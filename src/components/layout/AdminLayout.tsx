@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
 // ============================================
 // 어드민 레이아웃 컴포넌트 - 크기 조정
 // ============================================
 
-import { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { Header } from './Header';
-import { Sidebar } from './Sidebar';
-import { useSession } from '@/hooks/useSession';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Header } from "./Header";
+import { Sidebar } from "./Sidebar";
+import { useSession } from "@/hooks/useSession";
+import { cn } from "@/lib/utils";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -25,12 +25,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   // 인증 확인
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     const checkAuth = () => {
-      const token = localStorage.getItem('admin_token');
+      const token = localStorage.getItem("admin_token");
       if (!token) {
-        router.push('/login');
+        router.push("/login");
       } else {
         setIsLoading(false);
       }
@@ -65,16 +65,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* 메인 콘텐츠 영역 */}
       <main
         className={cn(
-          'pt-[60px] bg-[#f5f5f5] min-h-screen transition-all duration-300'
+          "pt-[60px] bg-[#f5f5f5] min-h-screen transition-all duration-300"
         )}
-        style={{ 
-          marginLeft: isSubmenuOpen ? '240px' : '80px',
+        style={{
+          marginLeft: isSubmenuOpen ? "240px" : "80px",
         }}
       >
         {/* 페이지 콘텐츠 */}
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="">{children}</div>
       </main>
 
       {/* 서브메뉴 오버레이 */}
