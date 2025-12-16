@@ -341,7 +341,7 @@ export default function DashboardPage() {
                     <table className="w-full text-[14px]">
                       <thead>
                         <tr className="bg-[#d9d9d9]">
-                          <th className="px-3 py-2.5 text-center font-semibold text-black w-[100px]">문의 유형</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black w-[130px]">문의 유형</th>
                           <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">문의 내용</th>
                           <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5] w-[150px]">처리 상태</th>
                         </tr>
