@@ -524,9 +524,6 @@ export default function DashboardPage() {
                                       ? "미답변"
                                       : "답변 완료"}
                                   </span>
-                                  <span className="bg-[#bbd900] text-white text-[13px] font-bold px-2 py-1 rounded-full">
-                                    4-{inquiry.status === "pending" ? "1" : "2"}
-                                  </span>
                                 </div>
                               )}
                             </td>
