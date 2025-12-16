@@ -11,8 +11,13 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // 로그인 페이지로 리다이렉트
-    router.push('/login');
+    // 로그인 상태 확인 후 리다이렉트
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      router.push('/dashboard');
+    } else {
+      router.push('/login');
+    }
   }, [router]);
 
   return (
