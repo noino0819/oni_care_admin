@@ -1,8 +1,7 @@
 'use client';
 
 // ============================================
-// 대시보드 페이지 - Figma 디자인 정확히 적용
-// 스크롤 없이 한 화면에 모든 내용 표시
+// 대시보드 페이지 - 글씨 크기 1.3배 확대
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -63,10 +62,10 @@ function formatNumber(num: number): string {
 // 섹션 타이틀 컴포넌트
 function SectionTitle({ children, subText }: { children: React.ReactNode; subText?: string }) {
   return (
-    <div className="flex items-center gap-2 mb-2">
-      <div className="w-[6px] h-[22px] bg-[#535353]" />
-      <h3 className="text-[18px] font-bold text-black">{children}</h3>
-      {subText && <span className="text-[11px] text-[#535353] ml-1">{subText}</span>}
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-[7px] h-[28px] bg-[#535353]" />
+      <h3 className="text-[22px] font-bold text-black">{children}</h3>
+      {subText && <span className="text-[14px] text-[#535353] ml-1">{subText}</span>}
     </div>
   );
 }
@@ -81,13 +80,13 @@ function AppUsageCard({ title, value, change, changePercent, compareText }: {
 }) {
   const isPositive = change >= 0;
   return (
-    <div className="bg-white rounded-[8px] shadow-sm flex-1">
-      <div className="px-2 py-1.5 border-b border-gray-200">
-        <h4 className="text-[13px] font-bold text-black text-center">{title}</h4>
+    <div className="bg-white rounded-[10px] shadow-sm flex-1">
+      <div className="px-3 py-2 border-b border-gray-200">
+        <h4 className="text-[16px] font-bold text-black text-center">{title}</h4>
       </div>
-      <div className="px-2 py-2 text-center">
-        <p className="text-[15px] text-black font-medium">{formatNumber(value)}명</p>
-        <p className="text-[10px] text-[#535353] mt-0.5">
+      <div className="px-3 py-3 text-center">
+        <p className="text-[20px] text-black font-medium">{formatNumber(value)}명</p>
+        <p className="text-[13px] text-[#535353] mt-1">
           {compareText} {isPositive ? '+' : ''}{formatNumber(change)}명 ({isPositive ? '+' : ''}{changePercent}%)
         </p>
       </div>
@@ -98,13 +97,13 @@ function AppUsageCard({ title, value, change, changePercent, compareText }: {
 // 포인트 카드 컴포넌트
 function PointCard({ title, value, subText }: { title: string; value: string; subText?: string }) {
   return (
-    <div className="bg-white rounded-t-[8px] shadow-sm flex-1">
-      <div className="px-2 py-1 border-b border-gray-200">
-        <h4 className="text-[12px] font-bold text-black text-center">{title}</h4>
+    <div className="bg-white rounded-t-[10px] shadow-sm flex-1">
+      <div className="px-3 py-2 border-b border-gray-200">
+        <h4 className="text-[15px] font-bold text-black text-center">{title}</h4>
       </div>
-      <div className="px-2 py-2 text-center">
-        <p className="text-[14px] text-black font-medium">{value}</p>
-        {subText && <p className="text-[9px] text-[#535353] mt-0.5">{subText}</p>}
+      <div className="px-3 py-3 text-center">
+        <p className="text-[18px] text-black font-medium">{value}</p>
+        {subText && <p className="text-[12px] text-[#535353] mt-1">{subText}</p>}
       </div>
     </div>
   );
@@ -213,32 +212,32 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout>
-      <div className="bg-[#f0f0f0] h-[calc(100vh-60px)] overflow-hidden flex flex-col">
+      <div className="bg-[#f0f0f0] min-h-[calc(100vh-60px)]">
         {/* 페이지 헤더 */}
-        <div className="flex items-center justify-between px-4 py-2 flex-shrink-0">
-          <h1 className="text-xl font-bold text-black">대시보드</h1>
+        <div className="flex items-center justify-between px-5 py-3">
+          <h1 className="text-2xl font-bold text-black">대시보드</h1>
           <div className="flex gap-2">
-            <Button onClick={fetchData} className="px-3 py-1.5 text-xs">조회</Button>
-            <Button variant="secondary" onClick={handleRefresh} className="px-2 py-1.5">
-              <RefreshCw className="w-3.5 h-3.5" />
+            <Button onClick={fetchData} className="px-4 py-2 text-sm">조회</Button>
+            <Button variant="secondary" onClick={handleRefresh} className="px-3 py-2">
+              <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* 메인 콘텐츠 영역 */}
-        <div className="bg-white rounded-[5px] mx-4 p-4 flex-1 overflow-hidden">
+        <div className="bg-white rounded-[5px] mx-5 p-5 mb-5">
           {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#535353]" />
+            <div className="flex items-center justify-center h-96">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#535353]" />
             </div>
           ) : (
-            <div className="grid grid-cols-[54fr_46fr] gap-4 h-full">
+            <div className="grid grid-cols-2 gap-5">
               {/* 좌측 영역 */}
-              <div className="flex flex-col gap-3 h-full overflow-hidden">
+              <div className="flex flex-col gap-4">
                 {/* 앱 이용 현황 */}
-                <div className="bg-[#eee] rounded-[15px] p-3 shadow-sm flex-shrink-0">
+                <div className="bg-[#eee] rounded-[18px] p-4 shadow-sm">
                   <SectionTitle>앱 이용 현황</SectionTitle>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <AppUsageCard
                       title="일일 사용자 수"
                       value={dashboardData.appUsage.dau.value}
@@ -271,29 +270,29 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 주요 기능 사용 현황 */}
-                <div className="bg-[#eee] rounded-[15px] p-3 shadow-sm flex-shrink-0">
+                <div className="bg-[#eee] rounded-[18px] p-4 shadow-sm">
                   <SectionTitle subText="*최근 7일 기준">주요 기능 사용 현황</SectionTitle>
                   <div className="bg-white rounded-[5px] overflow-hidden">
-                    <table className="w-full text-[11px]">
+                    <table className="w-full text-[14px]">
                       <thead>
                         <tr className="bg-[#d9d9d9]">
-                          <th className="px-2 py-1.5 text-center font-semibold text-black">기능명</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">사용 횟수</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">사용자 수</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">전주 대비 사용 횟수</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">전주 대비 사용자 수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black">기능명</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">사용 횟수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">사용자 수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">전주 대비 사용 횟수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">전주 대비 사용자 수</th>
                         </tr>
                       </thead>
                       <tbody>
                         {featureUsageData.map((feature, idx) => (
                           <tr key={idx} className="border-b border-[#a5a5a5] last:border-b-0">
-                            <td className="px-2 py-1.5 text-black">{feature.name}</td>
-                            <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(feature.usageCount.value)}회</td>
-                            <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(feature.userCount.value)}명</td>
-                            <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">
+                            <td className="px-3 py-2.5 text-black">{feature.name}</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(feature.usageCount.value)}회</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(feature.userCount.value)}명</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">
                               {feature.usageCount.change >= 0 ? '+' : ''}{formatNumber(feature.usageCount.change)}회 ({feature.usageCount.changePercent}%)
                             </td>
-                            <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">
                               {feature.userCount.change >= 0 ? '+' : ''}{formatNumber(feature.userCount.change)}명 ({feature.userCount.changePercent}%)
                             </td>
                           </tr>
@@ -303,69 +302,65 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* 컨텐츠 조회 현황 - 내부 스크롤 */}
-                <div className="bg-[#eee] rounded-[15px] p-3 shadow-sm flex-1 flex flex-col min-h-0">
+                {/* 컨텐츠 조회 현황 */}
+                <div className="bg-[#eee] rounded-[18px] p-4 shadow-sm">
                   <SectionTitle>컨텐츠 조회 현황</SectionTitle>
-                  <div className="bg-white rounded-[5px] flex-1 overflow-hidden flex flex-col">
-                    <table className="w-full text-[11px]">
+                  <div className="bg-white rounded-[5px] overflow-hidden max-h-[300px] overflow-y-auto">
+                    <table className="w-full text-[14px]">
                       <thead className="sticky top-0">
                         <tr className="bg-[#d9d9d9]">
-                          <th className="px-2 py-1.5 text-center font-semibold text-black">구분</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">카테고리명</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">주간 조회수</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">월간 조회수</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">누적 조회수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black">구분</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">카테고리명</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">주간 조회수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">월간 조회수</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">누적 조회수</th>
                         </tr>
                       </thead>
+                      <tbody>
+                        {contentViewsData.map((content, idx) => (
+                          <tr key={idx} className="border-b border-[#a5a5a5] last:border-b-0">
+                            <td className="px-3 py-2.5 text-center text-black">{content.categoryType}</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">{content.categoryName}</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(content.weeklyViews)}회</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(content.monthlyViews)}회</td>
+                            <td className="px-3 py-2.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(content.totalViews)}회</td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
-                    <div className="flex-1 overflow-y-auto">
-                      <table className="w-full text-[11px]">
-                        <tbody>
-                          {contentViewsData.map((content, idx) => (
-                            <tr key={idx} className="border-b border-[#a5a5a5] last:border-b-0">
-                              <td className="px-2 py-1.5 text-center text-black">{content.categoryType}</td>
-                              <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">{content.categoryName}</td>
-                              <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(content.weeklyViews)}회</td>
-                              <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(content.monthlyViews)}회</td>
-                              <td className="px-2 py-1.5 text-center text-black border-l border-[#e5e5e5]">{formatNumber(content.totalViews)}회</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
                 </div>
               </div>
 
               {/* 우측 영역 */}
-              <div className="flex flex-col gap-3 h-full overflow-hidden">
+              <div className="flex flex-col gap-4">
                 {/* 문의 게시판 */}
-                <div className="bg-[#eee] rounded-[15px] p-3 shadow-sm flex-shrink-0">
+                <div className="bg-[#eee] rounded-[18px] p-4 shadow-sm">
                   <SectionTitle>문의 게시판</SectionTitle>
                   <div className="bg-white rounded-[5px] overflow-hidden">
-                    <table className="w-full text-[11px]">
+                    <table className="w-full text-[14px]">
                       <thead>
                         <tr className="bg-[#d9d9d9]">
-                          <th className="px-2 py-1.5 text-center font-semibold text-black w-[80px]">문의 유형</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">문의 내용</th>
-                          <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5] w-[120px]">처리 상태</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black w-[100px]">문의 유형</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5]">문의 내용</th>
+                          <th className="px-3 py-2.5 text-center font-semibold text-black border-l border-[#a5a5a5] w-[150px]">처리 상태</th>
                         </tr>
                       </thead>
                       <tbody>
                         {inquiriesData.slice(0, 6).map((inquiry, idx) => (
                           <tr key={idx} className="border-b border-[#a5a5a5] last:border-b-0">
-                            <td className="px-2 py-1.5 text-black">{inquiry.inquiryType}</td>
-                            <td className="px-2 py-1.5 text-black border-l border-[#e5e5e5]">{inquiry.content || '-'}</td>
-                            <td className="px-2 py-1.5 border-l border-[#e5e5e5]">
+                            <td className="px-3 py-2.5 text-black">{inquiry.inquiryType}</td>
+                            <td className="px-3 py-2.5 text-black border-l border-[#e5e5e5]">{inquiry.content || '-'}</td>
+                            <td className="px-3 py-2.5 border-l border-[#e5e5e5]">
                               {inquiry.content && (
-                                <div className="flex items-center justify-center gap-1">
+                                <div className="flex items-center justify-center gap-2">
                                   <span className={cn(
-                                    'px-2 py-0.5 rounded-full text-[10px] font-bold text-white',
+                                    'px-3 py-1 rounded-full text-[13px] font-bold text-white',
                                     inquiry.status === 'pending' ? 'bg-[#535353]' : 'bg-[#9c80d4]'
                                   )}>
                                     {inquiry.status === 'pending' ? '미답변' : '답변 완료'}
                                   </span>
-                                  <span className="bg-[#bbd900] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                  <span className="bg-[#bbd900] text-white text-[13px] font-bold px-2 py-1 rounded-full">
                                     4-{inquiry.status === 'pending' ? '1' : '2'}
                                   </span>
                                 </div>
@@ -379,11 +374,11 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 포인트 현황 */}
-                <div className="bg-[#eee] rounded-[15px] p-3 shadow-sm flex-shrink-0">
+                <div className="bg-[#eee] rounded-[18px] p-4 shadow-sm">
                   <SectionTitle>포인트 현황</SectionTitle>
                   
                   {/* 포인트 요약 카드 */}
-                  <div className="flex gap-1.5 mb-1.5">
+                  <div className="flex gap-2 mb-2">
                     <PointCard
                       title="누적 발급 포인트"
                       value={`${formatNumber(dashboardData.points.total.value)}P`}
@@ -407,21 +402,21 @@ export default function DashboardPage() {
                   </div>
 
                   {/* 전환 유형별 테이블 */}
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-4 gap-2">
                     {['누적', '월간', '주간', '일간'].map((period, periodIdx) => (
                       <div key={period} className="bg-white rounded-b-[5px] overflow-hidden">
-                        <table className="w-full text-[9px]">
+                        <table className="w-full text-[12px]">
                           <thead>
                             <tr className="bg-[#d9d9d9]">
-                              <th className="px-1.5 py-1 text-center font-semibold text-black">전환 구분</th>
-                              <th className="px-1.5 py-1 text-center font-semibold text-black border-l border-[#a5a5a5]">전환 금액</th>
+                              <th className="px-2 py-1.5 text-center font-semibold text-black">전환 구분</th>
+                              <th className="px-2 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">전환 금액</th>
                             </tr>
                           </thead>
                           <tbody>
                             {conversionsData.map((conv, idx) => (
                               <tr key={idx} className="border-b border-[#a5a5a5] last:border-b-0">
-                                <td className="px-1.5 py-0.5 text-center text-black">{conv.type}</td>
-                                <td className="px-1.5 py-0.5 text-center text-black border-l border-[#e5e5e5]">
+                                <td className="px-2 py-1 text-center text-black">{conv.type}</td>
+                                <td className="px-2 py-1 text-center text-black border-l border-[#e5e5e5]">
                                   {formatNumber(periodIdx === 0 ? conv.total : periodIdx === 1 ? conv.monthly : periodIdx === 2 ? conv.weekly : conv.daily)}P
                                 </td>
                               </tr>
@@ -434,33 +429,33 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 챌린지 진행 현황 */}
-                <div className="bg-[#eee] rounded-[15px] p-3 shadow-sm flex-1">
+                <div className="bg-[#eee] rounded-[18px] p-4 shadow-sm">
                   <SectionTitle>챌린지 진행 현황</SectionTitle>
                   <div className="bg-white rounded-[5px] overflow-hidden">
-                    <table className="w-full text-[10px]">
+                    <table className="w-full text-[13px]">
                       <thead>
                         <tr className="bg-[#d9d9d9]">
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black">참여 대상</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">출석체크</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">걸음수</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">식사기록</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">영양제기록</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">영양설문</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">건강습관</th>
-                          <th className="px-1.5 py-1.5 text-center font-semibold text-black border-l border-[#a5a5a5]">퀴즈</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black">참여 대상</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">출석체크</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">걸음수</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">식사기록</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">영양제기록</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">영양설문</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">건강습관</th>
+                          <th className="px-2 py-2 text-center font-semibold text-black border-l border-[#a5a5a5]">퀴즈</th>
                         </tr>
                       </thead>
                       <tbody>
                         {challengesData.map((row, idx) => (
                           <tr key={idx} className="border-b border-[#a5a5a5] last:border-b-0">
-                            <td className="px-1.5 py-1.5 text-center text-black">{row.target}</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
-                            <td className="px-1.5 py-1.5 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black">{row.target}</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
+                            <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">N개</td>
                           </tr>
                         ))}
                       </tbody>
