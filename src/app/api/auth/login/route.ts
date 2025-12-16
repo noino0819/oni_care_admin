@@ -95,7 +95,11 @@ export async function POST(request: NextRequest) {
         organization: '현대그린푸드 본사',
       },
     });
-  } catch {
+  } catch (error) {
+    // 개발 환경에서만 에러 출력
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Login error:', error);
+    }
     return NextResponse.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: '서버 오류가 발생했습니다.' } },
       { status: 500 }

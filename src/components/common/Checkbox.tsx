@@ -1,12 +1,11 @@
 'use client';
 
 // ============================================
-// 공통 체크박스 컴포넌트
+// 공통 체크박스 컴포넌트 - Figma 디자인 동일
 // ============================================
 
 import { InputHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
 
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'> {
   label?: string;
@@ -21,35 +20,22 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       <label
         htmlFor={checkboxId}
         className={cn(
-          'inline-flex items-center cursor-pointer',
+          'inline-flex items-center cursor-pointer gap-[6px]',
           props.disabled && 'cursor-not-allowed opacity-50',
           className
         )}
       >
-        <div className="relative">
-          <input
-            ref={ref}
-            type="checkbox"
-            id={checkboxId}
-            checked={checked}
-            onChange={(e) => onChange?.(e.target.checked)}
-            className="sr-only peer"
-            {...props}
-          />
-          <div
-            className={cn(
-              'w-4 h-4 border rounded flex items-center justify-center transition-colors',
-              'peer-focus:ring-2 peer-focus:ring-[#C8E600] peer-focus:ring-offset-1',
-              checked
-                ? 'bg-[#C8E600] border-[#C8E600]'
-                : 'bg-white border-gray-300'
-            )}
-          >
-            {checked && <Check className="w-3 h-3 text-black" strokeWidth={3} />}
-          </div>
-        </div>
+        <input
+          ref={ref}
+          type="checkbox"
+          id={checkboxId}
+          checked={checked}
+          onChange={(e) => onChange?.(e.target.checked)}
+          className="custom-checkbox"
+          {...props}
+        />
         {label && (
-          <span className="ml-2 text-sm text-gray-700">{label}</span>
+          <span className="text-[14px] text-black">{label}</span>
         )}
       </label>
     );
@@ -58,7 +44,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
 Checkbox.displayName = 'Checkbox';
 
-// 체크박스 그룹 컴포넌트
+// 체크박스 그룹 컴포넌트 - Figma 디자인 동일
 interface CheckboxGroupProps {
   label?: string;
   options: { value: string; label: string }[];
@@ -66,6 +52,7 @@ interface CheckboxGroupProps {
   onChange: (values: string[]) => void;
   includeAll?: boolean;
   allLabel?: string;
+  horizontal?: boolean;
 }
 
 function CheckboxGroup({
@@ -75,6 +62,7 @@ function CheckboxGroup({
   onChange,
   includeAll = true,
   allLabel = '전체',
+  horizontal = false,
 }: CheckboxGroupProps) {
   const allSelected = values.length === options.length;
 
@@ -94,14 +82,43 @@ function CheckboxGroup({
     }
   };
 
+  if (horizontal) {
+    return (
+      <div className="flex items-center gap-4">
+        {label && (
+          <span className="text-[20px] font-bold text-black whitespace-nowrap">
+            {label}
+          </span>
+        )}
+        <div className="flex items-center gap-3">
+          {includeAll && (
+            <Checkbox
+              label={allLabel}
+              checked={allSelected}
+              onChange={handleAllChange}
+            />
+          )}
+          {options.map((option) => (
+            <Checkbox
+              key={option.value}
+              label={option.label}
+              checked={values.includes(option.value)}
+              onChange={(checked) => handleItemChange(option.value, checked)}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {label && (
-        <span className="block text-sm font-medium text-gray-700 mb-2">
+        <span className="block text-[20px] font-bold text-black mb-2">
           {label}
         </span>
       )}
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-3">
         {includeAll && (
           <Checkbox
             label={allLabel}
@@ -123,4 +140,3 @@ function CheckboxGroup({
 }
 
 export { Checkbox, CheckboxGroup };
-

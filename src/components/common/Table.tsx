@@ -1,12 +1,11 @@
 'use client';
 
 // ============================================
-// 공통 데이터 테이블 컴포넌트
+// 공통 데이터 테이블 컴포넌트 - 크기 조정
 // ============================================
 
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import type { TableColumn, SortConfig } from '@/types';
 
 interface DataTableProps<T> {
@@ -19,6 +18,37 @@ interface DataTableProps<T> {
   isLoading?: boolean;
   emptyMessage?: string;
   getRowKey?: (row: T) => string;
+  title?: string;
+}
+
+// 정렬 아이콘 컴포넌트
+function SortIcon({ direction }: { direction: 'asc' | 'desc' | null }) {
+  return (
+    <div className="flex flex-col ml-1 gap-[1px]">
+      <svg 
+        width="8" 
+        height="5" 
+        viewBox="0 0 8 5" 
+        fill="none"
+        className={cn(
+          direction === 'asc' ? 'text-black' : 'text-gray-300'
+        )}
+      >
+        <path d="M4 0L8 5H0L4 0Z" fill="currentColor" />
+      </svg>
+      <svg 
+        width="8" 
+        height="5" 
+        viewBox="0 0 8 5" 
+        fill="none"
+        className={cn(
+          direction === 'desc' ? 'text-black' : 'text-gray-300'
+        )}
+      >
+        <path d="M4 5L0 0H8L4 5Z" fill="currentColor" />
+      </svg>
+    </div>
+  );
 }
 
 function DataTable<T extends Record<string, unknown>>({
@@ -31,49 +61,44 @@ function DataTable<T extends Record<string, unknown>>({
   isLoading,
   emptyMessage = '데이터가 없습니다.',
   getRowKey,
+  title = '고객 리스트',
 }: DataTableProps<T>) {
-  const renderSortIcon = (field: string) => {
-    if (!sorting || sorting.field !== field) {
-      return <ChevronsUpDown className="w-4 h-4 text-gray-400" />;
-    }
-    if (sorting.direction === 'asc') {
-      return <ChevronUp className="w-4 h-4 text-gray-700" />;
-    }
-    return <ChevronDown className="w-4 h-4 text-gray-700" />;
-  };
-
   const handleHeaderClick = (column: TableColumn<T>) => {
     if (column.sortable && onSort) {
       onSort(column.key);
     }
   };
 
+  const getSortDirection = (field: string): 'asc' | 'desc' | null => {
+    if (!sorting || sorting.field !== field) return null;
+    return sorting.direction;
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      {/* 테이블 헤더 정보 */}
-      {totalCount !== undefined && (
-        <div className="px-4 py-3 border-b bg-gray-50">
-          <span className="text-sm font-medium text-gray-700">
-            고객 리스트
-          </span>
-          <span className="ml-2 text-sm text-gray-500">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      {/* 테이블 타이틀 */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <span className="text-[16px] font-bold text-black">
+          {title}
+        </span>
+        {totalCount !== undefined && (
+          <span className="ml-3 text-[14px] text-[#888]">
             총 {totalCount}건
           </span>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 테이블 */}
       <div className="overflow-x-auto">
         <table className="w-full">
+          {/* 테이블 헤더 */}
           <thead>
-            <tr className="bg-gray-50 border-b">
+            <tr className="bg-[#fafafa] border-b border-gray-200">
               {columns.map((column) => (
                 <th
                   key={column.key}
                   className={cn(
-                    'px-4 py-3 text-sm font-medium text-gray-700 whitespace-nowrap',
-                    column.align === 'center' && 'text-center',
-                    column.align === 'right' && 'text-right',
+                    'px-3 py-2.5 text-[13px] font-semibold text-[#333] whitespace-nowrap text-left',
                     column.sortable && 'cursor-pointer hover:bg-gray-100 select-none'
                   )}
                   style={{ width: column.width }}
@@ -85,7 +110,7 @@ function DataTable<T extends Record<string, unknown>>({
                     column.align === 'right' && 'justify-end'
                   )}>
                     {column.label}
-                    {column.sortable && renderSortIcon(column.key)}
+                    {column.sortable && <SortIcon direction={getSortDirection(column.key)} />}
                   </div>
                 </th>
               ))}
@@ -93,33 +118,31 @@ function DataTable<T extends Record<string, unknown>>({
           </thead>
           <tbody>
             {isLoading ? (
-              // 로딩 스켈레톤
               Array.from({ length: 5 }).map((_, index) => (
-                <tr key={index} className="border-b">
+                <tr key={index} className="border-b border-gray-100">
                   {columns.map((column) => (
-                    <td key={column.key} className="px-4 py-3">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                    <td key={column.key} className="px-3 py-2.5">
+                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
               ))
             ) : data.length === 0 ? (
-              // 빈 상태
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-16 text-center text-gray-500"
+                  className="px-3 py-12 text-center text-[13px] text-gray-400"
                 >
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              // 데이터 행
               data.map((row, rowIndex) => (
                 <tr
                   key={getRowKey ? getRowKey(row) : rowIndex}
                   className={cn(
-                    'border-b last:border-0 hover:bg-gray-50 transition-colors',
+                    'border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors',
+                    rowIndex % 2 === 1 ? 'bg-[#fafafa]' : 'bg-white',
                     onRowClick && 'cursor-pointer'
                   )}
                   onClick={() => onRowClick?.(row)}
@@ -128,7 +151,7 @@ function DataTable<T extends Record<string, unknown>>({
                     <td
                       key={column.key}
                       className={cn(
-                        'px-4 py-3 text-sm text-gray-900 whitespace-nowrap',
+                        'px-3 py-2.5 text-[13px] text-[#333] whitespace-nowrap',
                         column.align === 'center' && 'text-center',
                         column.align === 'right' && 'text-right'
                       )}
@@ -191,7 +214,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 text-[13px] text-gray-500 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
       >
         이전
       </button>
@@ -202,16 +225,16 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
             key={index}
             onClick={() => onPageChange(page)}
             className={cn(
-              'w-8 h-8 text-sm rounded',
+              'w-8 h-8 text-[13px] rounded',
               currentPage === page
-                ? 'bg-[#C8E600] text-black font-medium'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-[#737373] text-white font-medium'
+                : 'text-gray-500 hover:bg-gray-100'
             )}
           >
             {page}
           </button>
         ) : (
-          <span key={index} className="px-2 text-gray-400">
+          <span key={index} className="px-1 text-gray-400">
             {page}
           </span>
         )
@@ -220,7 +243,7 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 text-[13px] text-gray-500 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
       >
         다음
       </button>
@@ -229,4 +252,3 @@ function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) 
 }
 
 export { DataTable, Pagination };
-
