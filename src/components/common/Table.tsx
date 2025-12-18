@@ -51,7 +51,7 @@ function SortIcon({ direction }: { direction: 'asc' | 'desc' | null }) {
   );
 }
 
-function DataTable<T extends Record<string, unknown>>({
+function DataTable<T extends object>({
   columns,
   data,
   totalCount,
@@ -157,8 +157,8 @@ function DataTable<T extends Record<string, unknown>>({
                       )}
                     >
                       {column.render
-                        ? column.render(row[column.key], row)
-                        : (row[column.key] as ReactNode) ?? '-'}
+                        ? column.render((row as Record<string, unknown>)[column.key], row)
+                        : ((row as Record<string, unknown>)[column.key] as ReactNode) ?? '-'}
                     </td>
                   ))}
                 </tr>

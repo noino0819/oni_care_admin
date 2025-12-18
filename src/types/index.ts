@@ -28,7 +28,7 @@ export interface SortConfig {
 }
 
 // 테이블 컬럼 정의
-export interface TableColumn<T = unknown> {
+export interface TableColumn<T = object> {
   key: string;
   label: string;
   sortable?: boolean;
@@ -166,5 +166,172 @@ export interface ListRequest {
     page: number;
     limit: number;
   };
+}
+
+// ============================================
+// 설정 메뉴 타입 정의
+// ============================================
+
+// 시스템 환경설정
+export interface SystemSetting {
+  id: number;
+  setting_key: string;
+  setting_name: string;
+  setting_value: string | null;
+  description: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface SystemSettingForm {
+  setting_key: string;
+  setting_name: string;
+  setting_value: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface SystemSettingSearchFilters {
+  setting_key?: string;
+  setting_name?: string;
+  is_active?: string;
+}
+
+// 공통 코드 마스터
+export interface CommonCodeMaster {
+  id: number;
+  code_name: string;
+  description: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface CommonCodeMasterForm {
+  code_name: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface CommonCodeMasterSearchFilters {
+  code_name?: string;
+  is_active?: string;
+}
+
+// 공통 코드
+export interface CommonCode {
+  id: number;
+  master_id: number;
+  code_value: string;
+  code_name: string;
+  description: string | null;
+  sort_order: number;
+  extra_field1: string | null;
+  extra_field2: string | null;
+  extra_field3: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface CommonCodeForm {
+  master_id: number;
+  code_value: string;
+  code_name: string;
+  description: string;
+  sort_order: number;
+  extra_field1: string;
+  extra_field2: string;
+  extra_field3: string;
+  is_active: boolean;
+}
+
+// 접속로그
+export interface AccessLog {
+  id: string;
+  user_id: string | null;
+  user_name: string | null;
+  device_type: string | null;
+  os: string | null;
+  browser: string | null;
+  ip_address: string | null;
+  login_at: string;
+  logout_at: string | null;
+  created_at: string;
+}
+
+export interface AccessLogSearchFilters {
+  user_id?: string;
+  user_name?: string;
+  device_type?: string;
+  login_from?: string;
+  login_to?: string;
+}
+
+// 개인정보 접속로그
+export interface PersonalInfoAccessLog extends AccessLog {
+  business_code: string | null;
+  survey_id: string | null;
+}
+
+export interface PersonalInfoAccessLogSearchFilters extends AccessLogSearchFilters {
+  business_code?: string;
+  survey_id?: string;
+}
+
+// 회사
+export interface Company {
+  id: number;
+  company_code: string;
+  company_name: string;
+  note: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface CompanyForm {
+  company_code: string;
+  company_name: string;
+  note: string;
+  is_active: boolean;
+}
+
+export interface CompanySearchFilters {
+  company_code?: string;
+  company_name?: string;
+  department_code?: string;
+  department_name?: string;
+}
+
+// 부서
+export interface Department {
+  id: number;
+  company_id: number;
+  department_code: string;
+  department_name: string;
+  note: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface DepartmentForm {
+  company_id: number;
+  department_code: string;
+  department_name: string;
+  note: string;
+  is_active: boolean;
 }
 

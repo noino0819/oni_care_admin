@@ -17,6 +17,8 @@ export const menuItems: MenuItem[] = [
     icon: 'chart',
     children: [
       { id: 'greating-x-1', label: '그리팅-X 관리', path: '/greating-x/manage' },
+      { id: 'greating-x-access-logs', label: '접속로그', path: '/greating-x/access-logs' },
+      { id: 'greating-x-personal-logs', label: '개인정보 접근로그', path: '/greating-x/personal-info-logs' },
     ],
   },
   {
@@ -41,7 +43,6 @@ export const menuItems: MenuItem[] = [
     icon: 'user',
     children: [
       { id: 'admin-users', label: '어드민 사용자 관리', path: '/admin/users' },
-      { id: 'admin-logs', label: '접속 로그', path: '/admin/logs' },
     ],
   },
   {
@@ -49,7 +50,10 @@ export const menuItems: MenuItem[] = [
     label: '설정',
     icon: 'settings',
     children: [
-      { id: 'settings-general', label: '일반 설정', path: '/settings/general' },
+      { id: 'settings-system', label: '환경설정', path: '/settings/system-settings' },
+      { id: 'settings-code-master', label: '공통 코드 마스터', path: '/settings/common-codes/master' },
+      { id: 'settings-code-detail', label: '공통 코드 상세', path: '/settings/common-codes/detail' },
+      { id: 'settings-companies', label: '회사 및 조직 관리', path: '/settings/companies' },
     ],
   },
 ];

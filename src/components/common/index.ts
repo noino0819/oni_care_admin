@@ -9,4 +9,5 @@ export { Checkbox, CheckboxGroup } from './Checkbox';
 export { Modal, AlertModal, ConfirmModal } from './Modal';
 export { DataTable, Pagination } from './Table';
 export { DatePicker, DateRangePicker } from './DatePicker';
+export { FormModal, SearchFilterPanel, SearchField } from './FormModal';
 
