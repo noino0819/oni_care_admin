@@ -183,7 +183,7 @@ export default function PersonalInfoLogsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
+      <div className="space-y-4 pt-2">
         {/* 페이지 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
