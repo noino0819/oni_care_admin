@@ -395,8 +395,8 @@ export default function CompaniesPage() {
         </SearchFilterPanel>
 
         {/* 회사관리 섹션 */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-[16px] font-bold text-black mb-4">회사관리</h2>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-[16px] font-bold text-black mb-6">회사관리</h2>
           
           <div className="flex gap-4">
             {/* 좌측 패널: 회사 */}
