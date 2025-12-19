@@ -71,8 +71,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           marginLeft: isSubmenuOpen ? "240px" : "80px",
         }}
       >
-        {/* 페이지 콘텐츠 */}
-        <div className="">{children}</div>
+        {/* 페이지 콘텐츠 - Figma 기준 좌40px, 상24px, 우40px */}
+        <div className="px-10 py-6">{children}</div>
       </main>
 
       {/* 서브메뉴 오버레이 */}

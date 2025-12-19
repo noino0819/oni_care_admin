@@ -48,7 +48,6 @@ export default function PersonalInfoLogsPage() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTriggered, setSearchTriggered] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   // 데이터 조회
@@ -85,7 +84,6 @@ export default function PersonalInfoLogsPage() {
   // 조회 버튼 클릭
   const handleSearch = () => {
     setPage(1);
-    setSearchTriggered(true);
   };
 
   // 초기화 버튼 클릭
@@ -102,17 +100,12 @@ export default function PersonalInfoLogsPage() {
     setStartDate(null);
     setEndDate(null);
     setPage(1);
-    setSearchTriggered(false);
-    setData([]);
-    setPagination(null);
   };
 
-  // 검색 트리거 시 데이터 조회
+  // 페이지 로드 및 조건 변경 시 데이터 조회
   useEffect(() => {
-    if (searchTriggered) {
-      fetchData();
-    }
-  }, [searchTriggered, page, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   // 테이블 컬럼 정의
   const columns: TableColumn<PersonalInfoAccessLog>[] = [
@@ -183,7 +176,7 @@ export default function PersonalInfoLogsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4">
         {/* 페이지 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
@@ -271,7 +264,7 @@ export default function PersonalInfoLogsPage() {
           data={data}
           totalCount={pagination?.total}
           isLoading={isLoading}
-          emptyMessage={searchTriggered ? '조회 결과가 없습니다.' : '조회조건을 입력 후 조회해주세요.'}
+          emptyMessage="조회 결과가 없습니다."
           getRowKey={(row) => row.id}
           title="영양설문 접속로그"
         />

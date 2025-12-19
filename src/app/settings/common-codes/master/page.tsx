@@ -43,7 +43,6 @@ export default function CommonCodeMasterPage() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTriggered, setSearchTriggered] = useState(false);
 
   // 모달 상태
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -81,7 +80,6 @@ export default function CommonCodeMasterPage() {
   // 조회 버튼 클릭
   const handleSearch = () => {
     setPage(1);
-    setSearchTriggered(true);
   };
 
   // 초기화 버튼 클릭
@@ -91,17 +89,12 @@ export default function CommonCodeMasterPage() {
       is_active: '',
     });
     setPage(1);
-    setSearchTriggered(false);
-    setData([]);
-    setPagination(null);
   };
 
-  // 검색 트리거 시 데이터 조회
+  // 페이지 로드 및 조건 변경 시 데이터 조회
   useEffect(() => {
-    if (searchTriggered) {
-      fetchData();
-    }
-  }, [searchTriggered, page, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   // 추가 버튼 클릭
   const handleAdd = () => {
@@ -214,7 +207,7 @@ export default function CommonCodeMasterPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4">
         {/* 페이지 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
@@ -263,23 +256,21 @@ export default function CommonCodeMasterPage() {
         </SearchFilterPanel>
 
         {/* 데이터 테이블 */}
-        <div className="relative">
-          <div className="absolute right-4 top-3 z-10">
+        <DataTable
+          columns={columns}
+          data={data}
+          totalCount={pagination?.total}
+          onRowClick={handleRowClick}
+          isLoading={isLoading}
+          emptyMessage="조회 결과가 없습니다."
+          getRowKey={(row) => row.id.toString()}
+          title="코드 마스터"
+          headerAction={
             <Button size="sm" onClick={handleAdd}>
               추가
             </Button>
-          </div>
-          <DataTable
-            columns={columns}
-            data={data}
-            totalCount={pagination?.total}
-            onRowClick={handleRowClick}
-            isLoading={isLoading}
-            emptyMessage={searchTriggered ? '조회 결과가 없습니다.' : '조회조건을 입력 후 조회해주세요.'}
-            getRowKey={(row) => row.id.toString()}
-            title="코드 마스터"
-          />
-        </div>
+          }
+        />
 
         {pagination && pagination.totalPages > 1 && (
           <Pagination

@@ -77,12 +77,9 @@ export function useMembers(
   enabled = true
 ) {
   const queryString = filtersToQuery(filters, sort, page, limit);
-  const hasFilters = Object.values(filters).some((v) => 
-    v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)
-  );
 
   const { data, error, isLoading, mutate } = useSWR<MembersResponse>(
-    enabled && hasFilters ? `/api/members?${queryString}` : null,
+    enabled ? `/api/members?${queryString}` : null,
     fetcher,
     {
       revalidateOnFocus: false,

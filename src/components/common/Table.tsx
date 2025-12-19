@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================
-// 공통 데이터 테이블 컴포넌트 - 크기 조정
+// 공통 데이터 테이블 컴포넌트 - Figma 디자인 반영
 // ============================================
 
 import { ReactNode } from 'react';
@@ -19,6 +19,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   getRowKey?: (row: T) => string;
   title?: string;
+  headerAction?: ReactNode;
 }
 
 // 정렬 아이콘 컴포넌트
@@ -62,6 +63,7 @@ function DataTable<T extends object>({
   emptyMessage = '데이터가 없습니다.',
   getRowKey,
   title = '고객 리스트',
+  headerAction,
 }: DataTableProps<T>) {
   const handleHeaderClick = (column: TableColumn<T>) => {
     if (column.sortable && onSort) {
@@ -75,97 +77,108 @@ function DataTable<T extends object>({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      {/* 테이블 타이틀 */}
-      <div className="px-4 py-3 border-b border-gray-100">
-        <span className="text-[16px] font-bold text-black">
-          {title}
-        </span>
-        {totalCount !== undefined && (
-          <span className="ml-3 text-[14px] text-[#888]">
-            총 {totalCount}건
+    <div className="bg-white rounded-[5px] shadow-sm">
+      {/* 테이블 타이틀 영역 */}
+      <div className="px-7 pt-5 pb-4 flex items-center justify-between">
+        <div>
+          <span className="text-[16px] font-bold text-black">
+            {title}
           </span>
+          {totalCount !== undefined && (
+            <span className="ml-3 text-[14px] text-[#888]">
+              총 {totalCount}건
+            </span>
+          )}
+        </div>
+        {headerAction && (
+          <div>{headerAction}</div>
         )}
       </div>
 
-      {/* 테이블 */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          {/* 테이블 헤더 */}
-          <thead>
-            <tr className="bg-[#fafafa] border-b border-gray-200">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={cn(
-                    'px-3 py-2.5 text-[13px] font-semibold text-[#333] whitespace-nowrap text-left',
-                    column.sortable && 'cursor-pointer hover:bg-gray-100 select-none'
-                  )}
-                  style={{ width: column.width }}
-                  onClick={() => handleHeaderClick(column)}
-                >
-                  <div className={cn(
-                    'flex items-center gap-1',
-                    column.align === 'center' && 'justify-center',
-                    column.align === 'right' && 'justify-end'
-                  )}>
-                    {column.label}
-                    {column.sortable && <SortIcon direction={getSortDirection(column.key)} />}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <tr key={index} className="border-b border-gray-100">
-                  {columns.map((column) => (
-                    <td key={column.key} className="px-3 py-2.5">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : data.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-3 py-12 text-center text-[13px] text-gray-400"
-                >
-                  {emptyMessage}
-                </td>
+      {/* 테이블 - 내부 패딩 적용 */}
+      <div className="px-7 pb-6">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            {/* 테이블 헤더 - Figma 스타일 */}
+            <thead>
+              <tr className="bg-[#f8f8f8] border border-black/30 rounded-t-[5px]">
+                {columns.map((column, index) => (
+                  <th
+                    key={column.key}
+                    className={cn(
+                      'px-4 py-3 text-[13px] font-semibold text-[#333] whitespace-nowrap text-left',
+                      'border-r border-black/10 last:border-r-0',
+                      index === 0 && 'rounded-tl-[5px]',
+                      index === columns.length - 1 && 'rounded-tr-[5px]',
+                      column.sortable && 'cursor-pointer hover:bg-gray-100 select-none'
+                    )}
+                    style={{ width: column.width }}
+                    onClick={() => handleHeaderClick(column)}
+                  >
+                    <div className={cn(
+                      'flex items-center gap-1',
+                      column.align === 'center' && 'justify-center',
+                      column.align === 'right' && 'justify-end'
+                    )}>
+                      {column.label}
+                      {column.sortable && <SortIcon direction={getSortDirection(column.key)} />}
+                    </div>
+                  </th>
+                ))}
               </tr>
-            ) : (
-              data.map((row, rowIndex) => (
-                <tr
-                  key={getRowKey ? getRowKey(row) : rowIndex}
-                  className={cn(
-                    'border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors',
-                    rowIndex % 2 === 1 ? 'bg-[#fafafa]' : 'bg-white',
-                    onRowClick && 'cursor-pointer'
-                  )}
-                  onClick={() => onRowClick?.(row)}
-                >
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className={cn(
-                        'px-3 py-2.5 text-[13px] text-[#333] whitespace-nowrap',
-                        column.align === 'center' && 'text-center',
-                        column.align === 'right' && 'text-right'
-                      )}
-                    >
-                      {column.render
-                        ? column.render((row as Record<string, unknown>)[column.key], row)
-                        : ((row as Record<string, unknown>)[column.key] as ReactNode) ?? '-'}
-                    </td>
-                  ))}
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index} className="border-b border-[#a5a5a5]/30">
+                    {columns.map((column) => (
+                      <td key={column.key} className="px-4 py-3 border-r border-black/5 last:border-r-0">
+                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : data.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-12 text-center text-[13px] text-gray-400 border-b border-[#a5a5a5]/30"
+                  >
+                    {emptyMessage}
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                data.map((row, rowIndex) => (
+                  <tr
+                    key={getRowKey ? getRowKey(row) : rowIndex}
+                    className={cn(
+                      'border-b border-[#a5a5a5]/30 hover:bg-gray-50 transition-colors',
+                      rowIndex % 2 === 0 ? 'bg-[#f0f0f0]' : 'bg-[#fcfcfc]',
+                      onRowClick && 'cursor-pointer'
+                    )}
+                    onClick={() => onRowClick?.(row)}
+                  >
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={cn(
+                          'px-4 py-3 text-[13px] text-[#333] whitespace-nowrap',
+                          'border-r border-black/5 last:border-r-0',
+                          column.align === 'center' && 'text-center',
+                          column.align === 'right' && 'text-right'
+                        )}
+                      >
+                        {column.render
+                          ? column.render((row as Record<string, unknown>)[column.key], row)
+                          : ((row as Record<string, unknown>)[column.key] as ReactNode) ?? '-'}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
