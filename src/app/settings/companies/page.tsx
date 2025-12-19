@@ -334,7 +334,7 @@ export default function CompaniesPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
+      <div className="space-y-4 pt-2">
         {/* 페이지 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
@@ -395,8 +395,8 @@ export default function CompaniesPage() {
         </SearchFilterPanel>
 
         {/* 회사관리 섹션 */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-2">
-          <h2 className="text-[16px] font-bold text-black mt-2 mb-6">회사관리</h2>
+        <div className="bg-white rounded-lg shadow-sm p-4">
+          <h2 className="text-[16px] font-bold text-black mb-4">회사관리</h2>
           
           <div className="flex gap-4">
             {/* 좌측 패널: 회사 */}
