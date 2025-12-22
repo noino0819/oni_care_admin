@@ -335,3 +335,132 @@ export interface DepartmentForm {
   is_active: boolean;
 }
 
+// ============================================
+// 권한 관리 타입 정의
+// ============================================
+
+// 보안 그룹
+export interface SecurityGroup {
+  id: string;
+  group_name: string;
+  description: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface SecurityGroupForm {
+  group_name: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface SecurityGroupSearchFilters {
+  group_name?: string;
+  group_id?: string;
+}
+
+// 보안 그룹 항목 (지점)
+export interface SecurityGroupItem {
+  id: string;
+  group_id: string;
+  entry_path: string | null;
+  company_code: string | null;
+  company_name: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SecurityGroupItemForm {
+  group_id: string;
+  entry_path: string;
+  company_code: string;
+  company_name: string;
+  is_active: boolean;
+}
+
+// ============================================
+// 계정 관리 타입 정의
+// ============================================
+
+// 관리자 회원
+export interface AdminUserAccount {
+  id: string;
+  login_id: string;
+  password_hash?: string;
+  employee_name: string;
+  department_id: number | null;
+  department_name?: string;
+  company_id: number | null;
+  company_name?: string;
+  phone: string | null;
+  is_active: boolean;
+  status: string;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface AdminUserAccountForm {
+  login_id: string;
+  password?: string;
+  employee_name: string;
+  department_id: number | null;
+  company_id: number | null;
+  phone: string;
+  is_active: boolean;
+}
+
+export interface AdminUserSearchFilters {
+  company_id?: number;
+  company_name?: string;
+  department_name?: string;
+  employee_name?: string;
+  login_id?: string;
+}
+
+// 지점별 고객
+export interface StoreCustomer {
+  id: string;
+  member_code: string;
+  customer_name: string;
+  phone: string | null;
+  first_store_id: string | null;
+  first_store_name?: string;
+  authorized_stores: string[] | null;
+  authorized_store_names?: string[];
+  push_agreed: boolean;
+  sms_agreed: boolean;
+  registered_at: string | null;
+  joined_at: string | null;
+  last_visit_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoreCustomerForm {
+  member_code?: string;
+  customer_name: string;
+  phone: string;
+  first_store_id: string | null;
+  authorized_stores: string[];
+  push_agreed: boolean;
+  sms_agreed: boolean;
+  registered_at: string | null;
+  joined_at: string | null;
+}
+
+export interface StoreCustomerSearchFilters {
+  store_id?: string;
+  customer_name?: string;
+  member_code?: string;
+  receive_agreed?: string;
+  last_visit_from?: string;
+  last_visit_to?: string;
+  registered_from?: string;
+  registered_to?: string;
+}
+

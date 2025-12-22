@@ -190,3 +190,118 @@ COMMENT ON COLUMN public.departments.department_name IS '부서명';
 COMMENT ON COLUMN public.departments.note IS '비고';
 COMMENT ON COLUMN public.departments.is_active IS '사용여부';
 
+-- 8. 보안 그룹 테이블
+CREATE TABLE IF NOT EXISTS public.security_groups (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_name VARCHAR(200) NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_by VARCHAR(50),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_security_groups_group_name ON public.security_groups(group_name);
+CREATE INDEX idx_security_groups_is_active ON public.security_groups(is_active);
+
+COMMENT ON TABLE public.security_groups IS '보안 그룹';
+COMMENT ON COLUMN public.security_groups.group_name IS '보안그룹명';
+COMMENT ON COLUMN public.security_groups.description IS '설명';
+COMMENT ON COLUMN public.security_groups.is_active IS '사용여부';
+COMMENT ON COLUMN public.security_groups.created_by IS '생성자';
+COMMENT ON COLUMN public.security_groups.updated_by IS '변경자';
+
+-- 9. 보안 그룹 항목 테이블
+CREATE TABLE IF NOT EXISTS public.security_group_items (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  group_id UUID NOT NULL REFERENCES public.security_groups(id) ON DELETE CASCADE,
+  entry_path VARCHAR(50),
+  company_code VARCHAR(50),
+  company_name VARCHAR(200),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_security_group_items_group_id ON public.security_group_items(group_id);
+CREATE INDEX idx_security_group_items_company_code ON public.security_group_items(company_code);
+CREATE INDEX idx_security_group_items_is_active ON public.security_group_items(is_active);
+
+COMMENT ON TABLE public.security_group_items IS '보안 그룹 항목 (지점)';
+COMMENT ON COLUMN public.security_group_items.group_id IS '보안그룹 ID (FK)';
+COMMENT ON COLUMN public.security_group_items.entry_path IS '진입경로 코드';
+COMMENT ON COLUMN public.security_group_items.company_code IS '회사 코드';
+COMMENT ON COLUMN public.security_group_items.company_name IS '회사/지점명';
+COMMENT ON COLUMN public.security_group_items.is_active IS '사용여부';
+
+-- 10. 관리자 회원 테이블
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  login_id VARCHAR(100) NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  employee_name VARCHAR(100) NOT NULL,
+  department_id INTEGER REFERENCES public.departments(id),
+  company_id INTEGER REFERENCES public.companies(id),
+  phone VARCHAR(20),
+  is_active BOOLEAN DEFAULT true,
+  status VARCHAR(20) DEFAULT 'active',
+  created_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_by VARCHAR(50),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_admin_users_login_id ON public.admin_users(login_id);
+CREATE INDEX idx_admin_users_employee_name ON public.admin_users(employee_name);
+CREATE INDEX idx_admin_users_company_id ON public.admin_users(company_id);
+CREATE INDEX idx_admin_users_department_id ON public.admin_users(department_id);
+CREATE INDEX idx_admin_users_is_active ON public.admin_users(is_active);
+
+COMMENT ON TABLE public.admin_users IS '관리자 회원';
+COMMENT ON COLUMN public.admin_users.login_id IS '로그인 ID';
+COMMENT ON COLUMN public.admin_users.password_hash IS '비밀번호 해시';
+COMMENT ON COLUMN public.admin_users.employee_name IS '직원명';
+COMMENT ON COLUMN public.admin_users.department_id IS '부서 ID (FK)';
+COMMENT ON COLUMN public.admin_users.company_id IS '회사 ID (FK)';
+COMMENT ON COLUMN public.admin_users.phone IS '핸드폰 번호';
+COMMENT ON COLUMN public.admin_users.is_active IS '사용여부';
+COMMENT ON COLUMN public.admin_users.status IS '회원상태 (active/inactive)';
+COMMENT ON COLUMN public.admin_users.created_by IS '생성자';
+COMMENT ON COLUMN public.admin_users.updated_by IS '변경자';
+
+-- 11. 지점별 고객 테이블
+CREATE TABLE IF NOT EXISTS public.store_customers (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  member_code VARCHAR(50) NOT NULL UNIQUE,
+  customer_name VARCHAR(100) NOT NULL,
+  phone VARCHAR(20),
+  first_store_id UUID,
+  authorized_stores UUID[],
+  push_agreed BOOLEAN DEFAULT false,
+  sms_agreed BOOLEAN DEFAULT false,
+  registered_at DATE,
+  joined_at DATE,
+  last_visit_at DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_store_customers_member_code ON public.store_customers(member_code);
+CREATE INDEX idx_store_customers_customer_name ON public.store_customers(customer_name);
+CREATE INDEX idx_store_customers_phone ON public.store_customers(phone);
+CREATE INDEX idx_store_customers_first_store_id ON public.store_customers(first_store_id);
+CREATE INDEX idx_store_customers_last_visit_at ON public.store_customers(last_visit_at);
+CREATE INDEX idx_store_customers_registered_at ON public.store_customers(registered_at);
+
+COMMENT ON TABLE public.store_customers IS '지점별 고객';
+COMMENT ON COLUMN public.store_customers.member_code IS '회원코드';
+COMMENT ON COLUMN public.store_customers.customer_name IS '고객명';
+COMMENT ON COLUMN public.store_customers.phone IS '휴대폰번호';
+COMMENT ON COLUMN public.store_customers.first_store_id IS '최초등록지점 ID';
+COMMENT ON COLUMN public.store_customers.authorized_stores IS '권한지점 목록';
+COMMENT ON COLUMN public.store_customers.push_agreed IS '푸시 수신 동의';
+COMMENT ON COLUMN public.store_customers.sms_agreed IS 'SMS 수신 동의';
+COMMENT ON COLUMN public.store_customers.registered_at IS '등록일';
+COMMENT ON COLUMN public.store_customers.joined_at IS '가입일';
+COMMENT ON COLUMN public.store_customers.last_visit_at IS '최근방문일';
+
