@@ -305,3 +305,156 @@ COMMENT ON COLUMN public.store_customers.registered_at IS '등록일';
 COMMENT ON COLUMN public.store_customers.joined_at IS '가입일';
 COMMENT ON COLUMN public.store_customers.last_visit_at IS '최근방문일';
 
+-- ============================================
+-- 12. 역할 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.roles (
+  id SERIAL PRIMARY KEY,
+  role_code VARCHAR(20) NOT NULL UNIQUE,
+  role_name VARCHAR(100) NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_by VARCHAR(50),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_roles_role_code ON public.roles(role_code);
+CREATE INDEX idx_roles_role_name ON public.roles(role_name);
+CREATE INDEX idx_roles_is_active ON public.roles(is_active);
+
+COMMENT ON TABLE public.roles IS '역할';
+COMMENT ON COLUMN public.roles.role_code IS '역할 코드';
+COMMENT ON COLUMN public.roles.role_name IS '역할명';
+COMMENT ON COLUMN public.roles.description IS '설명';
+COMMENT ON COLUMN public.roles.is_active IS '사용여부';
+COMMENT ON COLUMN public.roles.created_by IS '생성자';
+COMMENT ON COLUMN public.roles.updated_by IS '변경자';
+
+-- ============================================
+-- 13. 어드민 메뉴 테이블 (계층 구조)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.admin_menus (
+  id SERIAL PRIMARY KEY,
+  menu_name VARCHAR(100) NOT NULL,
+  menu_path VARCHAR(200),
+  parent_id INTEGER REFERENCES public.admin_menus(id) ON DELETE CASCADE,
+  depth INTEGER DEFAULT 1,
+  sort_order INTEGER DEFAULT 0,
+  icon VARCHAR(50),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_admin_menus_parent_id ON public.admin_menus(parent_id);
+CREATE INDEX idx_admin_menus_depth ON public.admin_menus(depth);
+CREATE INDEX idx_admin_menus_sort_order ON public.admin_menus(sort_order);
+CREATE INDEX idx_admin_menus_is_active ON public.admin_menus(is_active);
+
+COMMENT ON TABLE public.admin_menus IS '어드민 메뉴';
+COMMENT ON COLUMN public.admin_menus.menu_name IS '메뉴명';
+COMMENT ON COLUMN public.admin_menus.menu_path IS '메뉴 경로';
+COMMENT ON COLUMN public.admin_menus.parent_id IS '상위 메뉴 ID';
+COMMENT ON COLUMN public.admin_menus.depth IS '메뉴 깊이 (1, 2, 3)';
+COMMENT ON COLUMN public.admin_menus.sort_order IS '정렬 순서';
+COMMENT ON COLUMN public.admin_menus.icon IS '아이콘';
+COMMENT ON COLUMN public.admin_menus.is_active IS '사용여부';
+
+-- ============================================
+-- 14. 역할별 메뉴 권한 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.role_menu_permissions (
+  id SERIAL PRIMARY KEY,
+  role_id INTEGER NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+  menu_id INTEGER NOT NULL REFERENCES public.admin_menus(id) ON DELETE CASCADE,
+  can_read BOOLEAN DEFAULT false,
+  can_write BOOLEAN DEFAULT false,
+  can_update BOOLEAN DEFAULT false,
+  can_delete BOOLEAN DEFAULT false,
+  can_export BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(role_id, menu_id)
+);
+
+CREATE INDEX idx_role_menu_permissions_role_id ON public.role_menu_permissions(role_id);
+CREATE INDEX idx_role_menu_permissions_menu_id ON public.role_menu_permissions(menu_id);
+CREATE INDEX idx_role_menu_permissions_is_active ON public.role_menu_permissions(is_active);
+
+COMMENT ON TABLE public.role_menu_permissions IS '역할별 메뉴 권한';
+COMMENT ON COLUMN public.role_menu_permissions.role_id IS '역할 ID';
+COMMENT ON COLUMN public.role_menu_permissions.menu_id IS '메뉴 ID';
+COMMENT ON COLUMN public.role_menu_permissions.can_read IS '읽기 권한';
+COMMENT ON COLUMN public.role_menu_permissions.can_write IS '쓰기 권한';
+COMMENT ON COLUMN public.role_menu_permissions.can_update IS '수정 권한';
+COMMENT ON COLUMN public.role_menu_permissions.can_delete IS '삭제 권한';
+COMMENT ON COLUMN public.role_menu_permissions.can_export IS '엑셀 권한';
+COMMENT ON COLUMN public.role_menu_permissions.is_active IS '사용여부';
+
+-- ============================================
+-- 15. API 마스터 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.admin_apis (
+  id SERIAL PRIMARY KEY,
+  api_name VARCHAR(100) NOT NULL,
+  api_path VARCHAR(200) NOT NULL,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_admin_apis_api_name ON public.admin_apis(api_name);
+CREATE INDEX idx_admin_apis_api_path ON public.admin_apis(api_path);
+CREATE INDEX idx_admin_apis_is_active ON public.admin_apis(is_active);
+
+COMMENT ON TABLE public.admin_apis IS 'API 마스터';
+COMMENT ON COLUMN public.admin_apis.api_name IS 'API명';
+COMMENT ON COLUMN public.admin_apis.api_path IS 'API 경로';
+COMMENT ON COLUMN public.admin_apis.description IS '설명';
+COMMENT ON COLUMN public.admin_apis.is_active IS '사용여부';
+
+-- ============================================
+-- 16. 역할별 API 권한 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.role_api_permissions (
+  id SERIAL PRIMARY KEY,
+  role_id INTEGER NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+  api_id INTEGER NOT NULL REFERENCES public.admin_apis(id) ON DELETE CASCADE,
+  is_permitted BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(role_id, api_id)
+);
+
+CREATE INDEX idx_role_api_permissions_role_id ON public.role_api_permissions(role_id);
+CREATE INDEX idx_role_api_permissions_api_id ON public.role_api_permissions(api_id);
+CREATE INDEX idx_role_api_permissions_is_active ON public.role_api_permissions(is_active);
+
+COMMENT ON TABLE public.role_api_permissions IS '역할별 API 권한';
+COMMENT ON COLUMN public.role_api_permissions.role_id IS '역할 ID';
+COMMENT ON COLUMN public.role_api_permissions.api_id IS 'API ID';
+COMMENT ON COLUMN public.role_api_permissions.is_permitted IS '허가 여부';
+COMMENT ON COLUMN public.role_api_permissions.is_active IS '사용여부';
+
+-- ============================================
+-- 17. 어드민 회원-역할 매핑 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.admin_user_roles (
+  id SERIAL PRIMARY KEY,
+  admin_user_id UUID NOT NULL REFERENCES public.admin_users(id) ON DELETE CASCADE,
+  role_id INTEGER NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(admin_user_id, role_id)
+);
+
+CREATE INDEX idx_admin_user_roles_admin_user_id ON public.admin_user_roles(admin_user_id);
+CREATE INDEX idx_admin_user_roles_role_id ON public.admin_user_roles(role_id);
+
+COMMENT ON TABLE public.admin_user_roles IS '어드민 회원-역할 매핑';
+COMMENT ON COLUMN public.admin_user_roles.admin_user_id IS '어드민 회원 ID';
+COMMENT ON COLUMN public.admin_user_roles.role_id IS '역할 ID';
+

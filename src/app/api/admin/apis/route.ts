@@ -1,17 +1,18 @@
 // ============================================
-// 보안 그룹 API
+// API 마스터 관리 API
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
-import type { SecurityGroup, ApiResponse, PaginationInfo } from '@/types';
+import type { AdminApi, ApiResponse, PaginationInfo } from '@/types';
 
-// GET - 보안그룹 목록 조회
+// GET - API 목록 조회
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const groupName = searchParams.get('group_name') || '';
-    const groupId = searchParams.get('group_id') || '';
+    const apiName = searchParams.get('api_name') || '';
+    const apiPath = searchParams.get('api_path') || '';
+    const isActive = searchParams.get('is_active');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = (page - 1) * limit;
@@ -21,15 +22,21 @@ export async function GET(request: NextRequest) {
     const params: unknown[] = [];
     let paramIndex = 1;
 
-    if (groupName) {
-      conditions.push(`group_name ILIKE $${paramIndex}`);
-      params.push(`%${groupName}%`);
+    if (apiName) {
+      conditions.push(`api_name ILIKE $${paramIndex}`);
+      params.push(`%${apiName}%`);
       paramIndex++;
     }
 
-    if (groupId) {
-      conditions.push(`id::text ILIKE $${paramIndex}`);
-      params.push(`%${groupId}%`);
+    if (apiPath) {
+      conditions.push(`api_path ILIKE $${paramIndex}`);
+      params.push(`%${apiPath}%`);
+      paramIndex++;
+    }
+
+    if (isActive !== null && isActive !== '') {
+      conditions.push(`is_active = $${paramIndex}`);
+      params.push(isActive === 'Y' || isActive === 'true');
       paramIndex++;
     }
 
@@ -38,26 +45,20 @@ export async function GET(request: NextRequest) {
       : '';
 
     // 전체 개수 조회
-    const countQuery = `
-      SELECT COUNT(*) as count 
-      FROM public.security_groups 
-      ${whereClause}
-    `;
+    const countQuery = `SELECT COUNT(*) as count FROM public.admin_apis ${whereClause}`;
     const countResult = await queryOne<{ count: string }>(countQuery, params);
     const total = parseInt(countResult?.count || '0');
 
     // 데이터 조회
     const dataQuery = `
-      SELECT 
-        id, group_name, description, is_active,
-        created_by, created_at, updated_by, updated_at
-      FROM public.security_groups
+      SELECT id, api_name, api_path, description, is_active, created_at, updated_at
+      FROM public.admin_apis
       ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY id ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
     
-    const data = await query<SecurityGroup>(dataQuery, [...params, limit, offset]);
+    const data = await query<AdminApi>(dataQuery, [...params, limit, offset]);
 
     const pagination: PaginationInfo = {
       page,
@@ -66,59 +67,56 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(total / limit),
     };
 
-    return NextResponse.json<ApiResponse<SecurityGroup[]>>({
+    return NextResponse.json<ApiResponse<AdminApi[]>>({
       success: true,
       data,
       pagination,
     });
   } catch (error) {
-    console.error('보안그룹 조회 에러:', error);
+    console.error('API 조회 에러:', error);
     return NextResponse.json<ApiResponse<null>>({
       success: false,
-      error: { code: 'FETCH_ERROR', message: '보안그룹 조회 중 오류가 발생했습니다.' },
+      error: { code: 'FETCH_ERROR', message: 'API 조회 중 오류가 발생했습니다.' },
     }, { status: 500 });
   }
 }
 
-// POST - 보안그룹 추가
+// POST - API 추가
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { group_name, description, is_active } = body;
+    const { api_name, api_path, description, is_active } = body;
 
-    if (!group_name) {
+    if (!api_name || !api_path) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: '보안그룹명은 필수입니다.' },
+        error: { code: 'VALIDATION_ERROR', message: 'API명과 API 경로는 필수입니다.' },
       }, { status: 400 });
     }
 
     const insertQuery = `
-      INSERT INTO public.security_groups 
-        (group_name, description, is_active, created_by)
+      INSERT INTO public.admin_apis (api_name, api_path, description, is_active)
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `;
 
-    const result = await queryOne<SecurityGroup>(insertQuery, [
-      group_name,
+    const result = await queryOne<AdminApi>(insertQuery, [
+      api_name,
+      api_path,
       description || null,
       is_active ?? true,
-      'admin',
     ]);
 
-    return NextResponse.json<ApiResponse<SecurityGroup>>({
+    return NextResponse.json<ApiResponse<AdminApi>>({
       success: true,
       data: result!,
     });
-  } catch (error: unknown) {
-    console.error('보안그룹 추가 에러:', error);
-    
+  } catch (error) {
+    console.error('API 추가 에러:', error);
     return NextResponse.json<ApiResponse<null>>({
       success: false,
-      error: { code: 'CREATE_ERROR', message: '보안그룹 추가 중 오류가 발생했습니다.' },
+      error: { code: 'CREATE_ERROR', message: 'API 추가 중 오류가 발생했습니다.' },
     }, { status: 500 });
   }
 }
-
 

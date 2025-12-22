@@ -464,3 +464,135 @@ export interface StoreCustomerSearchFilters {
   registered_to?: string;
 }
 
+// ============================================
+// 역할 관리 타입 정의
+// ============================================
+
+// 역할
+export interface Role {
+  id: number;
+  role_code: string;
+  role_name: string;
+  description: string | null;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface RoleForm {
+  role_code?: string;
+  role_name: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface RoleSearchFilters {
+  role_name?: string;
+  is_active?: string;
+}
+
+// 어드민 메뉴
+export interface AdminMenu {
+  id: number;
+  menu_name: string;
+  menu_path: string | null;
+  parent_id: number | null;
+  depth: number;
+  sort_order: number;
+  icon: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  children?: AdminMenu[];
+}
+
+export interface AdminMenuForm {
+  menu_name: string;
+  menu_path: string;
+  parent_id: number | null;
+  depth: number;
+  sort_order: number;
+  icon: string;
+  is_active: boolean;
+}
+
+// 역할별 메뉴 권한
+export interface RoleMenuPermission {
+  id: number;
+  role_id: number;
+  menu_id: number;
+  menu_name?: string;
+  menu_path?: string;
+  parent_id?: number | null;
+  depth?: number;
+  can_read: boolean;
+  can_write: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  can_export: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoleMenuPermissionForm {
+  role_id: number;
+  menu_id: number;
+  can_read: boolean;
+  can_write: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+  can_export: boolean;
+  is_active: boolean;
+}
+
+// API 마스터
+export interface AdminApi {
+  id: number;
+  api_name: string;
+  api_path: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminApiForm {
+  api_name: string;
+  api_path: string;
+  description: string;
+  is_active: boolean;
+}
+
+// 역할별 API 권한
+export interface RoleApiPermission {
+  id: number;
+  role_id: number;
+  api_id: number;
+  api_name?: string;
+  api_path?: string;
+  description?: string;
+  is_permitted: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface RoleApiPermissionForm {
+  role_id: number;
+  api_id: number;
+  is_permitted: boolean;
+  is_active: boolean;
+}
+
+// 어드민 회원-역할 매핑
+export interface AdminUserRole {
+  id: number;
+  admin_user_id: string;
+  role_id: number;
+  role_name?: string;
+  role_code?: string;
+  created_at: string;
+}
+

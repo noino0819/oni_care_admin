@@ -45,7 +45,11 @@ export const menuItems: MenuItem[] = [
     label: '어드민',
     icon: 'user',
     children: [
-      { id: 'admin-users', label: '어드민 사용자 관리', path: '/admin/users' },
+      { id: 'admin-users', label: '어드민 회원 조회', path: '/admin/admin-users' },
+      { id: 'admin-roles', label: '역할 관리', path: '/admin/roles' },
+      { id: 'admin-role-menu-permissions', label: '역할별 메뉴권한 관리', path: '/admin/role-menu-permissions' },
+      { id: 'admin-api-permissions', label: 'API 권한 관리', path: '/admin/api-permissions' },
+      { id: 'admin-menus', label: '어드민 메뉴 관리', path: '/admin/menus' },
     ],
   },
   {

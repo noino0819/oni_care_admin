@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================
-// 관리자 회원 조회 페이지
+// 어드민 회원 조회 페이지
 // ============================================
 
 import { useState, useCallback, useEffect } from 'react';
@@ -68,18 +68,18 @@ function AdminUserModal({ isOpen, onClose, onSave, initialData, companies, isLoa
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
         </div>
         <div className="px-6 py-4 space-y-3">
-          {/* 1행: 로그인 ID, 직원명 */}
+          {/* 1행: 사번, 직원명 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center border border-gray-200 rounded overflow-hidden">
               <div className="w-[100px] bg-gray-50 px-3 py-2 text-center text-[14px] font-medium border-r">
-                로그인 ID
+                사번
               </div>
               <input
                 type="text"
                 value={formData.login_id}
                 onChange={(e) => setFormData({ ...formData, login_id: e.target.value })}
                 className="flex-1 px-3 py-2 text-[14px] focus:outline-none"
-                placeholder="로그인 ID"
+                placeholder="사번"
               />
             </div>
             <div className="flex items-center border border-gray-200 rounded overflow-hidden">
@@ -222,10 +222,10 @@ function formatDateTime(dateStr: string): string {
 export default function AdminUsersPage() {
   // 필터 상태
   const [filters, setFilters] = useState({
-    company_name: '',
-    department_name: '',
-    employee_name: '',
     login_id: '',
+    employee_name: '',
+    department_name: '',
+    is_active: '',
   });
 
   // 회사 목록
@@ -266,10 +266,9 @@ export default function AdminUsersPage() {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.company_name) params.set('company_name', filters.company_name);
-      if (filters.department_name) params.set('department_name', filters.department_name);
-      if (filters.employee_name) params.set('employee_name', filters.employee_name);
       if (filters.login_id) params.set('login_id', filters.login_id);
+      if (filters.employee_name) params.set('employee_name', filters.employee_name);
+      if (filters.department_name) params.set('department_name', filters.department_name);
       params.set('limit', '100');
 
       const response = await fetch(`/api/admin/admin-users?${params}`);
@@ -299,10 +298,10 @@ export default function AdminUsersPage() {
   // 초기화 버튼
   const handleRefresh = () => {
     setFilters({
-      company_name: '',
-      department_name: '',
-      employee_name: '',
       login_id: '',
+      employee_name: '',
+      department_name: '',
+      is_active: '',
     });
     fetchUsers();
   };
@@ -310,7 +309,7 @@ export default function AdminUsersPage() {
   // 관리자 저장
   const handleSaveUser = async (data: Partial<AdminUserAccount>) => {
     if (!data.login_id || !data.employee_name) {
-      setAlertMessage('로그인 ID와 직원명은 필수입니다.');
+      setAlertMessage('사번과 직원명은 필수입니다.');
       return;
     }
 
@@ -375,14 +374,17 @@ export default function AdminUsersPage() {
         {/* 페이지 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
-            <h1 className="text-[18px] font-bold text-black">관리자 회원 조회</h1>
+            <h1 className="text-[18px] font-bold text-black">어드민 회원 조회</h1>
             <span className="text-[13px] text-[#888]">
-              그리팅-X 관리 &gt; 계정 관리 &gt; 관리자 회원 조회
+              어드민 관리 &gt; 어드민 회원 관리 &gt; 어드민 회원 조회
             </span>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSearch} size="sm">
               조회
+            </Button>
+            <Button variant="secondary" size="sm">
+              저장
             </Button>
             <Button 
               variant="secondary" 
@@ -397,22 +399,13 @@ export default function AdminUsersPage() {
 
         {/* 조회조건 */}
         <SearchFilterPanel>
-          <SearchField label="회사명">
+          <SearchField label="로그인 아이디">
             <input
               type="text"
-              value={filters.company_name}
-              onChange={(e) => setFilters({ ...filters, company_name: e.target.value })}
+              value={filters.login_id}
+              onChange={(e) => setFilters({ ...filters, login_id: e.target.value })}
               className={`${inputClass} w-[150px]`}
-              placeholder="회사명"
-            />
-          </SearchField>
-          <SearchField label="부서명">
-            <input
-              type="text"
-              value={filters.department_name}
-              onChange={(e) => setFilters({ ...filters, department_name: e.target.value })}
-              className={`${inputClass} w-[150px]`}
-              placeholder="부서명"
+              placeholder="로그인 ID"
             />
           </SearchField>
           <SearchField label="직원명">
@@ -424,29 +417,38 @@ export default function AdminUsersPage() {
               placeholder="직원명"
             />
           </SearchField>
-          <SearchField label="ID">
+          <SearchField label="조직">
             <input
               type="text"
-              value={filters.login_id}
-              onChange={(e) => setFilters({ ...filters, login_id: e.target.value })}
+              value={filters.department_name}
+              onChange={(e) => setFilters({ ...filters, department_name: e.target.value })}
               className={`${inputClass} w-[150px]`}
-              placeholder="로그인 ID"
+              placeholder="조직"
             />
+          </SearchField>
+          <SearchField label="사용여부">
+            <select
+              value={filters.is_active}
+              onChange={(e) => setFilters({ ...filters, is_active: e.target.value })}
+              className={`${inputClass} w-[100px]`}
+            >
+              <option value="">전체</option>
+              <option value="Y">Y</option>
+              <option value="N">N</option>
+            </select>
           </SearchField>
         </SearchFilterPanel>
 
-        {/* 관리자 회원 목록 */}
+        {/* 어드민 회원 목록 */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[16px] font-bold text-black">관리자 회원 목록</h2>
-            <Button 
-              size="sm" 
+            <h2 className="text-[16px] font-bold text-black">어드민 회원 목록</h2>
+            <button
               onClick={() => setUserModal({ isOpen: true, data: null })}
-              className="h-[26px]"
+              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-700 border border-gray-300 rounded"
             >
-              <Plus className="w-3 h-3 mr-1" />
-              추가
-            </Button>
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
           
           <div className="border rounded overflow-hidden">
@@ -549,5 +551,4 @@ export default function AdminUsersPage() {
     </AdminLayout>
   );
 }
-
 
