@@ -235,37 +235,45 @@ COMMENT ON COLUMN public.security_group_items.company_name IS '회사/지점명'
 COMMENT ON COLUMN public.security_group_items.is_active IS '사용여부';
 
 -- 10. 관리자 회원 테이블
+-- 기존 테이블 구조 (이미 존재하는 경우 ALTER로 컬럼 추가)
 CREATE TABLE IF NOT EXISTS public.admin_users (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  login_id VARCHAR(100) NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  employee_name VARCHAR(100) NOT NULL,
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(100),
+  role VARCHAR(50) DEFAULT 'admin',
+  status INTEGER DEFAULT 1,
+  last_login TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  -- 추가 컬럼 (기획서 요구사항)
+  login_id VARCHAR(100),
+  employee_name VARCHAR(100),
   department_id INTEGER REFERENCES public.departments(id),
   company_id INTEGER REFERENCES public.companies(id),
   phone VARCHAR(20),
   is_active BOOLEAN DEFAULT true,
-  status VARCHAR(20) DEFAULT 'active',
   created_by VARCHAR(50),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_by VARCHAR(50),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_by VARCHAR(50)
 );
 
-CREATE INDEX idx_admin_users_login_id ON public.admin_users(login_id);
-CREATE INDEX idx_admin_users_employee_name ON public.admin_users(employee_name);
-CREATE INDEX idx_admin_users_company_id ON public.admin_users(company_id);
-CREATE INDEX idx_admin_users_department_id ON public.admin_users(department_id);
-CREATE INDEX idx_admin_users_is_active ON public.admin_users(is_active);
+CREATE INDEX IF NOT EXISTS idx_admin_users_login_id ON public.admin_users(login_id);
+CREATE INDEX IF NOT EXISTS idx_admin_users_employee_name ON public.admin_users(employee_name);
+CREATE INDEX IF NOT EXISTS idx_admin_users_company_id ON public.admin_users(company_id);
+CREATE INDEX IF NOT EXISTS idx_admin_users_department_id ON public.admin_users(department_id);
+CREATE INDEX IF NOT EXISTS idx_admin_users_is_active ON public.admin_users(is_active);
 
 COMMENT ON TABLE public.admin_users IS '관리자 회원';
-COMMENT ON COLUMN public.admin_users.login_id IS '로그인 ID';
+COMMENT ON COLUMN public.admin_users.email IS '이메일 (로그인용)';
+COMMENT ON COLUMN public.admin_users.login_id IS '로그인 ID (사번)';
 COMMENT ON COLUMN public.admin_users.password_hash IS '비밀번호 해시';
+COMMENT ON COLUMN public.admin_users.name IS '이름 (기존)';
 COMMENT ON COLUMN public.admin_users.employee_name IS '직원명';
 COMMENT ON COLUMN public.admin_users.department_id IS '부서 ID (FK)';
 COMMENT ON COLUMN public.admin_users.company_id IS '회사 ID (FK)';
 COMMENT ON COLUMN public.admin_users.phone IS '핸드폰 번호';
 COMMENT ON COLUMN public.admin_users.is_active IS '사용여부';
-COMMENT ON COLUMN public.admin_users.status IS '회원상태 (active/inactive)';
+COMMENT ON COLUMN public.admin_users.status IS '회원상태 (1=활성, 0=비활성)';
 COMMENT ON COLUMN public.admin_users.created_by IS '생성자';
 COMMENT ON COLUMN public.admin_users.updated_by IS '변경자';
 

@@ -49,13 +49,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (employeeName) {
-      conditions.push(`au.employee_name ILIKE $${paramIndex}`);
+      // employee_name 또는 name으로 검색
+      conditions.push(`(au.employee_name ILIKE $${paramIndex} OR au.name ILIKE $${paramIndex})`);
       params.push(`%${employeeName}%`);
       paramIndex++;
     }
 
     if (loginId) {
-      conditions.push(`au.login_id ILIKE $${paramIndex}`);
+      // login_id 또는 email로 검색
+      conditions.push(`(au.login_id ILIKE $${paramIndex} OR au.email ILIKE $${paramIndex})`);
       params.push(`%${loginId}%`);
       paramIndex++;
     }
@@ -75,13 +77,21 @@ export async function GET(request: NextRequest) {
     const countResult = await queryOne<{ count: string }>(countQuery, params);
     const total = parseInt(countResult?.count || '0');
 
-    // 데이터 조회
+    // 데이터 조회 (login_id가 없으면 email 사용, employee_name이 없으면 name 사용)
     const dataQuery = `
       SELECT 
-        au.id, au.login_id, au.employee_name, 
+        au.id, 
+        au.email,
+        COALESCE(au.login_id, au.email) as login_id, 
+        COALESCE(au.employee_name, au.name) as employee_name,
+        au.name,
+        au.role,
         au.department_id, d.department_name,
         au.company_id, c.company_name,
-        au.phone, au.is_active, au.status,
+        au.phone, 
+        COALESCE(au.is_active, au.status = 1) as is_active, 
+        au.status,
+        au.last_login,
         au.created_by, au.created_at, au.updated_by, au.updated_at
       FROM public.admin_users au
       LEFT JOIN public.companies c ON au.company_id = c.id
@@ -123,28 +133,34 @@ export async function POST(request: NextRequest) {
     if (!login_id || !employee_name) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: '로그인 ID와 직원명은 필수입니다.' },
+        error: { code: 'VALIDATION_ERROR', message: '사번과 직원명은 필수입니다.' },
       }, { status: 400 });
     }
 
     // 기본 비밀번호 설정 (입력값 없으면 login_id + "1234")
     const passwordHash = hashPassword(password || `${login_id}1234`);
+    
+    // email은 login_id를 기반으로 생성 (기존 테이블 호환)
+    const email = `${login_id}@admin.local`;
 
     const insertQuery = `
       INSERT INTO public.admin_users 
-        (login_id, password_hash, employee_name, department_id, company_id, phone, is_active, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, login_id, employee_name, department_id, company_id, phone, is_active, status, created_by, created_at, updated_by, updated_at
+        (email, login_id, password_hash, name, employee_name, department_id, company_id, phone, is_active, status, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id, email, login_id, name, employee_name, department_id, company_id, phone, is_active, status, created_by, created_at, updated_by, updated_at
     `;
 
     const result = await queryOne<AdminUserAccount>(insertQuery, [
+      email,
       login_id,
       passwordHash,
+      employee_name, // name 컬럼에도 저장
       employee_name,
       department_id || null,
       company_id || null,
       phone || null,
       is_active ?? true,
+      is_active === false ? 0 : 1, // status 컬럼도 설정
       'admin',
     ]);
 
@@ -158,7 +174,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message.includes('unique constraint')) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
-        error: { code: 'DUPLICATE_KEY', message: '이미 존재하는 로그인 ID입니다.' },
+        error: { code: 'DUPLICATE_KEY', message: '이미 존재하는 사번입니다.' },
       }, { status: 400 });
     }
 

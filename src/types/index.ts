@@ -387,17 +387,21 @@ export interface SecurityGroupItemForm {
 
 // 관리자 회원
 export interface AdminUserAccount {
-  id: string;
-  login_id: string;
+  id: number;
+  email: string;
+  name: string | null;
+  role: string | null;
+  login_id: string | null;
   password_hash?: string;
-  employee_name: string;
+  employee_name: string | null;
   department_id: number | null;
   department_name?: string;
   company_id: number | null;
   company_name?: string;
   phone: string | null;
   is_active: boolean;
-  status: string;
+  status: number;
+  last_login: string | null;
   created_by: string | null;
   created_at: string;
   updated_by: string | null;
@@ -405,6 +409,7 @@ export interface AdminUserAccount {
 }
 
 export interface AdminUserAccountForm {
+  email?: string;
   login_id: string;
   password?: string;
   employee_name: string;

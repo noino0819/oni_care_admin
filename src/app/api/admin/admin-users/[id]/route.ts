@@ -16,10 +16,18 @@ export async function GET(
 
     const dataQuery = `
       SELECT 
-        au.id, au.login_id, au.employee_name, 
+        au.id, 
+        au.email,
+        COALESCE(au.login_id, au.email) as login_id, 
+        COALESCE(au.employee_name, au.name) as employee_name,
+        au.name,
+        au.role,
         au.department_id, d.department_name,
         au.company_id, c.company_name,
-        au.phone, au.is_active, au.status,
+        au.phone, 
+        COALESCE(au.is_active, au.status = 1) as is_active, 
+        au.status,
+        au.last_login,
         au.created_by, au.created_at, au.updated_by, au.updated_at
       FROM public.admin_users au
       LEFT JOIN public.companies c ON au.company_id = c.id
@@ -62,7 +70,7 @@ export async function PUT(
     if (!login_id || !employee_name) {
       return NextResponse.json<ApiResponse<null>>({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: '로그인 ID와 직원명은 필수입니다.' },
+        error: { code: 'VALIDATION_ERROR', message: '사번과 직원명은 필수입니다.' },
       }, { status: 400 });
     }
 
@@ -70,15 +78,17 @@ export async function PUT(
       UPDATE public.admin_users
       SET 
         login_id = $1,
+        name = $2,
         employee_name = $2,
         department_id = $3,
         company_id = $4,
         phone = $5,
         is_active = $6,
-        updated_by = $7,
+        status = $7,
+        updated_by = $8,
         updated_at = NOW()
-      WHERE id = $8
-      RETURNING id, login_id, employee_name, department_id, company_id, phone, is_active, status, created_by, created_at, updated_by, updated_at
+      WHERE id = $9
+      RETURNING id, email, login_id, name, employee_name, department_id, company_id, phone, is_active, status, created_by, created_at, updated_by, updated_at
     `;
 
     const result = await queryOne<AdminUserAccount>(updateQuery, [
@@ -88,6 +98,7 @@ export async function PUT(
       company_id || null,
       phone || null,
       is_active ?? true,
+      is_active === false ? 0 : 1,
       'admin',
       id,
     ]);

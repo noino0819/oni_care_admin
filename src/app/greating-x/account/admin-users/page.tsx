@@ -493,7 +493,7 @@ export default function AdminUsersPage() {
                       <td className="px-3 py-2 text-[13px]">{user.company_name || '-'}</td>
                       <td className="px-3 py-2 text-[13px]">{maskPhone(user.phone || '')}</td>
                       <td className="px-3 py-2 text-[13px] text-center">{user.is_active ? 'Y' : 'N'}</td>
-                      <td className="px-3 py-2 text-[13px] text-center">{user.status === 'active' ? '활성' : '비활성'}</td>
+                      <td className="px-3 py-2 text-[13px] text-center">{user.status === 1 ? '활성' : '비활성'}</td>
                       <td className="px-3 py-2 text-[13px]">{formatDateTime(user.created_at)}</td>
                       <td className="px-3 py-2 text-[13px]">{user.created_by || '-'}</td>
                       <td className="px-3 py-2 text-[13px]">{formatDateTime(user.updated_at)}</td>
