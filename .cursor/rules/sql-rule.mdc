@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+작업 시 아래 스키마 파일을 참고해
+매번 작업을 할 때마다 실행해야 하는 쿼리가 있다면,
+나에게 알려주고 나중에 직접 가장 최근의 SQL파일들을 확인 할 수 있도록
+파일도 수정해야해.
+
+oni_care/schema.sql : 앱 DB (PostgreSQL)
+oni_care_admin/schema.sql : 어드민 DB (PostgreSQL)
