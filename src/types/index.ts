@@ -589,7 +589,7 @@ export interface RoleApiPermissionForm {
 // 어드민 회원-역할 매핑
 export interface AdminUserRole {
   id: number;
-  admin_user_id: string;
+  admin_user_id: number;
   role_id: number;
   role_name?: string;
   role_code?: string;

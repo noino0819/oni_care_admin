@@ -445,7 +445,7 @@ COMMENT ON COLUMN public.role_api_permissions.is_active IS '사용여부';
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.admin_user_roles (
   id SERIAL PRIMARY KEY,
-  admin_user_id UUID NOT NULL REFERENCES public.admin_users(id) ON DELETE CASCADE,
+  admin_user_id INTEGER NOT NULL REFERENCES public.admin_users(id) ON DELETE CASCADE,
   role_id INTEGER NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(admin_user_id, role_id)
