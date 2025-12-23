@@ -466,3 +466,39 @@ COMMENT ON TABLE public.admin_user_roles IS '어드민 회원-역할 매핑';
 COMMENT ON COLUMN public.admin_user_roles.admin_user_id IS '어드민 회원 ID';
 COMMENT ON COLUMN public.admin_user_roles.role_id IS '역할 ID';
 
+-- ============================================
+-- 18. 그리팅-X 관리자 회원 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.greating_x_admin_users (
+  id SERIAL PRIMARY KEY,
+  login_id VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  employee_name VARCHAR(100) NOT NULL,
+  department_name VARCHAR(100),
+  company_id INTEGER REFERENCES public.companies(id),
+  phone VARCHAR(20),
+  is_active BOOLEAN DEFAULT true,
+  status INTEGER DEFAULT 1,
+  created_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_by VARCHAR(50),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_greating_x_admin_users_login_id ON public.greating_x_admin_users(login_id);
+CREATE INDEX idx_greating_x_admin_users_employee_name ON public.greating_x_admin_users(employee_name);
+CREATE INDEX idx_greating_x_admin_users_company_id ON public.greating_x_admin_users(company_id);
+CREATE INDEX idx_greating_x_admin_users_is_active ON public.greating_x_admin_users(is_active);
+
+COMMENT ON TABLE public.greating_x_admin_users IS '그리팅-X 관리자 회원';
+COMMENT ON COLUMN public.greating_x_admin_users.login_id IS '로그인 ID (사번)';
+COMMENT ON COLUMN public.greating_x_admin_users.password_hash IS '비밀번호 해시';
+COMMENT ON COLUMN public.greating_x_admin_users.employee_name IS '직원명';
+COMMENT ON COLUMN public.greating_x_admin_users.department_name IS '부서명';
+COMMENT ON COLUMN public.greating_x_admin_users.company_id IS '회사 ID (FK)';
+COMMENT ON COLUMN public.greating_x_admin_users.phone IS '핸드폰 번호';
+COMMENT ON COLUMN public.greating_x_admin_users.is_active IS '사용여부';
+COMMENT ON COLUMN public.greating_x_admin_users.status IS '회원상태 (1=활성, 0=비활성)';
+COMMENT ON COLUMN public.greating_x_admin_users.created_by IS '생성자';
+COMMENT ON COLUMN public.greating_x_admin_users.updated_by IS '변경자';
+

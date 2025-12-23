@@ -601,3 +601,41 @@ export interface AdminUserRole {
   created_at: string;
 }
 
+// ============================================
+// 그리팅-X 관리자 회원
+// ============================================
+
+export interface GreatingXAdminUser {
+  id: number;
+  login_id: string;
+  password_hash?: string;
+  employee_name: string;
+  department_name: string | null;
+  company_id: number | null;
+  company_name?: string;
+  phone: string | null;
+  is_active: boolean;
+  status: number;
+  created_by: string | null;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface GreatingXAdminUserForm {
+  login_id: string;
+  password?: string;
+  employee_name: string;
+  department_name: string;
+  company_id: number | null;
+  phone: string;
+  is_active: boolean;
+}
+
+export interface GreatingXAdminUserSearchFilters {
+  login_id?: string;
+  employee_name?: string;
+  department_name?: string;
+  company_name?: string;
+}
+

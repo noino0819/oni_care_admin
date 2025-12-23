@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================
-// 관리자 회원 조회 페이지
+// 그리팅-X 관리자 회원 조회 페이지
 // ============================================
 
 import { useState, useCallback, useEffect } from 'react';
@@ -14,14 +14,14 @@ import {
   SearchField,
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
-import type { AdminUserAccount, Company } from '@/types';
+import type { GreatingXAdminUser, Company } from '@/types';
 
 // 관리자 회원 모달 컴포넌트
 interface AdminUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<AdminUserAccount>) => void;
-  initialData?: AdminUserAccount | null;
+  onSave: (data: Partial<GreatingXAdminUser>) => void;
+  initialData?: GreatingXAdminUser | null;
   companies: Company[];
   isLoading?: boolean;
 }
@@ -64,7 +64,7 @@ function AdminUserModal({ isOpen, onClose, onSave, initialData, companies, isLoa
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-gray-900">회원 정보</h2>
+          <h2 className="text-lg font-bold text-gray-900">그리팅-X 관리자 정보</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
         </div>
         <div className="px-6 py-4 space-y-3">
@@ -79,7 +79,7 @@ function AdminUserModal({ isOpen, onClose, onSave, initialData, companies, isLoa
                 value={formData.login_id}
                 onChange={(e) => setFormData({ ...formData, login_id: e.target.value })}
                 className="flex-1 px-3 py-2 text-[14px] focus:outline-none"
-                placeholder="로그인 ID"
+                placeholder="사번 또는 로그인 ID"
               />
             </div>
             <div className="flex items-center border border-gray-200 rounded overflow-hidden">
@@ -219,7 +219,7 @@ function formatDateTime(dateStr: string): string {
   }).replace(/\./g, '-');
 }
 
-export default function AdminUsersPage() {
+export default function GreatingXAdminUsersPage() {
   // 필터 상태
   const [filters, setFilters] = useState({
     company_name: '',
@@ -232,7 +232,7 @@ export default function AdminUsersPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
 
   // 관리자 회원 상태
-  const [users, setUsers] = useState<AdminUserAccount[]>([]);
+  const [users, setUsers] = useState<GreatingXAdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // 모달 상태
@@ -244,7 +244,7 @@ export default function AdminUsersPage() {
   } | null>(null);
   const [userModal, setUserModal] = useState<{
     isOpen: boolean;
-    data: AdminUserAccount | null;
+    data: GreatingXAdminUser | null;
   }>({ isOpen: false, data: null });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -261,7 +261,7 @@ export default function AdminUsersPage() {
     }
   }, []);
 
-  // 관리자 회원 조회
+  // 그리팅-X 관리자 회원 조회
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -272,7 +272,8 @@ export default function AdminUsersPage() {
       if (filters.login_id) params.set('login_id', filters.login_id);
       params.set('limit', '100');
 
-      const response = await fetch(`/api/admin/admin-users?${params}`);
+      // 그리팅-X 전용 API 호출
+      const response = await fetch(`/api/greating-x/admin-users?${params}`);
       const result = await response.json();
 
       if (result.success) {
@@ -308,7 +309,7 @@ export default function AdminUsersPage() {
   };
 
   // 관리자 저장
-  const handleSaveUser = async (data: Partial<AdminUserAccount>) => {
+  const handleSaveUser = async (data: Partial<GreatingXAdminUser>) => {
     if (!data.login_id || !data.employee_name) {
       setAlertMessage('로그인 ID와 직원명은 필수입니다.');
       return;
@@ -317,9 +318,10 @@ export default function AdminUsersPage() {
     setIsSaving(true);
     try {
       const isEdit = !!userModal.data;
+      // 그리팅-X 전용 API 호출
       const url = isEdit 
-        ? `/api/admin/admin-users/${userModal.data!.id}`
-        : '/api/admin/admin-users';
+        ? `/api/greating-x/admin-users/${userModal.data!.id}`
+        : '/api/greating-x/admin-users';
       
       const response = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
@@ -343,14 +345,15 @@ export default function AdminUsersPage() {
   };
 
   // 비밀번호 초기화
-  const handleResetPassword = async (user: AdminUserAccount) => {
+  const handleResetPassword = async (user: GreatingXAdminUser) => {
     setConfirmModal({
       isOpen: true,
       message: `${user.employee_name}님의 비밀번호를 초기화하시겠습니까?`,
       onConfirm: async () => {
         setConfirmModal(null);
         try {
-          const response = await fetch(`/api/admin/admin-users/${user.id}/reset-password`, {
+          // 그리팅-X 전용 API 호출
+          const response = await fetch(`/api/greating-x/admin-users/${user.id}/reset-password`, {
             method: 'POST',
           });
           const result = await response.json();
@@ -375,7 +378,7 @@ export default function AdminUsersPage() {
         {/* 페이지 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-baseline gap-3">
-            <h1 className="text-[18px] font-bold text-black">관리자 회원 조회</h1>
+            <h1 className="text-[18px] font-bold text-black">그리팅-X 관리자 회원 조회</h1>
             <span className="text-[13px] text-[#888]">
               그리팅-X 관리 &gt; 계정 관리 &gt; 관리자 회원 조회
             </span>
@@ -438,7 +441,7 @@ export default function AdminUsersPage() {
         {/* 관리자 회원 목록 */}
         <div className="bg-white rounded-lg shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[16px] font-bold text-black">관리자 회원 목록</h2>
+            <h2 className="text-[16px] font-bold text-black">그리팅-X 관리자 회원 목록</h2>
             <Button 
               size="sm" 
               onClick={() => setUserModal({ isOpen: true, data: null })}
@@ -549,5 +552,3 @@ export default function AdminUsersPage() {
     </AdminLayout>
   );
 }
-
-
