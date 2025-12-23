@@ -4,6 +4,7 @@
 // 회원 데이터 훅
 // ============================================
 
+import { useState } from 'react';
 import useSWR from 'swr';
 import type { MemberListItem, MemberDetail, MemberSearchFilters, SortConfig } from '@/types';
 
@@ -112,5 +113,37 @@ export function useMemberDetail(id: string | null) {
     error,
     refetch: mutate,
   };
+}
+
+// 회원 정보 수정 훅
+export function useMemberUpdate() {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updateMember = async (id: string, data: Record<string, unknown>) => {
+    setIsUpdating(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+      
+      const response = await fetch(`/api/members/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('수정 요청 실패');
+      }
+
+      return await response.json();
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return { updateMember, isUpdating };
 }
 

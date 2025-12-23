@@ -138,6 +138,14 @@ export interface MemberDetail extends MemberListItem {
   marketing_sms_agreed: boolean;
   last_login: string | null;
   total_points: number;
+  linked_accounts?: {
+    greating_id: string | null;
+    greating_linked_at: string | null;
+    cafeteria_id: string | null;
+    cafeteria_linked_at: string | null;
+    greating_x_code: string | null;
+    greating_x_linked_at: string | null;
+  };
 }
 
 // 회원 검색 필터
@@ -599,6 +607,229 @@ export interface AdminUserRole {
   role_name?: string;
   role_code?: string;
   created_at: string;
+}
+
+// ============================================
+// 그리팅 케어 관련 타입 정의
+// ============================================
+
+// 회원 수정 폼
+export interface MemberUpdateForm {
+  name: string;
+  birth_date: string;
+  gender: string;
+  member_type: string;
+  business_code: string;
+  phone: string;
+  is_active: boolean;
+  marketing_sms_agreed: boolean;
+  marketing_push_agreed: boolean;
+  diseases: string[];
+  interests: string[];
+}
+
+// 회원 연동 정보
+export interface MemberLinkedAccounts {
+  greating_id: string | null;
+  greating_linked_at: string | null;
+  cafeteria_id: string | null;
+  cafeteria_linked_at: string | null;
+  greating_x_code: string | null;
+  greating_x_linked_at: string | null;
+}
+
+// 컨텐츠 리스트 아이템
+export interface ContentListItem {
+  id: string;
+  title: string;
+  category_names: string[];
+  tags: string[];
+  visibility_scope: string[];
+  start_date: string | null;
+  end_date: string | null;
+  updated_at: string;
+  updated_by: string | null;
+  has_quote: boolean;
+}
+
+// 컨텐츠 상세
+export interface ContentDetail extends ContentListItem {
+  content: string;
+  thumbnail_url: string | null;
+  category_ids: number[];
+  company_codes: string[];
+  is_store_visible: boolean;
+  quote_content: string | null;
+  quote_source: string | null;
+  images: ContentImage[];
+  category_id: number | null;
+  subcategory_id: number | null;
+}
+
+// 컨텐츠 이미지
+export interface ContentImage {
+  id: string;
+  media_url: string;
+  display_order: number;
+}
+
+// 컨텐츠 등록/수정 폼
+export interface ContentForm {
+  title: string;
+  content: string;
+  thumbnail_url?: string | null;
+  category_ids?: number[];
+  tags?: string[];
+  visibility_scope?: string[];
+  company_codes?: string[];
+  is_store_visible?: boolean;
+  start_date?: string;
+  end_date?: string;
+  has_quote?: boolean;
+  quote_content?: string;
+  quote_source?: string;
+  images?: string[];
+}
+
+// 컨텐츠 검색 필터
+export interface ContentSearchFilters {
+  title?: string;
+  category_id?: number;
+  tag?: string;
+  visibility_scope?: string[];
+  company_code?: string;
+  updated_from?: string;
+  updated_to?: string;
+  start_from?: string;
+  start_to?: string;
+  has_quote?: string;
+}
+
+// 대분류 카테고리
+export interface ContentCategory {
+  id: number;
+  category_type: string;
+  category_name: string;
+  subcategory_types: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  subcategory_count?: number;
+}
+
+// 중분류 카테고리
+export interface ContentSubcategory {
+  id: number;
+  category_id: number;
+  category_name?: string;
+  subcategory_name: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 대분류 등록/수정 폼
+export interface CategoryForm {
+  category_type: string;
+  category_name: string;
+  subcategory_types: string;
+  display_order: number;
+  is_active?: boolean;
+}
+
+// 중분류 등록/수정 폼
+export interface SubcategoryForm {
+  category_id: number;
+  subcategory_name: string;
+  display_order: number;
+  is_active?: boolean;
+}
+
+// 카테고리 검색 필터
+export interface CategorySearchFilters {
+  category_name?: string;
+  subcategory_name?: string;
+  is_active?: string;
+}
+
+// 포인트 현황 아이템
+export interface PointSummary {
+  user_id: string;
+  email: string;
+  name: string;
+  member_type: string;
+  business_code: string | null;
+  total_points: number;
+}
+
+// 포인트 내역 아이템
+export interface PointHistoryItem {
+  id: string;
+  user_id: string;
+  email: string;
+  transaction_type: 'earn' | 'use' | 'transfer' | 'expire';
+  source: string;
+  source_detail: string | null;
+  points: number;
+  balance_after: number;
+  created_at: string;
+  is_revoked: boolean;
+}
+
+// 포인트 검색 필터
+export interface PointSearchFilters {
+  name?: string;
+  id?: string;
+  member_types?: string[];
+  business_code?: string;
+  min_points?: number;
+  max_points?: number;
+  transaction_type?: string;
+  created_from?: string;
+  created_to?: string;
+}
+
+// 공지사항 리스트 아이템
+export interface NoticeListItem {
+  id: string;
+  title: string;
+  visibility_scope: string[];
+  company_codes: string[];
+  start_date: string | null;
+  end_date: string | null;
+  status: 'before' | 'active' | 'ended';
+  created_at: string;
+}
+
+// 공지사항 상세
+export interface NoticeDetail extends NoticeListItem {
+  content: string;
+  image_url: string | null;
+  store_visible: boolean;
+}
+
+// 공지사항 등록/수정 폼
+export interface NoticeForm {
+  title: string;
+  content: string;
+  image_url: string | null;
+  visibility_scope: string[];
+  company_codes: string[];
+  store_visible: boolean;
+  start_date: string;
+  end_date: string;
+}
+
+// 공지사항 검색 필터
+export interface NoticeSearchFilters {
+  title?: string;
+  status?: string[];
+  visibility_scope?: string[];
+  company_code?: string;
+  created_from?: string;
+  created_to?: string;
 }
 
 // ============================================
