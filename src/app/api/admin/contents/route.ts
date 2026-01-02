@@ -209,6 +209,8 @@ export async function POST(request: NextRequest) {
     const {
       title,
       content,
+      thumbnail_url,
+      detail_images,
       category_ids,
       tags,
       visibility_scope,
@@ -235,14 +237,16 @@ export async function POST(request: NextRequest) {
     // 컨텐츠 등록
     const result = await query<{ id: string }>(
       `INSERT INTO public.contents (
-        title, content, category_id, tags, visibility_scope, company_codes,
+        title, content, thumbnail_url, detail_images, category_id, tags, visibility_scope, company_codes,
         store_visible, start_date, end_date, has_quote, quote_content, quote_source,
         created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
       RETURNING id`,
       [
         title.trim(),
         content || null,
+        thumbnail_url || null,
+        detail_images || [],
         categoryId,
         tags || [],
         visibility_scope || ['all'],

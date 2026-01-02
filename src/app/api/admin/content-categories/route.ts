@@ -63,18 +63,23 @@ export async function GET(request: NextRequest) {
     );
     const total = parseInt(countResult[0]?.count || '0');
 
-    // 대분류 목록 조회 - 기본 컬럼만 사용
+    // 대분류 목록 조회 - category_type 포함
     const categories = await query<{
       id: number;
+      category_type: string;
       category_name: string;
+      subcategory_types: string | null;
+      display_order: number;
       is_active: boolean;
       created_at: string;
       updated_at: string;
     }>(
-      `SELECT id, category_name, is_active, created_at, updated_at
+      `SELECT id, COALESCE(category_type, '관심사') as category_type, category_name, 
+              subcategory_types, COALESCE(display_order, 0) as display_order, 
+              is_active, created_at, updated_at
        FROM public.content_categories
        ${catWhereClause}
-       ORDER BY id ASC
+       ORDER BY category_type, display_order, id ASC
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...catParams, pageSize, offset]
     );
@@ -127,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { category_name, is_active } = body;
+    const { category_type, category_name, subcategory_types, display_order, is_active } = body;
 
     if (!category_name?.trim()) {
       return NextResponse.json(
@@ -137,10 +142,10 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query<{ id: number }>(
-      `INSERT INTO public.content_categories (category_name, is_active)
-       VALUES ($1, $2)
+      `INSERT INTO public.content_categories (category_type, category_name, subcategory_types, display_order, is_active)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
-      [category_name.trim(), is_active !== false]
+      [category_type || '관심사', category_name.trim(), subcategory_types || null, display_order || 0, is_active !== false]
     );
 
     return NextResponse.json({

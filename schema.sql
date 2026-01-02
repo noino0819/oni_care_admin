@@ -507,7 +507,9 @@ COMMENT ON COLUMN public.greating_x_admin_users.updated_by IS '변경자';
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.content_categories (
   id SERIAL PRIMARY KEY,
+  category_type VARCHAR(50) NOT NULL DEFAULT '관심사',  -- '관심사', '질병', '운동'
   category_name VARCHAR(100) NOT NULL,
+  subcategory_types VARCHAR(200),
   description TEXT,
   display_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
@@ -515,11 +517,14 @@ CREATE TABLE IF NOT EXISTS public.content_categories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE INDEX idx_content_categories_category_type ON public.content_categories(category_type);
 CREATE INDEX idx_content_categories_display_order ON public.content_categories(display_order);
 CREATE INDEX idx_content_categories_is_active ON public.content_categories(is_active);
 
 COMMENT ON TABLE public.content_categories IS '컨텐츠 카테고리';
+COMMENT ON COLUMN public.content_categories.category_type IS '카테고리 유형 (관심사, 질병, 운동)';
 COMMENT ON COLUMN public.content_categories.category_name IS '카테고리명';
+COMMENT ON COLUMN public.content_categories.subcategory_types IS '중분류 유형';
 COMMENT ON COLUMN public.content_categories.description IS '설명';
 COMMENT ON COLUMN public.content_categories.display_order IS '정렬순서';
 COMMENT ON COLUMN public.content_categories.is_active IS '사용여부';
@@ -557,6 +562,7 @@ CREATE TABLE IF NOT EXISTS public.contents (
   title VARCHAR(500) NOT NULL,
   content TEXT,
   thumbnail_url TEXT,
+  detail_images TEXT[] DEFAULT '{}',
   background_color VARCHAR(20),
   card_style VARCHAR(20) DEFAULT 'A',
   -- 추가 필드 (2026-01-02)

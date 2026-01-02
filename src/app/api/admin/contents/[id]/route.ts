@@ -38,6 +38,8 @@ export async function GET(
       id: string;
       title: string;
       content: string | null;
+      thumbnail_url: string | null;
+      detail_images: string[] | null;
       category_id: number | null;
       tags: string[] | null;
       visibility_scope: string[] | null;
@@ -53,7 +55,7 @@ export async function GET(
       updated_by: string | null;
     }>(
       `SELECT 
-        id, title, content, category_id,
+        id, title, content, thumbnail_url, detail_images, category_id,
         tags, visibility_scope, company_codes,
         COALESCE(store_visible, false) as store_visible,
         start_date, end_date,
@@ -88,6 +90,7 @@ export async function GET(
         tags: contentData.tags || [],
         visibility_scope: contentData.visibility_scope || ['all'],
         company_codes: contentData.company_codes || [],
+        detail_images: contentData.detail_images || [],
         is_store_visible: contentData.store_visible,
         category_ids: contentData.category_id ? [contentData.category_id] : [],
         category_names: categoryName ? [categoryName] : [],
@@ -135,6 +138,8 @@ export async function PUT(
     const {
       title,
       content,
+      thumbnail_url,
+      detail_images,
       category_ids,
       tags,
       visibility_scope,
@@ -161,15 +166,17 @@ export async function PUT(
     // 컨텐츠 수정
     await query(
       `UPDATE public.contents SET
-        title = $1, content = $2, category_id = $3,
-        tags = $4, visibility_scope = $5, company_codes = $6,
-        store_visible = $7, start_date = $8, end_date = $9,
-        has_quote = $10, quote_content = $11, quote_source = $12,
-        updated_by = $13, updated_at = NOW()
-       WHERE id = $14`,
+        title = $1, content = $2, thumbnail_url = $3, detail_images = $4, category_id = $5,
+        tags = $6, visibility_scope = $7, company_codes = $8,
+        store_visible = $9, start_date = $10, end_date = $11,
+        has_quote = $12, quote_content = $13, quote_source = $14,
+        updated_by = $15, updated_at = NOW()
+       WHERE id = $16`,
       [
         title.trim(),
         content || null,
+        thumbnail_url || null,
+        detail_images || [],
         categoryId,
         tags || [],
         visibility_scope || ['all'],

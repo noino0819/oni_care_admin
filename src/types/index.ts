@@ -662,6 +662,7 @@ export interface ContentDetail extends ContentListItem {
   quote_content: string | null;
   quote_source: string | null;
   images: ContentImage[];
+  detail_images: string[];
   category_id: number | null;
   subcategory_id: number | null;
 }
@@ -689,6 +690,7 @@ export interface ContentForm {
   quote_content?: string;
   quote_source?: string;
   images?: string[];
+  detail_images?: string[];
 }
 
 // 컨텐츠 검색 필터
