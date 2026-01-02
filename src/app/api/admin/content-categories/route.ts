@@ -149,7 +149,11 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / pageSize),
       },
     });
-  } catch {
+  } catch (error) {
+    // 개발 환경에서 에러 상세 출력
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Content Categories API Error]', error);
+    }
     return NextResponse.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: '서버 오류가 발생했습니다.' } },
       { status: 500 }
