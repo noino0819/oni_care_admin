@@ -230,8 +230,8 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
       .map((cat: ContentCategory) => cat.category_name);
   };
 
-  const inputClass = 'h-[32px] px-2 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#333] bg-white';
-  const labelClass = 'text-[13px] text-[#333] w-[95px] flex-shrink-0 text-right pr-2';
+  const inputClass = 'h-[32px] px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#333] bg-white';
+  const labelClass = 'text-[13px] text-[#333] w-[110px] flex-shrink-0 text-right pr-3 whitespace-nowrap';
 
   return (
     <>
@@ -239,7 +239,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
         isOpen={isOpen}
         onClose={onClose}
         title={isEditing ? '컨텐츠 수정' : '컨텐츠 등록'}
-        size="xl"
+        size="3xl"
       >
         {isLoadingContent ? (
           <div className="py-12 flex items-center justify-center">
@@ -354,7 +354,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
             )}
 
             {/* 우측: 컨텐츠 속성 */}
-            <div className="flex-1 min-w-[300px] max-w-[350px] overflow-hidden">
+            <div className="flex-1 min-w-[380px]">
               <h4 className="text-[13px] font-medium text-[#333] mb-3">컨텐츠 속성</h4>
               
               <div className="space-y-3">
@@ -501,19 +501,19 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                 {/* 컨텐츠 게시기간 */}
                 <div className="flex items-center">
                   <span className={labelClass}>게시기간</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <input
                       type="date"
                       value={form.start_date}
                       onChange={(e) => handleChange('start_date', e.target.value)}
-                      className={`${inputClass} w-[105px] text-[12px]`}
+                      className={`${inputClass} w-[130px]`}
                     />
-                    <span className="text-gray-400 text-[11px]">~</span>
+                    <span className="text-gray-400">~</span>
                     <input
                       type="date"
                       value={form.end_date}
                       onChange={(e) => handleChange('end_date', e.target.value)}
-                      className={`${inputClass} w-[105px] text-[12px]`}
+                      className={`${inputClass} w-[130px]`}
                     />
                   </div>
                 </div>
