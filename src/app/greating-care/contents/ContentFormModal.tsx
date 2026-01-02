@@ -9,7 +9,7 @@ import { Modal, Button, AlertModal } from '@/components/common';
 import { useContentDetail, useContentCategories, createContent, updateContent } from '@/hooks/useContents';
 import { formatDate } from '@/lib/utils';
 import type { ContentForm, ContentCategory } from '@/types';
-import { X, Plus, Trash2, Calendar } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 
 interface ContentFormModalProps {
   contentId: string | null;
@@ -501,26 +501,20 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                 {/* 컨텐츠 게시기간 */}
                 <div className="flex items-center">
                   <span className={labelClass}>컨텐츠 게시기간</span>
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={form.start_date}
-                        onChange={(e) => handleChange('start_date', e.target.value)}
-                        className={`${inputClass} w-[130px] pr-8`}
-                      />
-                      <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
-                    <span className="text-gray-400">~</span>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={form.end_date}
-                        onChange={(e) => handleChange('end_date', e.target.value)}
-                        className={`${inputClass} w-[130px] pr-8`}
-                      />
-                      <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="date"
+                      value={form.start_date}
+                      onChange={(e) => handleChange('start_date', e.target.value)}
+                      className={`${inputClass} w-[115px]`}
+                    />
+                    <span className="text-gray-400 text-[12px]">~</span>
+                    <input
+                      type="date"
+                      value={form.end_date}
+                      onChange={(e) => handleChange('end_date', e.target.value)}
+                      className={`${inputClass} w-[115px]`}
+                    />
                   </div>
                 </div>
 
