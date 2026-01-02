@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
     // 정렬 필드 검증
-    const allowedSortFields = ['title', 'updated_at', 'created_at', 'start_date'];
+    const allowedSortFields = ['title', 'updated_at', 'created_at'];
     const safeField = allowedSortFields.includes(sortField) ? `c.${sortField}` : 'c.updated_at';
     const safeDirection = sortDirection === 'asc' ? 'ASC' : 'DESC';
 
@@ -85,27 +85,18 @@ export async function GET(request: NextRequest) {
     );
     const total = parseInt(countResult[0]?.count || '0');
 
-    // 컨텐츠 목록 조회
+    // 컨텐츠 목록 조회 - 기본 컬럼만 사용
     const contents = await query<{
       id: string;
       title: string;
       category_id: number | null;
       category_name: string | null;
-      tags: string[];
-      visibility_scope: string[];
-      start_date: string | null;
-      end_date: string | null;
       updated_at: string;
-      updated_by: string | null;
-      has_quote: boolean;
-      quote_content: string | null;
+      created_at: string;
     }>(
       `SELECT 
         c.id, c.title, c.category_id, cat.category_name,
-        COALESCE(c.tags, '{}') as tags, 
-        COALESCE(c.visibility_scope, '{all}') as visibility_scope, 
-        c.start_date, c.end_date, c.updated_at, c.updated_by,
-        COALESCE(c.has_quote, false) as has_quote, c.quote_content
+        c.updated_at, c.created_at
        FROM public.contents c
        LEFT JOIN public.content_categories cat ON c.category_id = cat.id
        ${whereClause}
@@ -118,7 +109,6 @@ export async function GET(request: NextRequest) {
     const formattedContents = contents.map((content) => ({
       ...content,
       category_names: content.category_name ? [content.category_name] : [],
-      has_quote: content.has_quote || !!content.quote_content,
     }));
 
     return NextResponse.json({
@@ -166,20 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      title,
-      content,
-      category_id,
-      tags,
-      visibility_scope,
-      company_codes,
-      store_visible,
-      start_date,
-      end_date,
-      has_quote,
-      quote_content,
-      quote_source,
-    } = body;
+    const { title, content, category_id } = body;
 
     if (!title?.trim()) {
       return NextResponse.json(
@@ -188,29 +165,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 컨텐츠 등록
+    // 컨텐츠 등록 - 기본 컬럼만 사용
     const result = await query<{ id: string }>(
-      `INSERT INTO public.contents (
-        title, content, category_id, tags, visibility_scope, company_codes,
-        store_visible, start_date, end_date, has_quote, quote_content, quote_source,
-        created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
-      RETURNING id`,
-      [
-        title.trim(),
-        content || null,
-        category_id || null,
-        tags || [],
-        visibility_scope || ['all'],
-        company_codes || [],
-        store_visible || false,
-        start_date || null,
-        end_date || null,
-        has_quote || false,
-        quote_content || null,
-        quote_source || null,
-        payload.name || payload.email || 'admin',
-      ]
+      `INSERT INTO public.contents (title, content, category_id)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [title.trim(), content || null, category_id || null]
     );
 
     return NextResponse.json({

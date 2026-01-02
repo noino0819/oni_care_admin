@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyToken, extractToken } from '@/lib/auth';
 
-// GET: 카테고리 목록 조회 (대분류 + 중분류)
+// GET: 카테고리 목록 조회
 export async function GET(request: NextRequest) {
   try {
     // 인증 확인
@@ -31,13 +31,11 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터 파싱
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('page_size') || '20');
+    const pageSize = parseInt(searchParams.get('page_size') || '100');
     const offset = (page - 1) * pageSize;
 
     const categoryName = searchParams.get('category_name');
     const isActive = searchParams.get('is_active');
-    const sortField = searchParams.get('sort_field') || 'display_order';
-    const sortDirection = searchParams.get('sort_direction') || 'asc';
 
     // 대분류 조회 조건
     const catConditions: string[] = [];
@@ -57,11 +55,6 @@ export async function GET(request: NextRequest) {
     }
 
     const catWhereClause = catConditions.length > 0 ? `WHERE ${catConditions.join(' AND ')}` : '';
-    
-    // 정렬 필드 검증
-    const allowedSortFields = ['category_type', 'category_name', 'display_order', 'updated_at'];
-    const safeField = allowedSortFields.includes(sortField) ? sortField : 'display_order';
-    const safeDirection = sortDirection === 'asc' ? 'ASC' : 'DESC';
 
     // 전체 대분류 개수 조회
     const countResult = await query<{ count: string }>(
@@ -70,64 +63,27 @@ export async function GET(request: NextRequest) {
     );
     const total = parseInt(countResult[0]?.count || '0');
 
-    // 대분류 목록 조회
+    // 대분류 목록 조회 - 기본 컬럼만 사용
     const categories = await query<{
       id: number;
-      category_type: string;
       category_name: string;
-      subcategory_types: string | null;
-      display_order: number;
       is_active: boolean;
       created_at: string;
       updated_at: string;
     }>(
-      `SELECT id, category_type, category_name, subcategory_types, display_order, 
-              is_active, created_at, updated_at
+      `SELECT id, category_name, is_active, created_at, updated_at
        FROM public.content_categories
        ${catWhereClause}
-       ORDER BY ${safeField} ${safeDirection}
+       ORDER BY id ASC
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...catParams, pageSize, offset]
     );
-
-    // 중분류 목록 조회 (대분류가 있는 경우만)
-    let subcategories: {
-      id: number;
-      category_id: number;
-      subcategory_name: string;
-      display_order: number;
-      is_active: boolean;
-      created_at: string;
-      updated_at: string;
-    }[] = [];
-
-    if (categories.length > 0) {
-      const catIds = categories.map(c => c.id);
-      const catIdPlaceholders = catIds.map((_, i) => `$${i + 1}`).join(', ');
-
-      subcategories = await query<{
-        id: number;
-        category_id: number;
-        subcategory_name: string;
-        display_order: number;
-        is_active: boolean;
-        created_at: string;
-        updated_at: string;
-      }>(
-        `SELECT id, category_id, subcategory_name, display_order, 
-                is_active, created_at, updated_at
-         FROM public.content_subcategories
-         WHERE category_id IN (${catIdPlaceholders})
-         ORDER BY display_order ASC`,
-        catIds
-      );
-    }
 
     return NextResponse.json({
       success: true,
       data: {
         categories,
-        subcategories,
+        subcategories: [], // 중분류 테이블이 없으면 빈 배열
       },
       pagination: {
         page,
@@ -171,26 +127,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { category_type, category_name, subcategory_types, display_order, is_active } = body;
+    const { category_name, is_active } = body;
 
-    if (!category_type?.trim() || !category_name?.trim()) {
+    if (!category_name?.trim()) {
       return NextResponse.json(
-        { success: false, error: { code: 'VALIDATION_ERROR', message: '카테고리 유형과 이름을 입력해주세요.' } },
+        { success: false, error: { code: 'VALIDATION_ERROR', message: '카테고리 이름을 입력해주세요.' } },
         { status: 400 }
       );
     }
 
     const result = await query<{ id: number }>(
-      `INSERT INTO public.content_categories (category_type, category_name, subcategory_types, display_order, is_active)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO public.content_categories (category_name, is_active)
+       VALUES ($1, $2)
        RETURNING id`,
-      [
-        category_type.trim(),
-        category_name.trim(),
-        subcategory_types || null,
-        display_order || 0,
-        is_active !== false,
-      ]
+      [category_name.trim(), is_active !== false]
     );
 
     return NextResponse.json({
