@@ -127,7 +127,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     formData.append('file', file);
     formData.append('folder', folder);
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
     
     try {
       const res = await fetch('/api/admin/upload', {
