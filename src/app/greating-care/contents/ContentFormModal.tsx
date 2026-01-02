@@ -50,11 +50,23 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
 
   const isEditing = !!contentId;
 
+  // contentId가 변경되거나 모달이 열릴 때 form 초기화
   useEffect(() => {
-    if (content && isEditing) {
+    if (!isOpen) return;
+    
+    // 새로운 컨텐츠를 선택하면 즉시 form 초기화 (로딩 중 이전 데이터 보이는 것 방지)
+    setForm(initialForm);
+    setNewTag('');
+  }, [contentId, isOpen]);
+
+  // 컨텐츠 데이터가 로드되면 form에 반영
+  useEffect(() => {
+    if (!isOpen || !isEditing) return;
+    
+    if (content) {
       setForm({
-        title: content.title,
-        content: content.content,
+        title: content.title || '',
+        content: content.content || '',
         category_ids: content.category_ids || [],
         tags: content.tags || [],
         visibility_scope: content.visibility_scope || ['all'],
@@ -66,8 +78,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
         quote_content: content.quote_content || '',
         quote_source: content.quote_source || '',
       });
-    } else if (!isEditing && isOpen) {
-      setForm(initialForm);
     }
   }, [content, isEditing, isOpen]);
 
