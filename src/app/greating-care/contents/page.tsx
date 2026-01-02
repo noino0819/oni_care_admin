@@ -279,29 +279,6 @@ export default function ContentsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className={labelClass}>명언</span>
-              <div className="flex items-center gap-3">
-                <label className="inline-flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.has_quote === 'Y'}
-                    onChange={(e) => handleFilterChange('has_quote', e.target.checked ? 'Y' : '')}
-                    className={checkboxClass}
-                  />
-                  <span className="text-[13px] text-[#333]">Y</span>
-                </label>
-                <label className="inline-flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.has_quote === 'N'}
-                    onChange={(e) => handleFilterChange('has_quote', e.target.checked ? 'N' : '')}
-                    className={checkboxClass}
-                  />
-                  <span className="text-[13px] text-[#333]">N</span>
-                </label>
-              </div>
-            </div>
           </div>
 
           {/* 2행 */}

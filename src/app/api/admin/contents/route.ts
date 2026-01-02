@@ -37,8 +37,14 @@ export async function GET(request: NextRequest) {
     // 필터 조건
     const title = searchParams.get('title');
     const categoryId = searchParams.get('category_id');
+    const tag = searchParams.get('tag');
+    const visibilityScope = searchParams.get('visibility_scope')?.split(',').filter(Boolean);
+    const companyCode = searchParams.get('company_code');
     const updatedFrom = searchParams.get('updated_from');
     const updatedTo = searchParams.get('updated_to');
+    const startFrom = searchParams.get('start_from');
+    const startTo = searchParams.get('start_to');
+    const hasQuote = searchParams.get('has_quote');
     const sortField = searchParams.get('sort_field') || 'updated_at';
     const sortDirection = searchParams.get('sort_direction') || 'desc';
 
@@ -59,6 +65,24 @@ export async function GET(request: NextRequest) {
       paramIndex++;
     }
 
+    if (tag) {
+      conditions.push(`$${paramIndex} = ANY(c.tags)`);
+      params.push(tag);
+      paramIndex++;
+    }
+
+    if (visibilityScope && visibilityScope.length > 0) {
+      conditions.push(`c.visibility_scope && $${paramIndex}::text[]`);
+      params.push(`{${visibilityScope.join(',')}}`);
+      paramIndex++;
+    }
+
+    if (companyCode) {
+      conditions.push(`$${paramIndex} = ANY(c.company_codes)`);
+      params.push(companyCode);
+      paramIndex++;
+    }
+
     if (updatedFrom) {
       conditions.push(`c.updated_at >= $${paramIndex}`);
       params.push(updatedFrom);
@@ -71,10 +95,28 @@ export async function GET(request: NextRequest) {
       paramIndex++;
     }
 
+    if (startFrom) {
+      conditions.push(`c.start_date >= $${paramIndex}`);
+      params.push(startFrom);
+      paramIndex++;
+    }
+
+    if (startTo) {
+      conditions.push(`c.end_date <= $${paramIndex}`);
+      params.push(startTo);
+      paramIndex++;
+    }
+
+    if (hasQuote === 'Y') {
+      conditions.push(`c.has_quote = true`);
+    } else if (hasQuote === 'N') {
+      conditions.push(`(c.has_quote = false OR c.has_quote IS NULL)`);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
     // 정렬 필드 검증
-    const allowedSortFields = ['title', 'updated_at', 'created_at'];
+    const allowedSortFields = ['title', 'updated_at', 'created_at', 'start_date'];
     const safeField = allowedSortFields.includes(sortField) ? `c.${sortField}` : 'c.updated_at';
     const safeDirection = sortDirection === 'asc' ? 'ASC' : 'DESC';
 
@@ -85,18 +127,25 @@ export async function GET(request: NextRequest) {
     );
     const total = parseInt(countResult[0]?.count || '0');
 
-    // 컨텐츠 목록 조회 - 기본 컬럼만 사용
+    // 컨텐츠 목록 조회
     const contents = await query<{
       id: string;
       title: string;
       category_id: number | null;
       category_name: string | null;
+      tags: string[] | null;
+      visibility_scope: string[] | null;
+      start_date: string | null;
+      end_date: string | null;
       updated_at: string;
-      created_at: string;
+      updated_by: string | null;
+      has_quote: boolean;
     }>(
       `SELECT 
         c.id, c.title, c.category_id, cat.category_name,
-        c.updated_at, c.created_at
+        c.tags, c.visibility_scope, 
+        c.start_date, c.end_date, c.updated_at, c.updated_by,
+        COALESCE(c.has_quote, false) as has_quote
        FROM public.contents c
        LEFT JOIN public.content_categories cat ON c.category_id = cat.id
        ${whereClause}
@@ -108,6 +157,8 @@ export async function GET(request: NextRequest) {
     // 결과 포맷팅
     const formattedContents = contents.map((content) => ({
       ...content,
+      tags: content.tags || [],
+      visibility_scope: content.visibility_scope || ['all'],
       category_names: content.category_name ? [content.category_name] : [],
     }));
 
@@ -122,7 +173,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    // 개발 환경에서 에러 상세 출력
     if (process.env.NODE_ENV === 'development') {
       console.error('[Contents API Error]', error);
     }
@@ -156,7 +206,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, category_id } = body;
+    const {
+      title,
+      content,
+      category_ids,
+      tags,
+      visibility_scope,
+      company_codes,
+      is_store_visible,
+      start_date,
+      end_date,
+      has_quote,
+      quote_content,
+      quote_source,
+    } = body;
 
     if (!title?.trim()) {
       return NextResponse.json(
@@ -165,12 +228,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 컨텐츠 등록 - 기본 컬럼만 사용
+    // 첫 번째 카테고리 ID 사용
+    const categoryId = category_ids && category_ids.length > 0 ? category_ids[0] : null;
+    const adminName = payload.name || payload.email || 'admin';
+
+    // 컨텐츠 등록
     const result = await query<{ id: string }>(
-      `INSERT INTO public.contents (title, content, category_id)
-       VALUES ($1, $2, $3)
-       RETURNING id`,
-      [title.trim(), content || null, category_id || null]
+      `INSERT INTO public.contents (
+        title, content, category_id, tags, visibility_scope, company_codes,
+        store_visible, start_date, end_date, has_quote, quote_content, quote_source,
+        created_by, updated_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
+      RETURNING id`,
+      [
+        title.trim(),
+        content || null,
+        categoryId,
+        tags || [],
+        visibility_scope || ['all'],
+        company_codes || [],
+        is_store_visible || false,
+        start_date || null,
+        end_date || null,
+        has_quote || false,
+        quote_content || null,
+        quote_source || null,
+        adminName,
+      ]
     );
 
     return NextResponse.json({

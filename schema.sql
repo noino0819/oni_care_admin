@@ -502,3 +502,128 @@ COMMENT ON COLUMN public.greating_x_admin_users.status IS '회원상태 (1=활�
 COMMENT ON COLUMN public.greating_x_admin_users.created_by IS '생성자';
 COMMENT ON COLUMN public.greating_x_admin_users.updated_by IS '변경자';
 
+-- ============================================
+-- 19. 컨텐츠 카테고리 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.content_categories (
+  id SERIAL PRIMARY KEY,
+  category_name VARCHAR(100) NOT NULL,
+  description TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_content_categories_display_order ON public.content_categories(display_order);
+CREATE INDEX idx_content_categories_is_active ON public.content_categories(is_active);
+
+COMMENT ON TABLE public.content_categories IS '컨텐츠 카테고리';
+COMMENT ON COLUMN public.content_categories.category_name IS '카테고리명';
+COMMENT ON COLUMN public.content_categories.description IS '설명';
+COMMENT ON COLUMN public.content_categories.display_order IS '정렬순서';
+COMMENT ON COLUMN public.content_categories.is_active IS '사용여부';
+
+-- ============================================
+-- 20. 컨텐츠 중분류 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.content_subcategories (
+  id SERIAL PRIMARY KEY,
+  category_id INTEGER NOT NULL REFERENCES public.content_categories(id) ON DELETE CASCADE,
+  subcategory_name VARCHAR(100) NOT NULL,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_content_subcategories_category_id ON public.content_subcategories(category_id);
+CREATE INDEX idx_content_subcategories_display_order ON public.content_subcategories(display_order);
+CREATE INDEX idx_content_subcategories_is_active ON public.content_subcategories(is_active);
+
+COMMENT ON TABLE public.content_subcategories IS '컨텐츠 중분류';
+COMMENT ON COLUMN public.content_subcategories.category_id IS '대분류 ID (FK)';
+COMMENT ON COLUMN public.content_subcategories.subcategory_name IS '중분류명';
+COMMENT ON COLUMN public.content_subcategories.display_order IS '정렬순서';
+COMMENT ON COLUMN public.content_subcategories.is_active IS '사용여부';
+
+-- ============================================
+-- 21. 컨텐츠 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.contents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category_id INTEGER REFERENCES public.content_categories(id),
+  subcategory_id INTEGER REFERENCES public.content_subcategories(id),
+  title VARCHAR(500) NOT NULL,
+  content TEXT,
+  thumbnail_url TEXT,
+  background_color VARCHAR(20),
+  card_style VARCHAR(20) DEFAULT 'A',
+  -- 추가 필드 (2026-01-02)
+  tags TEXT[] DEFAULT '{}',
+  visibility_scope TEXT[] DEFAULT '{all}',
+  company_codes TEXT[] DEFAULT '{}',
+  start_date DATE,
+  end_date DATE,
+  store_visible BOOLEAN DEFAULT false,
+  quote_content TEXT,
+  quote_source TEXT,
+  has_quote BOOLEAN DEFAULT false,
+  -- 상태 필드
+  is_published BOOLEAN DEFAULT false,
+  published_at TIMESTAMP WITH TIME ZONE,
+  view_count INTEGER DEFAULT 0,
+  like_count INTEGER DEFAULT 0,
+  -- 감사 필드
+  created_by VARCHAR(50),
+  updated_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_contents_category_id ON public.contents(category_id);
+CREATE INDEX idx_contents_subcategory_id ON public.contents(subcategory_id);
+CREATE INDEX idx_contents_is_published ON public.contents(is_published);
+CREATE INDEX idx_contents_start_date ON public.contents(start_date);
+CREATE INDEX idx_contents_end_date ON public.contents(end_date);
+CREATE INDEX idx_contents_visibility_scope ON public.contents USING GIN(visibility_scope);
+CREATE INDEX idx_contents_tags ON public.contents USING GIN(tags);
+CREATE INDEX idx_contents_updated_at ON public.contents(updated_at);
+
+COMMENT ON TABLE public.contents IS '컨텐츠';
+COMMENT ON COLUMN public.contents.category_id IS '대분류 ID (FK)';
+COMMENT ON COLUMN public.contents.subcategory_id IS '중분류 ID (FK)';
+COMMENT ON COLUMN public.contents.title IS '컨텐츠 제목';
+COMMENT ON COLUMN public.contents.content IS '컨텐츠 본문';
+COMMENT ON COLUMN public.contents.thumbnail_url IS '썸네일 URL';
+COMMENT ON COLUMN public.contents.tags IS '태그 배열';
+COMMENT ON COLUMN public.contents.visibility_scope IS '공개범위 (all, normal, affiliate, fs)';
+COMMENT ON COLUMN public.contents.company_codes IS '기업/사업장 코드 배열';
+COMMENT ON COLUMN public.contents.start_date IS '게시 시작일';
+COMMENT ON COLUMN public.contents.end_date IS '게시 종료일';
+COMMENT ON COLUMN public.contents.store_visible IS '스토어 노출 여부';
+COMMENT ON COLUMN public.contents.quote_content IS '명언 내용';
+COMMENT ON COLUMN public.contents.quote_source IS '명언 출처';
+COMMENT ON COLUMN public.contents.has_quote IS '명언 포함 여부';
+COMMENT ON COLUMN public.contents.is_published IS '게시 여부';
+COMMENT ON COLUMN public.contents.created_by IS '생성자';
+COMMENT ON COLUMN public.contents.updated_by IS '수정자';
+
+-- ============================================
+-- 22. 컨텐츠-카테고리 다대다 매핑 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.content_category_mapping (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id UUID NOT NULL REFERENCES public.contents(id) ON DELETE CASCADE,
+  category_id INTEGER NOT NULL REFERENCES public.content_categories(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(content_id, category_id)
+);
+
+CREATE INDEX idx_content_category_mapping_content_id ON public.content_category_mapping(content_id);
+CREATE INDEX idx_content_category_mapping_category_id ON public.content_category_mapping(category_id);
+
+COMMENT ON TABLE public.content_category_mapping IS '컨텐츠-카테고리 매핑';
+COMMENT ON COLUMN public.content_category_mapping.content_id IS '컨텐츠 ID (FK)';
+COMMENT ON COLUMN public.content_category_mapping.category_id IS '카테고리 ID (FK)';
+

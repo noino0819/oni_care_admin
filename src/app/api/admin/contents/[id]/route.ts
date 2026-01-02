@@ -33,16 +33,32 @@ export async function GET(
       );
     }
 
-    // 컨텐츠 조회 - 기본 컬럼만 사용
+    // 컨텐츠 조회
     const contentData = await queryOne<{
       id: string;
       title: string;
       content: string | null;
       category_id: number | null;
+      tags: string[] | null;
+      visibility_scope: string[] | null;
+      company_codes: string[] | null;
+      store_visible: boolean;
+      start_date: string | null;
+      end_date: string | null;
+      has_quote: boolean;
+      quote_content: string | null;
+      quote_source: string | null;
       created_at: string;
       updated_at: string;
+      updated_by: string | null;
     }>(
-      `SELECT id, title, content, category_id, created_at, updated_at
+      `SELECT 
+        id, title, content, category_id,
+        tags, visibility_scope, company_codes,
+        COALESCE(store_visible, false) as store_visible,
+        start_date, end_date,
+        COALESCE(has_quote, false) as has_quote, quote_content, quote_source,
+        created_at, updated_at, updated_by
        FROM public.contents
        WHERE id = $1`,
       [id]
@@ -69,18 +85,12 @@ export async function GET(
       success: true,
       data: {
         ...contentData,
+        tags: contentData.tags || [],
+        visibility_scope: contentData.visibility_scope || ['all'],
+        company_codes: contentData.company_codes || [],
+        is_store_visible: contentData.store_visible,
         category_ids: contentData.category_id ? [contentData.category_id] : [],
         category_names: categoryName ? [categoryName] : [],
-        // 기본값 설정
-        tags: [],
-        visibility_scope: ['all'],
-        company_codes: [],
-        is_store_visible: false,
-        start_date: null,
-        end_date: null,
-        has_quote: false,
-        quote_content: null,
-        quote_source: null,
       },
     });
   } catch (error) {
@@ -122,7 +132,20 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, content, category_ids } = body;
+    const {
+      title,
+      content,
+      category_ids,
+      tags,
+      visibility_scope,
+      company_codes,
+      is_store_visible,
+      start_date,
+      end_date,
+      has_quote,
+      quote_content,
+      quote_source,
+    } = body;
 
     if (!title?.trim()) {
       return NextResponse.json(
@@ -131,15 +154,35 @@ export async function PUT(
       );
     }
 
-    // 첫 번째 카테고리 ID 사용 (단일 카테고리)
+    // 첫 번째 카테고리 ID 사용
     const categoryId = category_ids && category_ids.length > 0 ? category_ids[0] : null;
+    const adminName = payload.name || payload.email || 'admin';
 
-    // 컨텐츠 수정 - 기본 컬럼만 사용
+    // 컨텐츠 수정
     await query(
       `UPDATE public.contents SET
-        title = $1, content = $2, category_id = $3, updated_at = NOW()
-       WHERE id = $4`,
-      [title.trim(), content || null, categoryId, id]
+        title = $1, content = $2, category_id = $3,
+        tags = $4, visibility_scope = $5, company_codes = $6,
+        store_visible = $7, start_date = $8, end_date = $9,
+        has_quote = $10, quote_content = $11, quote_source = $12,
+        updated_by = $13, updated_at = NOW()
+       WHERE id = $14`,
+      [
+        title.trim(),
+        content || null,
+        categoryId,
+        tags || [],
+        visibility_scope || ['all'],
+        company_codes || [],
+        is_store_visible || false,
+        start_date || null,
+        end_date || null,
+        has_quote || false,
+        quote_content || null,
+        quote_source || null,
+        adminName,
+        id,
+      ]
     );
 
     return NextResponse.json({

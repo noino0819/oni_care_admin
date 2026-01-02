@@ -301,49 +301,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
               </div>
             </section>
 
-            {/* 명언 섹션 */}
-            <section>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 pb-2 border-b">명언 설정</h3>
-              
-              <div className="flex items-center gap-2 mb-3">
-                <span className={labelClass}>명언 포함</span>
-                <label className="inline-flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.has_quote}
-                    onChange={(e) => handleChange('has_quote', e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  <span className="text-[13px] text-[#333]">포함</span>
-                </label>
-              </div>
-
-              {form.has_quote && (
-                <>
-                  <div className="flex items-start gap-2 mb-3">
-                    <span className={labelClass}>명언 내용</span>
-                    <textarea
-                      value={form.quote_content}
-                      onChange={(e) => handleChange('quote_content', e.target.value)}
-                      className={textareaClass}
-                      rows={3}
-                      placeholder="명언을 입력하세요"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={labelClass}>명언 출처</span>
-                    <input
-                      type="text"
-                      value={form.quote_source}
-                      onChange={(e) => handleChange('quote_source', e.target.value)}
-                      className={`${inputClass} flex-1`}
-                      placeholder="예: 니체, 논어 등"
-                    />
-                  </div>
-                </>
-              )}
-            </section>
-
             {/* 버튼 */}
             <div className="flex justify-center gap-3 pt-4">
               <Button variant="secondary" onClick={onClose} className="min-w-[100px]">
