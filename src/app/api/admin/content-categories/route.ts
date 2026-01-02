@@ -3,7 +3,7 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { appQuery } from '@/lib/app-db';
+import { query } from '@/lib/db';
 import { verifyToken, extractToken } from '@/lib/auth';
 
 // GET: 카테고리 목록 조회 (대분류 + 중분류)
@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * pageSize;
 
     const categoryName = searchParams.get('category_name');
-    const subcategoryName = searchParams.get('subcategory_name');
     const isActive = searchParams.get('is_active');
     const sortField = searchParams.get('sort_field') || 'display_order';
     const sortDirection = searchParams.get('sort_direction') || 'asc';
@@ -65,14 +64,14 @@ export async function GET(request: NextRequest) {
     const safeDirection = sortDirection === 'asc' ? 'ASC' : 'DESC';
 
     // 전체 대분류 개수 조회
-    const countResult = await appQuery<{ count: string }>(
-      `SELECT COUNT(*) as count FROM content_categories ${catWhereClause}`,
+    const countResult = await query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM public.content_categories ${catWhereClause}`,
       catParams
     );
     const total = parseInt(countResult[0]?.count || '0');
 
     // 대분류 목록 조회
-    const categories = await appQuery<{
+    const categories = await query<{
       id: number;
       category_type: string;
       category_name: string;
@@ -84,42 +83,15 @@ export async function GET(request: NextRequest) {
     }>(
       `SELECT id, category_type, category_name, subcategory_types, display_order, 
               is_active, created_at, updated_at
-       FROM content_categories
+       FROM public.content_categories
        ${catWhereClause}
        ORDER BY ${safeField} ${safeDirection}
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
       [...catParams, pageSize, offset]
     );
 
-    // 중분류 조회 조건
-    const subConditions: string[] = [];
-    const subParams: (string | number)[] = [];
-    let subParamIndex = 1;
-
-    if (subcategoryName) {
-      subConditions.push(`subcategory_name ILIKE $${subParamIndex}`);
-      subParams.push(`%${subcategoryName}%`);
-      subParamIndex++;
-    }
-
-    if (isActive === 'Y') {
-      subConditions.push(`is_active = true`);
-    } else if (isActive === 'N') {
-      subConditions.push(`is_active = false`);
-    }
-
-    // 대분류 ID 목록으로 필터링
-    if (categories.length > 0) {
-      const catIds = categories.map(c => c.id);
-      const catIdPlaceholders = catIds.map((_, i) => `$${subParamIndex + i}`).join(', ');
-      subConditions.push(`category_id IN (${catIdPlaceholders})`);
-      subParams.push(...catIds);
-    }
-
-    const subWhereClause = subConditions.length > 0 ? `WHERE ${subConditions.join(' AND ')}` : '';
-
-    // 중분류 목록 조회
-    const subcategories = await appQuery<{
+    // 중분류 목록 조회 (대분류가 있는 경우만)
+    let subcategories: {
       id: number;
       category_id: number;
       subcategory_name: string;
@@ -127,14 +99,29 @@ export async function GET(request: NextRequest) {
       is_active: boolean;
       created_at: string;
       updated_at: string;
-    }>(
-      `SELECT id, category_id, subcategory_name, display_order, 
-              is_active, created_at, updated_at
-       FROM content_subcategories
-       ${subWhereClause}
-       ORDER BY display_order ASC`,
-      subParams
-    );
+    }[] = [];
+
+    if (categories.length > 0) {
+      const catIds = categories.map(c => c.id);
+      const catIdPlaceholders = catIds.map((_, i) => `$${i + 1}`).join(', ');
+
+      subcategories = await query<{
+        id: number;
+        category_id: number;
+        subcategory_name: string;
+        display_order: number;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+      }>(
+        `SELECT id, category_id, subcategory_name, display_order, 
+                is_active, created_at, updated_at
+         FROM public.content_subcategories
+         WHERE category_id IN (${catIdPlaceholders})
+         ORDER BY display_order ASC`,
+        catIds
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -193,8 +180,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await appQuery<{ id: number }>(
-      `INSERT INTO content_categories (category_type, category_name, subcategory_types, display_order, is_active)
+    const result = await query<{ id: number }>(
+      `INSERT INTO public.content_categories (category_type, category_name, subcategory_types, display_order, is_active)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
       [
@@ -210,11 +197,13 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { id: result[0]?.id },
     }, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Content Categories POST Error]', error);
+    }
     return NextResponse.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: '서버 오류가 발생했습니다.' } },
       { status: 500 }
     );
   }
 }
-
