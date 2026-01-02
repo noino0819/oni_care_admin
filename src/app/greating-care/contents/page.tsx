@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================
-// 컨텐츠 관리 페이지 - 기획서 스펙 반영
+// 컨텐츠 관리 페이지 - 실제 테이블 구조에 맞춤
 // ============================================
 
 import { useState, useCallback } from 'react';
@@ -13,18 +13,11 @@ import { formatDate } from '@/lib/utils';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { ContentSearchFilters, SortConfig, TableColumn, ContentListItem } from '@/types';
 
-// 공개범위 옵션
-const VISIBILITY_OPTIONS = [
-  { value: 'all', label: '전체' },
-  { value: 'normal', label: '일반회원' },
-  { value: 'affiliate', label: '제휴사' },
-  { value: 'fs', label: 'FS' },
-];
-
 export default function ContentsPage() {
   const [filters, setFilters] = useState<ContentSearchFilters>({
     title: '',
     category_id: undefined,
+    // 실제 테이블에 없는 필드들은 제거
     tag: '',
     visibility_scope: [],
     company_code: '',
@@ -136,41 +129,13 @@ export default function ContentsPage() {
         const names = value as string[];
         return (
           <div className="flex flex-wrap gap-1">
-            {names?.map((name, i) => (
+            {names?.length > 0 ? names.map((name, i) => (
               <span key={i} className="px-2 py-0.5 bg-gray-100 rounded text-[12px]">
                 {name}
               </span>
-            ))}
+            )) : '-'}
           </div>
         );
-      },
-    },
-    {
-      key: 'tags',
-      label: '컨텐츠 태그',
-      render: (value) => {
-        const tags = value as string[];
-        return tags?.join(' | ') || '-';
-      },
-    },
-    {
-      key: 'visibility_scope',
-      label: '컨텐츠 노출범위',
-      render: (value) => {
-        const scopes = value as string[];
-        const labels = scopes?.map(s => {
-          const opt = VISIBILITY_OPTIONS.find(o => o.value === s);
-          return opt?.label || s;
-        });
-        return labels?.join(', ') || '-';
-      },
-    },
-    {
-      key: 'start_date',
-      label: '컨텐츠 게시기간',
-      render: (_, row) => {
-        if (!row.start_date && !row.end_date) return '-';
-        return `${formatDate(row.start_date || '')}~${formatDate(row.end_date || '')}`;
       },
     },
     {
@@ -180,16 +145,16 @@ export default function ContentsPage() {
       render: (value) => formatDate(value as string),
     },
     {
-      key: 'updated_by',
-      label: '수정자',
-      render: (value) => (value as string) || '-',
+      key: 'created_at',
+      label: '등록일',
+      sortable: true,
+      render: (value) => formatDate(value as string),
     },
   ];
 
   const inputClass = 'h-[30px] px-2 border border-gray-300 rounded text-[13px] bg-white focus:outline-none focus:border-[#666] placeholder:text-gray-400';
   const selectClass = 'h-[30px] px-2 border border-gray-300 rounded text-[13px] bg-white appearance-none focus:outline-none focus:border-[#666] select-arrow';
   const labelClass = 'text-[13px] font-semibold text-[#333] whitespace-nowrap';
-  const checkboxClass = 'w-4 h-4 border border-gray-300 rounded cursor-pointer accent-[#737373]';
 
   return (
     <AdminLayout>
@@ -219,15 +184,15 @@ export default function ContentsPage() {
 
         {/* 조회조건 */}
         <div className="bg-white rounded-lg shadow-sm p-4">
-          {/* 1행 */}
-          <div className="flex items-center gap-6 mb-3">
+          <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <span className={labelClass}>제목</span>
               <input
                 type="text"
                 value={filters.title}
                 onChange={(e) => handleFilterChange('title', e.target.value)}
-                className={`${inputClass} w-[160px]`}
+                className={`${inputClass} w-[200px]`}
+                placeholder="제목 검색"
               />
             </div>
 
@@ -246,67 +211,6 @@ export default function ContentsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className={labelClass}>태그</span>
-              <input
-                type="text"
-                value={filters.tag}
-                onChange={(e) => handleFilterChange('tag', e.target.value)}
-                className={`${inputClass} w-[160px]`}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className={labelClass}>공개범위</span>
-              <div className="flex items-center gap-3">
-                {VISIBILITY_OPTIONS.map(option => (
-                  <label key={option.value} className="inline-flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.visibility_scope?.includes(option.value) || false}
-                      onChange={(e) => {
-                        const current = filters.visibility_scope || [];
-                        if (e.target.checked) {
-                          handleFilterChange('visibility_scope', [...current, option.value]);
-                        } else {
-                          handleFilterChange('visibility_scope', current.filter(v => v !== option.value));
-                        }
-                      }}
-                      className={checkboxClass}
-                    />
-                    <span className="text-[13px] text-[#333]">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className={labelClass}>명언</span>
-              <div className="flex items-center gap-3">
-                <label className="inline-flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.has_quote === 'Y'}
-                    onChange={(e) => handleFilterChange('has_quote', e.target.checked ? 'Y' : '')}
-                    className={checkboxClass}
-                  />
-                  <span className="text-[13px] text-[#333]">Y</span>
-                </label>
-                <label className="inline-flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.has_quote === 'N'}
-                    onChange={(e) => handleFilterChange('has_quote', e.target.checked ? 'N' : '')}
-                    className={checkboxClass}
-                  />
-                  <span className="text-[13px] text-[#333]">N</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* 2행 */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
               <span className={labelClass}>최종수정일</span>
               <input
                 type="date"
@@ -320,33 +224,6 @@ export default function ContentsPage() {
                 value={filters.updated_to}
                 onChange={(e) => handleFilterChange('updated_to', e.target.value)}
                 className={`${inputClass} w-[130px]`}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className={labelClass}>게시기간</span>
-              <input
-                type="date"
-                value={filters.start_from}
-                onChange={(e) => handleFilterChange('start_from', e.target.value)}
-                className={`${inputClass} w-[130px]`}
-              />
-              <span className="text-gray-400">~</span>
-              <input
-                type="date"
-                value={filters.start_to}
-                onChange={(e) => handleFilterChange('start_to', e.target.value)}
-                className={`${inputClass} w-[130px]`}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className={labelClass}>상세범위(기업코드)</span>
-              <input
-                type="text"
-                value={filters.company_code}
-                onChange={(e) => handleFilterChange('company_code', e.target.value)}
-                className={`${inputClass} w-[160px]`}
               />
             </div>
           </div>
@@ -429,5 +306,3 @@ export default function ContentsPage() {
     </AdminLayout>
   );
 }
-
-
