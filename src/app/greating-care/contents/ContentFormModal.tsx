@@ -9,7 +9,7 @@ import { Modal, Button, AlertModal } from '@/components/common';
 import { useContentDetail, useContentCategories, createContent, updateContent } from '@/hooks/useContents';
 import { formatDate } from '@/lib/utils';
 import type { ContentForm, ContentCategory } from '@/types';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Calendar } from 'lucide-react';
 
 interface ContentFormModalProps {
   contentId: string | null;
@@ -24,12 +24,6 @@ const VISIBILITY_OPTIONS = [
   { value: 'normal', label: '일반회원' },
   { value: 'affiliate', label: '제휴사' },
   { value: 'fs', label: 'FS' },
-];
-
-// 스토어 공개 옵션
-const STORE_OPTIONS = [
-  { value: true, label: 'Y' },
-  { value: false, label: 'N' },
 ];
 
 const initialForm: ContentForm = {
@@ -58,6 +52,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
   const [newTag, setNewTag] = useState('');
   const [selectedDetailImage, setSelectedDetailImage] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const detailInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +65,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     setForm(initialForm);
     setNewTag('');
     setSelectedDetailImage(0);
+    setIsCategoryOpen(false);
   }, [contentId, isOpen]);
 
   // 컨텐츠 데이터가 로드되면 form에 반영
@@ -109,6 +105,20 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
 
   const handleRemoveTag = (tag: string) => {
     handleChange('tags', form.tags?.filter(t => t !== tag));
+  };
+
+  // 카테고리 토글
+  const handleCategoryToggle = (categoryId: number) => {
+    const current = form.category_ids || [];
+    if (current.includes(categoryId)) {
+      handleChange('category_ids', current.filter(id => id !== categoryId));
+    } else {
+      if (current.length >= 5) {
+        setAlertMessage('카테고리는 최대 5개까지 선택 가능합니다.');
+        return;
+      }
+      handleChange('category_ids', [...current, categoryId]);
+    }
   };
 
   // 이미지 업로드 핸들러
@@ -152,7 +162,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
       setAlertMessage('이미지 업로드에 실패했습니다.');
     }
     
-    // 입력 초기화
     if (thumbnailInputRef.current) {
       thumbnailInputRef.current.value = '';
     }
@@ -179,7 +188,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
       setAlertMessage('이미지 업로드에 실패했습니다.');
     }
 
-    // 입력 초기화
     if (detailInputRef.current) {
       detailInputRef.current.value = '';
     }
@@ -214,16 +222,16 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     }
   };
 
-  // 카테고리를 그룹으로 분류
-  const groupedCategories = {
-    interest: categories?.filter((cat: ContentCategory) => cat.category_type === '관심사') || [],
-    disease: categories?.filter((cat: ContentCategory) => cat.category_type === '질병') || [],
-    exercise: categories?.filter((cat: ContentCategory) => cat.category_type === '운동') || [],
+  // 선택된 카테고리 이름 가져오기
+  const getSelectedCategoryNames = () => {
+    if (!categories || !form.category_ids?.length) return [];
+    return categories
+      .filter((cat: ContentCategory) => form.category_ids?.includes(cat.id))
+      .map((cat: ContentCategory) => cat.category_name);
   };
 
-  const inputClass = 'h-[34px] px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#666]';
-  const labelClass = 'text-[13px] font-semibold text-[#333] w-[120px] flex-shrink-0 text-right pr-3';
-  const checkboxClass = 'w-4 h-4 border border-gray-300 rounded cursor-pointer accent-[#333]';
+  const inputClass = 'h-[32px] px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#333] bg-white';
+  const labelClass = 'text-[13px] text-[#333] w-[110px] flex-shrink-0 text-right pr-3';
 
   return (
     <>
@@ -238,14 +246,14 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C8E600]" />
           </div>
         ) : (
-          <div className="flex gap-6">
+          <div className="flex gap-5">
             {/* 좌측: 이미지 영역 */}
-            <div className="w-[280px] flex-shrink-0">
+            <div className="w-[200px] flex-shrink-0">
               {/* 썸네일 이미지 */}
               <div className="mb-4">
-                <h4 className="text-[13px] font-semibold mb-2">썸네일 이미지</h4>
+                <h4 className="text-[13px] font-medium text-[#333] mb-2">썸네일 이미지</h4>
                 <div 
-                  className="w-full h-[160px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 overflow-hidden relative"
+                  className="w-full h-[140px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 overflow-hidden relative"
                   onClick={() => thumbnailInputRef.current?.click()}
                 >
                   {form.thumbnail_url ? (
@@ -260,15 +268,13 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                           e.stopPropagation();
                           handleChange('thumbnail_url', '');
                         }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50"
+                        className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center hover:bg-red-50"
                       >
-                        <Trash2 className="w-3 h-3 text-red-500" />
+                        <Trash2 className="w-3 h-3 text-gray-500" />
                       </button>
                     </>
                   ) : (
-                    <>
-                      <span className="text-gray-400 text-[13px]">+ 파일추가</span>
-                    </>
+                    <span className="text-[13px] text-gray-400">+ 파일추가</span>
                   )}
                   <input
                     ref={thumbnailInputRef}
@@ -282,22 +288,21 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
 
               {/* 상세 이미지 */}
               <div>
-                <h4 className="text-[13px] font-semibold mb-2">
+                <h4 className="text-[13px] font-medium text-[#333] mb-2">
                   상세 이미지 <span className="text-gray-400">({form.detail_images?.length || 0}/10)</span>
                 </h4>
                 
-                {/* 썸네일 리스트 */}
-                <div className="flex flex-col gap-1 max-h-[320px] overflow-y-auto pr-1">
+                <div className="space-y-1 max-h-[280px] overflow-y-auto">
                   {form.detail_images?.map((img, index) => (
                     <div 
                       key={index}
-                      className={`relative flex items-center gap-2 p-1 rounded cursor-pointer ${
+                      className={`flex items-center gap-2 p-1 rounded cursor-pointer ${
                         selectedDetailImage === index ? 'bg-gray-100' : 'hover:bg-gray-50'
                       }`}
                       onClick={() => setSelectedDetailImage(index)}
                     >
-                      <span className="text-[11px] text-gray-500 w-4">{index + 1}</span>
-                      <div className="w-[60px] h-[60px] bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                      <span className="text-[11px] text-gray-400 w-3">{index + 1}</span>
+                      <div className="w-[50px] h-[50px] bg-gray-100 rounded overflow-hidden flex-shrink-0 border border-gray-200">
                         <img src={img} alt={`상세${index + 1}`} className="w-full h-full object-cover" />
                       </div>
                       <button
@@ -305,22 +310,21 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                           e.stopPropagation();
                           handleRemoveDetailImage(index);
                         }}
-                        className="absolute right-1 top-1 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50"
+                        className="ml-auto w-4 h-4 flex items-center justify-center hover:text-red-500 text-gray-400"
                       >
-                        <X className="w-3 h-3 text-gray-500" />
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
                   
-                  {/* 추가 버튼 */}
                   {(form.detail_images?.length || 0) < 10 && (
                     <div 
                       className="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-50"
                       onClick={() => detailInputRef.current?.click()}
                     >
-                      <span className="text-[11px] text-gray-400 w-4">{(form.detail_images?.length || 0) + 1}</span>
-                      <div className="w-[60px] h-[60px] bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
-                        <Plus className="w-5 h-5 text-gray-400" />
+                      <span className="text-[11px] text-gray-400 w-3">{(form.detail_images?.length || 0) + 1}</span>
+                      <div className="w-[50px] h-[50px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex items-center justify-center">
+                        <Plus className="w-4 h-4 text-gray-400" />
                       </div>
                     </div>
                   )}
@@ -336,24 +340,24 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
               </div>
             </div>
 
-            {/* 우측: 컨텐츠 속성 */}
-            <div className="flex-1 min-w-0">
-              {/* 상세 이미지 미리보기 */}
-              {form.detail_images && form.detail_images.length > 0 && (
-                <div className="mb-4">
-                  <div className="w-full h-[300px] bg-gray-100 rounded-lg overflow-hidden">
-                    <img 
-                      src={form.detail_images[selectedDetailImage]} 
-                      alt="상세 이미지" 
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
+            {/* 중앙: 상세 이미지 미리보기 */}
+            {form.detail_images && form.detail_images.length > 0 && (
+              <div className="w-[280px] flex-shrink-0">
+                <div className="w-full h-[440px] bg-[#f5f5f5] rounded overflow-hidden border border-gray-200">
+                  <img 
+                    src={form.detail_images[selectedDetailImage]} 
+                    alt="상세 이미지" 
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-              )}
+              </div>
+            )}
 
+            {/* 우측: 컨텐츠 속성 */}
+            <div className="flex-1 min-w-[320px]">
+              <h4 className="text-[13px] font-medium text-[#333] mb-3">컨텐츠 속성</h4>
+              
               <div className="space-y-3">
-                <h4 className="text-[13px] font-semibold border-b pb-2 mb-3">컨텐츠 속성</h4>
-                
                 {/* 컨텐츠 제목 */}
                 <div className="flex items-center">
                   <span className={labelClass}>컨텐츠 제목</span>
@@ -370,81 +374,39 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                 {/* 컨텐츠 카테고리 */}
                 <div className="flex items-start">
                   <span className={labelClass}>컨텐츠 카테고리</span>
-                  <div className="flex-1 border border-gray-200 rounded p-3 max-h-[200px] overflow-y-auto">
-                    {/* 관심사 */}
-                    <div className="mb-3">
-                      <div className="text-[12px] font-bold text-gray-700 mb-2 pb-1 border-b">관심사</div>
-                      <div className="grid grid-cols-3 gap-1">
-                        {groupedCategories.interest.map((cat: ContentCategory) => (
-                          <label key={cat.id} className="inline-flex items-center gap-1 cursor-pointer">
+                  <div className="flex-1 relative">
+                    <div 
+                      className={`${inputClass} w-full min-h-[32px] h-auto py-1 cursor-pointer flex items-center justify-between`}
+                      onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                    >
+                      <span className="text-[13px] text-gray-400">
+                        {getSelectedCategoryNames().length > 0 
+                          ? getSelectedCategoryNames().join(', ')
+                          : '최대 5개 카테고리 선택가능'}
+                      </span>
+                      <svg className={`w-4 h-4 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    
+                    {isCategoryOpen && categories && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 max-h-[200px] overflow-y-auto">
+                        {categories.map((cat: ContentCategory) => (
+                          <label 
+                            key={cat.id} 
+                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-[13px]"
+                          >
                             <input
                               type="checkbox"
                               checked={form.category_ids?.includes(cat.id) || false}
-                              onChange={(e) => {
-                                const current = form.category_ids || [];
-                                if (e.target.checked) {
-                                  handleChange('category_ids', [...current, cat.id]);
-                                } else {
-                                  handleChange('category_ids', current.filter(id => id !== cat.id));
-                                }
-                              }}
-                              className={checkboxClass}
+                              onChange={() => handleCategoryToggle(cat.id)}
+                              className="w-4 h-4 accent-[#333]"
                             />
-                            <span className="text-[12px] text-[#333]">{cat.category_name}</span>
+                            <span>{cat.category_name}</span>
                           </label>
                         ))}
                       </div>
-                    </div>
-
-                    {/* 질병 */}
-                    <div className="mb-3">
-                      <div className="text-[12px] font-bold text-gray-700 mb-2 pb-1 border-b">질병</div>
-                      <div className="grid grid-cols-3 gap-1">
-                        {groupedCategories.disease.map((cat: ContentCategory) => (
-                          <label key={cat.id} className="inline-flex items-center gap-1 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={form.category_ids?.includes(cat.id) || false}
-                              onChange={(e) => {
-                                const current = form.category_ids || [];
-                                if (e.target.checked) {
-                                  handleChange('category_ids', [...current, cat.id]);
-                                } else {
-                                  handleChange('category_ids', current.filter(id => id !== cat.id));
-                                }
-                              }}
-                              className={checkboxClass}
-                            />
-                            <span className="text-[12px] text-[#333]">{cat.category_name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 운동 */}
-                    <div>
-                      <div className="text-[12px] font-bold text-gray-700 mb-2 pb-1 border-b">운동</div>
-                      <div className="grid grid-cols-3 gap-1">
-                        {groupedCategories.exercise.map((cat: ContentCategory) => (
-                          <label key={cat.id} className="inline-flex items-center gap-1 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={form.category_ids?.includes(cat.id) || false}
-                              onChange={(e) => {
-                                const current = form.category_ids || [];
-                                if (e.target.checked) {
-                                  handleChange('category_ids', [...current, cat.id]);
-                                } else {
-                                  handleChange('category_ids', current.filter(id => id !== cat.id));
-                                }
-                              }}
-                              className={checkboxClass}
-                            />
-                            <span className="text-[12px] text-[#333]">{cat.category_name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -458,17 +420,14 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                       onChange={(e) => setNewTag(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
                       className={`${inputClass} w-full`}
-                      placeholder="텍스트 입력 후 엔터로 입력하실 수 있습니다."
+                      placeholder="텍스트 입력 후"
                     />
                     {form.tags && form.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {form.tags.map((tag, i) => (
-                          <span key={i} className="px-2 py-1 bg-gray-100 rounded text-[12px] flex items-center gap-1">
+                          <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[12px] text-[#333]">
                             {tag}
-                            <button
-                              onClick={() => handleRemoveTag(tag)}
-                              className="text-gray-400 hover:text-red-500"
-                            >
+                            <button onClick={() => handleRemoveTag(tag)} className="text-gray-400 hover:text-red-500">
                               <X className="w-3 h-3" />
                             </button>
                           </span>
@@ -495,7 +454,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                               handleChange('visibility_scope', current.filter(v => v !== option.value));
                             }
                           }}
-                          className={checkboxClass}
+                          className="w-4 h-4 accent-[#333]"
                         />
                         <span className="text-[12px] text-[#333]">{option.label}</span>
                       </label>
@@ -511,7 +470,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                     value={form.company_codes?.join(',') || ''}
                     onChange={(e) => handleChange('company_codes', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
                     className={`${inputClass} flex-1`}
-                    placeholder="쉼표로 구분"
                   />
                 </div>
 
@@ -519,17 +477,24 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                 <div className="flex items-center">
                   <span className={labelClass}>스토어 공개여부</span>
                   <div className="flex items-center gap-3">
-                    {STORE_OPTIONS.map(option => (
-                      <label key={String(option.value)} className="inline-flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.is_store_visible === option.value}
-                          onChange={() => handleChange('is_store_visible', option.value)}
-                          className={checkboxClass}
-                        />
-                        <span className="text-[12px] text-[#333]">{option.label}</span>
-                      </label>
-                    ))}
+                    <label className="inline-flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.is_store_visible === true}
+                        onChange={() => handleChange('is_store_visible', true)}
+                        className="w-4 h-4 accent-[#333]"
+                      />
+                      <span className="text-[12px] text-[#333]">Y</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.is_store_visible === false}
+                        onChange={() => handleChange('is_store_visible', false)}
+                        className="w-4 h-4 accent-[#333]"
+                      />
+                      <span className="text-[12px] text-[#333]">N</span>
+                    </label>
                   </div>
                 </div>
 
@@ -537,19 +502,25 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                 <div className="flex items-center">
                   <span className={labelClass}>컨텐츠 게시기간</span>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={form.start_date}
-                      onChange={(e) => handleChange('start_date', e.target.value)}
-                      className={`${inputClass} w-[140px]`}
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={form.start_date}
+                        onChange={(e) => handleChange('start_date', e.target.value)}
+                        className={`${inputClass} w-[130px] pr-8`}
+                      />
+                      <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                     <span className="text-gray-400">~</span>
-                    <input
-                      type="date"
-                      value={form.end_date}
-                      onChange={(e) => handleChange('end_date', e.target.value)}
-                      className={`${inputClass} w-[140px]`}
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={form.end_date}
+                        onChange={(e) => handleChange('end_date', e.target.value)}
+                        className={`${inputClass} w-[130px] pr-8`}
+                      />
+                      <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
 
@@ -577,19 +548,27 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                   />
                 </div>
               </div>
-
-              {/* 버튼 */}
-              <div className="flex justify-center gap-3 pt-6 mt-4 border-t">
-                <Button variant="secondary" onClick={onClose} className="min-w-[100px]">
-                  취소하기
-                </Button>
-                <Button onClick={handleSubmit} disabled={isSaving || isUploading} className="min-w-[100px]">
-                  {isSaving ? '저장 중...' : '저장'}
-                </Button>
-              </div>
             </div>
           </div>
         )}
+
+        {/* 버튼 */}
+        <div className="flex justify-center gap-3 pt-5 mt-5 border-t">
+          <Button 
+            variant="secondary" 
+            onClick={onClose} 
+            className="min-w-[100px] bg-[#666] text-white hover:bg-[#555]"
+          >
+            취소하기
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSaving || isUploading} 
+            className="min-w-[100px] bg-[#4a90d9] text-white hover:bg-[#3a80c9]"
+          >
+            {isSaving ? '저장 중...' : '저장'}
+          </Button>
+        </div>
       </Modal>
 
       <AlertModal
