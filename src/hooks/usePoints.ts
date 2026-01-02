@@ -154,3 +154,4 @@ export async function adjustPoints(params: {
   globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/points'), undefined, { revalidate: true });
 }
 
+
