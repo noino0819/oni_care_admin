@@ -39,7 +39,6 @@ export async function GET(
       title: string;
       content: string | null;
       thumbnail_url: string | null;
-      detail_images: string[] | null;
       category_id: number | null;
       tags: string[] | null;
       visibility_scope: string[] | null;
@@ -55,7 +54,7 @@ export async function GET(
       updated_by: string | null;
     }>(
       `SELECT 
-        id, title, content, thumbnail_url, detail_images, category_id,
+        id, title, content, thumbnail_url, category_id,
         tags, visibility_scope, company_codes,
         COALESCE(store_visible, false) as store_visible,
         start_date, end_date,
@@ -72,6 +71,16 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // 상세 이미지 조회 (content_media 테이블에서)
+    const mediaList = await query<{ media_url: string; display_order: number }>(
+      `SELECT media_url, display_order 
+       FROM public.content_media 
+       WHERE content_id = $1 AND media_type = 'image'
+       ORDER BY display_order ASC`,
+      [id]
+    );
+    const detailImages = mediaList.map(m => m.media_url);
 
     // 카테고리 이름 조회
     let categoryName = null;
@@ -90,7 +99,7 @@ export async function GET(
         tags: contentData.tags || [],
         visibility_scope: contentData.visibility_scope || ['all'],
         company_codes: contentData.company_codes || [],
-        detail_images: contentData.detail_images || [],
+        detail_images: detailImages,
         is_store_visible: contentData.store_visible,
         category_ids: contentData.category_id ? [contentData.category_id] : [],
         category_names: categoryName ? [categoryName] : [],
@@ -166,17 +175,16 @@ export async function PUT(
     // 컨텐츠 수정
     await query(
       `UPDATE public.contents SET
-        title = $1, content = $2, thumbnail_url = $3, detail_images = $4, category_id = $5,
-        tags = $6, visibility_scope = $7, company_codes = $8,
-        store_visible = $9, start_date = $10, end_date = $11,
-        has_quote = $12, quote_content = $13, quote_source = $14,
-        updated_by = $15, updated_at = NOW()
-       WHERE id = $16`,
+        title = $1, content = $2, thumbnail_url = $3, category_id = $4,
+        tags = $5, visibility_scope = $6, company_codes = $7,
+        store_visible = $8, start_date = $9, end_date = $10,
+        has_quote = $11, quote_content = $12, quote_source = $13,
+        updated_by = $14, updated_at = NOW()
+       WHERE id = $15`,
       [
         title.trim(),
         content || null,
         thumbnail_url || null,
-        detail_images || [],
         categoryId,
         tags || [],
         visibility_scope || ['all'],
@@ -191,6 +199,23 @@ export async function PUT(
         id,
       ]
     );
+
+    // 기존 상세 이미지 삭제 후 새로 등록
+    await query(
+      `DELETE FROM public.content_media WHERE content_id = $1 AND media_type = 'image'`,
+      [id]
+    );
+
+    // 상세 이미지를 content_media 테이블에 저장
+    if (detail_images && detail_images.length > 0) {
+      for (let i = 0; i < detail_images.length; i++) {
+        await query(
+          `INSERT INTO public.content_media (content_id, media_type, media_url, display_order)
+           VALUES ($1, 'image', $2, $3)`,
+          [id, detail_images[i], i + 1]
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -234,6 +259,7 @@ export async function DELETE(
       );
     }
 
+    // content_media는 CASCADE로 자동 삭제됨
     await query(`DELETE FROM public.contents WHERE id = $1`, [id]);
 
     return NextResponse.json({

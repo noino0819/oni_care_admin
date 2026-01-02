@@ -237,16 +237,15 @@ export async function POST(request: NextRequest) {
     // 컨텐츠 등록
     const result = await query<{ id: string }>(
       `INSERT INTO public.contents (
-        title, content, thumbnail_url, detail_images, category_id, tags, visibility_scope, company_codes,
+        title, content, thumbnail_url, category_id, tags, visibility_scope, company_codes,
         store_visible, start_date, end_date, has_quote, quote_content, quote_source,
         created_by, updated_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)
       RETURNING id`,
       [
         title.trim(),
         content || null,
         thumbnail_url || null,
-        detail_images || [],
         categoryId,
         tags || [],
         visibility_scope || ['all'],
@@ -261,9 +260,22 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    const contentId = result[0]?.id;
+
+    // 상세 이미지를 content_media 테이블에 저장
+    if (contentId && detail_images && detail_images.length > 0) {
+      for (let i = 0; i < detail_images.length; i++) {
+        await query(
+          `INSERT INTO public.content_media (content_id, media_type, media_url, display_order)
+           VALUES ($1, 'image', $2, $3)`,
+          [contentId, detail_images[i], i + 1]
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      data: { id: result[0]?.id },
+      data: { id: contentId },
     }, { status: 201 });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

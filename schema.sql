@@ -633,3 +633,26 @@ COMMENT ON TABLE public.content_category_mapping IS '컨텐츠-카테고리 매�
 COMMENT ON COLUMN public.content_category_mapping.content_id IS '컨텐츠 ID (FK)';
 COMMENT ON COLUMN public.content_category_mapping.category_id IS '카테고리 ID (FK)';
 
+-- ============================================
+-- 23. 컨텐츠 미디어 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.content_media (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id UUID REFERENCES public.contents(id) ON DELETE CASCADE,
+  media_type VARCHAR(20) NOT NULL CHECK (media_type IN ('image', 'video', 'thumbnail')),
+  media_url TEXT NOT NULL,
+  display_order INT DEFAULT 0,
+  alt_text VARCHAR(500),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_content_media_content_id ON public.content_media(content_id);
+CREATE INDEX idx_content_media_display_order ON public.content_media(display_order);
+
+COMMENT ON TABLE public.content_media IS '컨텐츠 미디어';
+COMMENT ON COLUMN public.content_media.content_id IS '컨텐츠 ID (FK)';
+COMMENT ON COLUMN public.content_media.media_type IS '미디어 타입 (image, video, thumbnail)';
+COMMENT ON COLUMN public.content_media.media_url IS '미디어 URL';
+COMMENT ON COLUMN public.content_media.display_order IS '표시 순서';
+COMMENT ON COLUMN public.content_media.alt_text IS '대체 텍스트';
+
