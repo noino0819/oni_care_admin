@@ -59,7 +59,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
 
   const isEditing = !!contentId;
 
-  // contentId가 변경되거나 모달이 열릴 때 form 초기화
   useEffect(() => {
     if (!isOpen) return;
     setForm(initialForm);
@@ -68,7 +67,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     setIsCategoryOpen(false);
   }, [contentId, isOpen]);
 
-  // 컨텐츠 데이터가 로드되면 form에 반영
   useEffect(() => {
     if (!isOpen || !isEditing) return;
     
@@ -107,7 +105,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     handleChange('tags', form.tags?.filter(t => t !== tag));
   };
 
-  // 카테고리 토글
   const handleCategoryToggle = (categoryId: number) => {
     const current = form.category_ids || [];
     if (current.includes(categoryId)) {
@@ -121,7 +118,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     }
   };
 
-  // 이미지 업로드 핸들러
   const uploadImage = async (file: File, folder: string): Promise<string | null> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -222,7 +218,6 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     }
   };
 
-  // 선택된 카테고리 이름 가져오기
   const getSelectedCategoryNames = () => {
     if (!categories || !form.category_ids?.length) return [];
     return categories
@@ -231,7 +226,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
   };
 
   const inputClass = 'h-[32px] px-3 border border-gray-300 rounded text-[13px] focus:outline-none focus:border-[#333] bg-white';
-  const labelClass = 'text-[13px] text-[#333] w-[110px] flex-shrink-0 text-right pr-3 whitespace-nowrap';
+  const labelClass = 'text-[13px] text-[#333] w-[100px] flex-shrink-0 text-right pr-3 whitespace-nowrap';
 
   return (
     <>
@@ -239,21 +234,21 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
         isOpen={isOpen}
         onClose={onClose}
         title={isEditing ? '컨텐츠 수정' : '컨텐츠 등록'}
-        size="3xl"
+        size="4xl"
       >
         {isLoadingContent ? (
           <div className="py-12 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C8E600]" />
           </div>
         ) : (
-          <div className="flex gap-5">
-            {/* 좌측: 이미지 영역 */}
-            <div className="w-[200px] flex-shrink-0">
-              {/* 썸네일 이미지 */}
-              <div className="mb-4">
+          <div className="max-h-[75vh] overflow-y-auto">
+            {/* 상단: 썸네일 + 컨텐츠 속성 */}
+            <div className="flex gap-6 mb-6">
+              {/* 좌측: 썸네일 이미지 */}
+              <div className="w-[200px] flex-shrink-0">
                 <h4 className="text-[13px] font-medium text-[#333] mb-2">썸네일 이미지</h4>
                 <div 
-                  className="w-full h-[140px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 overflow-hidden relative"
+                  className="w-full h-[180px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 overflow-hidden relative"
                   onClick={() => thumbnailInputRef.current?.click()}
                 >
                   {form.thumbnail_url ? (
@@ -268,7 +263,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                           e.stopPropagation();
                           handleChange('thumbnail_url', '');
                         }}
-                        className="absolute top-1 right-1 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center hover:bg-red-50"
+                        className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full shadow flex items-center justify-center hover:bg-red-50"
                       >
                         <Trash2 className="w-3 h-3 text-gray-500" />
                       </button>
@@ -286,260 +281,269 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                 </div>
               </div>
 
-              {/* 상세 이미지 */}
-              <div>
-                <h4 className="text-[13px] font-medium text-[#333] mb-2">
-                  상세 이미지 <span className="text-gray-400">({form.detail_images?.length || 0}/10)</span>
-                </h4>
+              {/* 우측: 컨텐츠 속성 */}
+              <div className="flex-1">
+                <h4 className="text-[13px] font-medium text-[#333] mb-2">컨텐츠 속성</h4>
                 
-                <div className="space-y-1 max-h-[280px] overflow-y-auto">
+                <div className="space-y-2">
+                  {/* 컨텐츠 제목 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>컨텐츠 제목</span>
+                    <input
+                      type="text"
+                      value={form.title}
+                      onChange={(e) => handleChange('title', e.target.value)}
+                      className={`${inputClass} flex-1`}
+                      placeholder="최대 20자"
+                      maxLength={20}
+                    />
+                  </div>
+
+                  {/* 컨텐츠 카테고리 */}
+                  <div className="flex items-start">
+                    <span className={labelClass}>컨텐츠 카테고리</span>
+                    <div className="flex-1 relative">
+                      <div 
+                        className={`${inputClass} w-full min-h-[32px] h-auto py-1 cursor-pointer flex items-center justify-between`}
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                      >
+                        <span className={`text-[13px] ${getSelectedCategoryNames().length > 0 ? 'text-[#333]' : 'text-gray-400'}`}>
+                          {getSelectedCategoryNames().length > 0 
+                            ? getSelectedCategoryNames().join(', ')
+                            : '최대 5개 카테고리 선택가능'}
+                        </span>
+                        <svg className={`w-4 h-4 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      
+                      {isCategoryOpen && categories && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 max-h-[200px] overflow-y-auto">
+                          {categories.map((cat: ContentCategory) => (
+                            <label 
+                              key={cat.id} 
+                              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-[13px]"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={form.category_ids?.includes(cat.id) || false}
+                                onChange={() => handleCategoryToggle(cat.id)}
+                                className="w-4 h-4 accent-[#333]"
+                              />
+                              <span>{cat.category_name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 컨텐츠 태그 */}
+                  <div className="flex items-start">
+                    <span className={labelClass}>컨텐츠 태그</span>
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                        className={`${inputClass} w-full`}
+                        placeholder="텍스트 입력 후 엔터로 입력하실 수 있습니다."
+                      />
+                      {form.tags && form.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {form.tags.map((tag, i) => (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[12px] text-[#333]">
+                              {tag}
+                              <button onClick={() => handleRemoveTag(tag)} className="text-gray-400 hover:text-red-500">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 컨텐츠 노출 범위 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>컨텐츠 노출 범위</span>
+                    <div className="flex items-center gap-2">
+                      {VISIBILITY_OPTIONS.map(option => (
+                        <label key={option.value} className="inline-flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.visibility_scope?.includes(option.value) || false}
+                            onChange={(e) => {
+                              const current = form.visibility_scope || [];
+                              if (e.target.checked) {
+                                handleChange('visibility_scope', [...current, option.value]);
+                              } else {
+                                handleChange('visibility_scope', current.filter(v => v !== option.value));
+                              }
+                            }}
+                            className="w-4 h-4 accent-[#333]"
+                          />
+                          <span className="text-[12px] text-[#333]">{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 기업/사업장 코드 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>기업/사업장 코드</span>
+                    <input
+                      type="text"
+                      value={form.company_codes?.join(',') || ''}
+                      onChange={(e) => handleChange('company_codes', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                      className={`${inputClass} flex-1`}
+                    />
+                  </div>
+
+                  {/* 스토어 공개여부 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>스토어 공개여부</span>
+                    <div className="flex items-center gap-3">
+                      <label className="inline-flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.is_store_visible === true}
+                          onChange={() => handleChange('is_store_visible', true)}
+                          className="w-4 h-4 accent-[#333]"
+                        />
+                        <span className="text-[12px] text-[#333]">Y</span>
+                      </label>
+                      <label className="inline-flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.is_store_visible === false}
+                          onChange={() => handleChange('is_store_visible', false)}
+                          className="w-4 h-4 accent-[#333]"
+                        />
+                        <span className="text-[12px] text-[#333]">N</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 컨텐츠 게시기간 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>컨텐츠 게시기간</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={form.start_date}
+                        onChange={(e) => handleChange('start_date', e.target.value)}
+                        className={`${inputClass} w-[130px]`}
+                      />
+                      <span className="text-gray-400">~</span>
+                      <input
+                        type="date"
+                        value={form.end_date}
+                        onChange={(e) => handleChange('end_date', e.target.value)}
+                        className={`${inputClass} w-[130px]`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 명언 내용 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>명언 내용</span>
+                    <input
+                      type="text"
+                      value={form.quote_content}
+                      onChange={(e) => handleChange('quote_content', e.target.value)}
+                      className={`${inputClass} flex-1`}
+                      placeholder="홈화면에 등록될 명언을 입력해주세요."
+                    />
+                  </div>
+
+                  {/* 명언 출처 */}
+                  <div className="flex items-center">
+                    <span className={labelClass}>명언 출처</span>
+                    <input
+                      type="text"
+                      value={form.quote_source}
+                      onChange={(e) => handleChange('quote_source', e.target.value)}
+                      className={`${inputClass} flex-1`}
+                      placeholder="명언의 출처를 입력해주세요."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 하단: 상세 이미지 */}
+            <div>
+              <h4 className="text-[13px] font-medium text-[#333] mb-2">
+                상세 이미지 <span className="text-gray-400">({form.detail_images?.length || 0}/10)</span>
+              </h4>
+              
+              <div className="flex gap-4">
+                {/* 좌측: 상세 이미지 리스트 */}
+                <div className="w-[140px] flex-shrink-0 space-y-2 max-h-[400px] overflow-y-auto">
                   {form.detail_images?.map((img, index) => (
                     <div 
                       key={index}
-                      className={`flex items-center gap-2 p-1 rounded cursor-pointer ${
-                        selectedDetailImage === index ? 'bg-gray-100' : 'hover:bg-gray-50'
+                      className={`relative cursor-pointer rounded overflow-hidden border-2 ${
+                        selectedDetailImage === index ? 'border-blue-500' : 'border-transparent'
                       }`}
                       onClick={() => setSelectedDetailImage(index)}
                     >
-                      <span className="text-[11px] text-gray-400 w-3">{index + 1}</span>
-                      <div className="w-[50px] h-[50px] bg-gray-100 rounded overflow-hidden flex-shrink-0 border border-gray-200">
-                        <img src={img} alt={`상세${index + 1}`} className="w-full h-full object-cover" />
+                      <div className="flex items-start gap-1">
+                        <span className="text-[11px] text-gray-400 pt-1">{index + 1}</span>
+                        <div className="w-[100px] h-[100px] bg-gray-100 rounded overflow-hidden">
+                          <img src={img} alt={`상세${index + 1}`} className="w-full h-full object-cover" />
+                        </div>
                       </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveDetailImage(index);
                         }}
-                        className="ml-auto w-4 h-4 flex items-center justify-center hover:text-red-500 text-gray-400"
+                        className="absolute top-0 right-0 w-5 h-5 bg-white/80 rounded-full flex items-center justify-center hover:bg-red-50"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3 text-gray-500" />
                       </button>
                     </div>
                   ))}
                   
                   {(form.detail_images?.length || 0) < 10 && (
                     <div 
-                      className="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-50"
+                      className="flex items-start gap-1 cursor-pointer"
                       onClick={() => detailInputRef.current?.click()}
                     >
-                      <span className="text-[11px] text-gray-400 w-3">{(form.detail_images?.length || 0) + 1}</span>
-                      <div className="w-[50px] h-[50px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex items-center justify-center">
-                        <Plus className="w-4 h-4 text-gray-400" />
+                      <span className="text-[11px] text-gray-400 pt-1">{(form.detail_images?.length || 0) + 1}</span>
+                      <div className="w-[100px] h-[100px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400">
+                        <Plus className="w-5 h-5 text-gray-400" />
                       </div>
                     </div>
                   )}
-                </div>
-                
-                <input
-                  ref={detailInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleDetailImageUpload}
-                  className="hidden"
-                />
-              </div>
-            </div>
-
-            {/* 중앙: 상세 이미지 미리보기 */}
-            {form.detail_images && form.detail_images.length > 0 && (
-              <div className="w-[280px] flex-shrink-0">
-                <div className="w-full h-[440px] bg-[#f5f5f5] rounded overflow-hidden border border-gray-200">
-                  <img 
-                    src={form.detail_images[selectedDetailImage]} 
-                    alt="상세 이미지" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* 우측: 컨텐츠 속성 */}
-            <div className="flex-1 min-w-[380px]">
-              <h4 className="text-[13px] font-medium text-[#333] mb-3">컨텐츠 속성</h4>
-              
-              <div className="space-y-3">
-                {/* 컨텐츠 제목 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>컨텐츠 제목</span>
+                  
                   <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => handleChange('title', e.target.value)}
-                    className={`${inputClass} flex-1`}
-                    placeholder="최대 20자"
-                    maxLength={20}
+                    ref={detailInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleDetailImageUpload}
+                    className="hidden"
                   />
                 </div>
 
-                {/* 컨텐츠 카테고리 */}
-                <div className="flex items-start">
-                  <span className={labelClass}>컨텐츠 카테고리</span>
-                  <div className="flex-1 relative">
-                    <div 
-                      className={`${inputClass} w-full min-h-[32px] h-auto py-1 cursor-pointer flex items-center justify-between`}
-                      onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                    >
-                      <span className="text-[13px] text-gray-400">
-                        {getSelectedCategoryNames().length > 0 
-                          ? getSelectedCategoryNames().join(', ')
-                          : '최대 5개 카테고리 선택가능'}
-                      </span>
-                      <svg className={`w-4 h-4 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                {/* 우측: 상세 이미지 미리보기 */}
+                <div className="flex-1">
+                  {form.detail_images && form.detail_images.length > 0 ? (
+                    <div className="w-full h-[400px] bg-[#f5f5f5] rounded overflow-hidden border border-gray-200 flex items-center justify-center">
+                      <img 
+                        src={form.detail_images[selectedDetailImage]} 
+                        alt="상세 이미지" 
+                        className="max-w-full max-h-full object-contain"
+                      />
                     </div>
-                    
-                    {isCategoryOpen && categories && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 max-h-[200px] overflow-y-auto">
-                        {categories.map((cat: ContentCategory) => (
-                          <label 
-                            key={cat.id} 
-                            className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-[13px]"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={form.category_ids?.includes(cat.id) || false}
-                              onChange={() => handleCategoryToggle(cat.id)}
-                              className="w-4 h-4 accent-[#333]"
-                            />
-                            <span>{cat.category_name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 컨텐츠 태그 */}
-                <div className="flex items-start">
-                  <span className={labelClass}>컨텐츠 태그</span>
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                      className={`${inputClass} w-full`}
-                      placeholder="텍스트 입력 후"
-                    />
-                    {form.tags && form.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {form.tags.map((tag, i) => (
-                          <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-[12px] text-[#333]">
-                            {tag}
-                            <button onClick={() => handleRemoveTag(tag)} className="text-gray-400 hover:text-red-500">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* 컨텐츠 노출 범위 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>컨텐츠 노출 범위</span>
-                  <div className="flex items-center gap-3">
-                    {VISIBILITY_OPTIONS.map(option => (
-                      <label key={option.value} className="inline-flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.visibility_scope?.includes(option.value) || false}
-                          onChange={(e) => {
-                            const current = form.visibility_scope || [];
-                            if (e.target.checked) {
-                              handleChange('visibility_scope', [...current, option.value]);
-                            } else {
-                              handleChange('visibility_scope', current.filter(v => v !== option.value));
-                            }
-                          }}
-                          className="w-4 h-4 accent-[#333]"
-                        />
-                        <span className="text-[12px] text-[#333]">{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 기업/사업장 코드 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>기업/사업장 코드</span>
-                  <input
-                    type="text"
-                    value={form.company_codes?.join(',') || ''}
-                    onChange={(e) => handleChange('company_codes', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                    className={`${inputClass} flex-1`}
-                  />
-                </div>
-
-                {/* 스토어 공개여부 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>스토어 공개여부</span>
-                  <div className="flex items-center gap-3">
-                    <label className="inline-flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={form.is_store_visible === true}
-                        onChange={() => handleChange('is_store_visible', true)}
-                        className="w-4 h-4 accent-[#333]"
-                      />
-                      <span className="text-[12px] text-[#333]">Y</span>
-                    </label>
-                    <label className="inline-flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={form.is_store_visible === false}
-                        onChange={() => handleChange('is_store_visible', false)}
-                        className="w-4 h-4 accent-[#333]"
-                      />
-                      <span className="text-[12px] text-[#333]">N</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* 컨텐츠 게시기간 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>게시기간</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={form.start_date}
-                      onChange={(e) => handleChange('start_date', e.target.value)}
-                      className={`${inputClass} w-[130px]`}
-                    />
-                    <span className="text-gray-400">~</span>
-                    <input
-                      type="date"
-                      value={form.end_date}
-                      onChange={(e) => handleChange('end_date', e.target.value)}
-                      className={`${inputClass} w-[130px]`}
-                    />
-                  </div>
-                </div>
-
-                {/* 명언 내용 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>명언 내용</span>
-                  <input
-                    type="text"
-                    value={form.quote_content}
-                    onChange={(e) => handleChange('quote_content', e.target.value)}
-                    className={`${inputClass} flex-1`}
-                    placeholder="홈화면에 등록될 명언을 입력해주세요."
-                  />
-                </div>
-
-                {/* 명언 출처 */}
-                <div className="flex items-center">
-                  <span className={labelClass}>명언 출처</span>
-                  <input
-                    type="text"
-                    value={form.quote_source}
-                    onChange={(e) => handleChange('quote_source', e.target.value)}
-                    className={`${inputClass} flex-1`}
-                    placeholder="명언의 출처를 입력해주세요."
-                  />
+                  ) : (
+                    <div className="w-full h-[400px] bg-[#f5f5f5] rounded border border-dashed border-gray-300 flex items-center justify-center">
+                      <span className="text-gray-400 text-[13px]">상세 이미지를 추가해주세요</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -551,7 +555,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
           <Button 
             variant="secondary" 
             onClick={onClose} 
-            className="min-w-[100px] bg-[#666] text-white hover:bg-[#555]"
+            className="min-w-[100px] bg-[#888] text-white hover:bg-[#777]"
           >
             취소하기
           </Button>
