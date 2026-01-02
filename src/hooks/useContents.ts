@@ -76,7 +76,10 @@ interface ContentDetailResponse {
 
 interface ContentCategoryResponse {
   success: boolean;
-  data: ContentCategory[];
+  data: {
+    categories: ContentCategory[];
+    subcategories: unknown[];
+  };
 }
 
 // 컨텐츠 목록 조회 훅
@@ -125,7 +128,7 @@ export function useContents(
   return {
     contents: data?.data || [],
     pagination: data?.pagination || null,
-    categories: categoriesData?.data || [],
+    categories: categoriesData?.data?.categories || [],
     isLoading,
     error,
     refetch: mutate,
@@ -162,7 +165,7 @@ export function useContentCategories() {
   );
 
   return {
-    categories: data?.data || [],
+    categories: data?.data?.categories || [],
     isLoading,
     error,
     refetch: mutate,
