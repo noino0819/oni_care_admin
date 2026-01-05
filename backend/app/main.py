@@ -23,6 +23,15 @@ from app.routers import (
     roles_router,
     menus_router,
     companies_router,
+    security_groups_router,
+    logs_router,
+    content_categories_router,
+    common_codes_router,
+    system_settings_router,
+    notices_router,
+    store_customers_router,
+    members_router,
+    greating_x_router,
 )
 
 
@@ -140,6 +149,15 @@ app.include_router(contents_router)
 app.include_router(roles_router)
 app.include_router(menus_router)
 app.include_router(companies_router)
+app.include_router(security_groups_router)
+app.include_router(logs_router)
+app.include_router(content_categories_router)
+app.include_router(common_codes_router)
+app.include_router(system_settings_router)
+app.include_router(notices_router)
+app.include_router(store_customers_router)
+app.include_router(members_router)
+app.include_router(greating_x_router)
 
 
 # 개발용 실행
