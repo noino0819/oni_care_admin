@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/v1/admin/content-categories", tags=["Content Cat
 async def get_content_categories(
     category_name: Optional[str] = Query(None, description="카테고리명"),
     is_active: Optional[str] = Query(None, description="활성 여부 (Y/N)"),
-    parent_id: Optional[int] = Query(None, description="상위 카테고리 ID (null이면 대분류만)"),
+    parent_id: Optional[str] = Query(None, description="상위 카테고리 ID ('null'이면 대분류만, 숫자면 해당 대분류의 중분류)"),
     include_children: bool = Query(False, description="하위 카테고리 포함 여부"),
     page: int = Query(1, ge=1, description="페이지"),
     page_size: int = Query(100, ge=1, le=500, description="페이지 크기"),
@@ -27,19 +27,23 @@ async def get_content_categories(
 ):
     """
     컨텐츠 카테고리 목록 조회 (계층 구조)
-    - parent_id가 없으면 대분류만 조회
-    - parent_id가 있으면 해당 대분류의 중분류 조회
+    - parent_id 파라미터 없음: 모든 카테고리 조회
+    - parent_id='null': 대분류만 조회 (parent_id IS NULL)
+    - parent_id=숫자: 해당 대분류의 중분류 조회
     """
     try:
         conditions = []
         params = {}
         
         # parent_id 필터
-        if parent_id is not None:
-            conditions.append("parent_id = %(parent_id)s")
-            params["parent_id"] = parent_id
-        else:
+        if parent_id == 'null':
+            # 대분류만 조회
             conditions.append("parent_id IS NULL")
+        elif parent_id is not None and parent_id.isdigit():
+            # 특정 대분류의 중분류 조회
+            conditions.append("parent_id = %(parent_id)s")
+            params["parent_id"] = int(parent_id)
+        # parent_id가 없으면 모든 카테고리 조회
         
         if category_name:
             conditions.append("category_name ILIKE %(category_name)s")
@@ -115,6 +119,9 @@ async def get_categories_simple_list(
     """
     카테고리 간단 목록 (Select용) - 계층 구조
     대분류와 각 대분류에 속한 중분류를 함께 반환
+    
+    마이그레이션 전: category_type별로 그룹화하여 반환
+    마이그레이션 후: parent_id 기반 계층 구조로 반환
     """
     try:
         # 대분류 조회 (parent_id IS NULL)
@@ -127,20 +134,57 @@ async def get_categories_simple_list(
             """
         )
         
-        # 각 대분류의 중분류 조회
-        for cat in main_categories:
-            children = await query(
-                """
-                SELECT id, category_type, category_name, parent_id, display_order
-                FROM public.content_categories
-                WHERE is_active = true AND parent_id = %(parent_id)s
-                ORDER BY display_order, id
-                """,
-                {"parent_id": cat["id"]}
-            )
-            cat["children"] = children
+        # 대분류가 있으면 계층 구조로 반환
+        if main_categories:
+            for cat in main_categories:
+                children = await query(
+                    """
+                    SELECT id, category_type, category_name, parent_id, display_order
+                    FROM public.content_categories
+                    WHERE is_active = true AND parent_id = %(parent_id)s
+                    ORDER BY display_order, id
+                    """,
+                    {"parent_id": cat["id"]}
+                )
+                cat["children"] = children
+            
+            return {"success": True, "data": main_categories}
         
-        return {"success": True, "data": main_categories}
+        # 대분류가 없으면 (마이그레이션 전) category_type별로 그룹화
+        all_categories = await query(
+            """
+            SELECT id, COALESCE(category_type, 'interest') as category_type, 
+                   category_name, display_order
+            FROM public.content_categories
+            WHERE is_active = true
+            ORDER BY category_type, display_order, id
+            """
+        )
+        
+        # category_type별로 그룹화하여 가상 대분류 생성
+        type_labels = {
+            'interest': '관심사',
+            'disease': '질병', 
+            'exercise': '운동',
+            '관심사': '관심사',
+            '질병': '질병',
+            '운동': '운동'
+        }
+        
+        grouped = {}
+        for cat in all_categories:
+            cat_type = cat.get('category_type', 'interest')
+            if cat_type not in grouped:
+                grouped[cat_type] = {
+                    'id': 0,  # 가상 ID
+                    'category_type': cat_type,
+                    'category_name': type_labels.get(cat_type, cat_type),
+                    'display_order': len(grouped),
+                    'children': []
+                }
+            grouped[cat_type]['children'].append(cat)
+        
+        return {"success": True, "data": list(grouped.values())}
     except Exception as e:
         logger.error(f"카테고리 목록 조회 오류: {str(e)}", exc_info=True)
         raise HTTPException(

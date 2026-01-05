@@ -50,6 +50,7 @@ export default function CategoriesPage() {
   // 대분류 조회 (parent_id IS NULL)
   const buildMainQuery = () => {
     const params = new URLSearchParams();
+    params.set("parent_id", "null");  // 대분류만 조회
     if (filters.category_name) params.set("category_name", filters.category_name);
     if (filters.is_active === "true") params.set("is_active", "Y");
     else if (filters.is_active === "false") params.set("is_active", "N");
