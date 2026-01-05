@@ -27,6 +27,7 @@ function filtersToQuery(
   
   if (filters.title) params.append('title', filters.title);
   if (filters.category_id) params.append('category_id', String(filters.category_id));
+  if (filters.category_ids?.length) params.append('category_ids', filters.category_ids.join(','));
   if (filters.tag) params.append('tag', filters.tag);
   if (filters.visibility_scope?.length) params.append('visibility_scope', filters.visibility_scope.join(','));
   if (filters.company_code) params.append('company_code', filters.company_code);

@@ -697,6 +697,7 @@ export interface ContentForm {
 export interface ContentSearchFilters {
   title?: string;
   category_id?: number;
+  category_ids?: number[];  // 다중 카테고리 선택
   tag?: string;
   visibility_scope?: string[];
   company_code?: string;

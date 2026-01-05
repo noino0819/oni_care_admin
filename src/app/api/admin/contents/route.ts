@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
     // 필터 조건
     const title = searchParams.get('title');
     const categoryId = searchParams.get('category_id');
+    const categoryIds = searchParams.get('category_ids')?.split(',').filter(Boolean).map(Number);
     const tag = searchParams.get('tag');
     const visibilityScope = searchParams.get('visibility_scope')?.split(',').filter(Boolean);
     const companyCode = searchParams.get('company_code');
@@ -62,6 +63,13 @@ export async function GET(request: NextRequest) {
     if (categoryId) {
       conditions.push(`c.category_id = $${paramIndex}`);
       params.push(parseInt(categoryId));
+      paramIndex++;
+    }
+
+    // 다중 카테고리 선택 (category_ids)
+    if (categoryIds && categoryIds.length > 0) {
+      conditions.push(`c.category_id = ANY($${paramIndex}::int[])`);
+      params.push(`{${categoryIds.join(',')}}`);
       paramIndex++;
     }
 

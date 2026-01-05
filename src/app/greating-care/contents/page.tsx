@@ -74,11 +74,13 @@ export default function ContentsPage() {
   // 카테고리 체크박스 토글
   const handleCategoryCheck = (categoryId: number) => {
     setSelectedCategoryIds(prev => {
-      if (prev.includes(categoryId)) {
-        return prev.filter(id => id !== categoryId);
-      } else {
-        return [...prev, categoryId];
-      }
+      const newIds = prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId];
+      
+      // filters에도 반영
+      setFilters(f => ({ ...f, category_ids: newIds.length > 0 ? newIds : undefined }));
+      return newIds;
     });
   };
 
@@ -102,6 +104,7 @@ export default function ContentsPage() {
     setFilters({
       title: '',
       category_id: undefined,
+      category_ids: undefined,
       tag: '',
       visibility_scope: [],
       company_code: '',
@@ -111,6 +114,7 @@ export default function ContentsPage() {
       start_to: '',
       has_quote: '',
     });
+    setSelectedCategoryIds([]);  // 카테고리 선택도 초기화
     setSort({ field: 'updated_at', direction: 'desc' });
     setPage(1);
   };
