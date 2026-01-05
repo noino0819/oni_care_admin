@@ -271,9 +271,12 @@ NODE_ENV=development
 ### oni_care
 
 ```env
-# Supabase (미사용, 레거시)
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# Database (PostgreSQL - Docker)
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=oni_care_app
+DB_USER=postgres
+DB_PASSWORD=your-password
 
 # API
 NEXT_PUBLIC_API_URL=http://localhost:3000
