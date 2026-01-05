@@ -267,7 +267,7 @@ async def revoke_point_transaction(
         await execute_returning(
             """
             UPDATE point_history 
-            SET is_revoked = true, updated_at = NOW()
+            SET is_revoked = true
             WHERE id = %(history_id)s
             RETURNING id
             """,
