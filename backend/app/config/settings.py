@@ -10,6 +10,8 @@ import os
 
 # 프로젝트 루트 디렉토리 (backend의 상위)
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+# oni_care 앱 백엔드 디렉토리 (Redis 등 공유 설정)
+ONI_CARE_BACKEND = Path(__file__).parent.parent.parent.parent.parent / "oni_care" / "backend"
 
 
 class Settings(BaseSettings):
@@ -93,11 +95,13 @@ class Settings(BaseSettings):
         return f"postgresql://{self.app_db_user}:{self.app_db_password}@{self.app_db_host}:{self.app_db_port}/{self.app_db_name}"
     
     class Config:
-        # 프로젝트 루트의 .env.local과 backend/.env 모두 읽기
+        # 여러 .env 파일 읽기 (우선순위: 나중에 나온 것이 높음)
+        # oni_care의 공유 설정(Redis 등)을 먼저 읽고, Admin 설정으로 덮어씀
         env_file = (
-            str(PROJECT_ROOT / ".env.local"),
-            str(PROJECT_ROOT / ".env"),
+            str(ONI_CARE_BACKEND / ".env"),  # 공유 설정 (Redis, DB 등) - 낮은 우선순위
             ".env",
+            str(PROJECT_ROOT / ".env"),
+            str(PROJECT_ROOT / ".env.local"),  # Admin 전용 설정 - 높은 우선순위
         )
         env_file_encoding = "utf-8"
         extra = "ignore"
