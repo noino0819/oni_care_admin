@@ -60,16 +60,16 @@ cp .env.example .env
 
 ```bash
 # 개발 모드
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 # 프로덕션 모드
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --workers 4
 ```
 
 ## API 문서
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8001/docs
+- ReDoc: http://localhost:8001/redoc
 
 ## 환경변수
 
@@ -79,7 +79,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 | APP_ENV | 실행 환경 | development |
 | DEBUG | 디버그 모드 | true |
 | HOST | 서버 호스트 | 0.0.0.0 |
-| PORT | 서버 포트 | 8000 |
+| PORT | 서버 포트 | 8001 |
 | DB_HOST | Admin DB 호스트 | localhost |
 | DB_PORT | Admin DB 포트 | 5432 |
 | DB_NAME | Admin DB 이름 | oni_care_admin |

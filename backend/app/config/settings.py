@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # 서버 설정
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8001  # Admin Backend (App Backend는 8000)
     
     # Admin DB 설정
     DB_HOST: str = "localhost"
