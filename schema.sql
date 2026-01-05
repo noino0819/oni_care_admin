@@ -507,9 +507,9 @@ COMMENT ON COLUMN public.greating_x_admin_users.updated_by IS '변경자';
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.content_categories (
   id SERIAL PRIMARY KEY,
-  category_type VARCHAR(50) NOT NULL DEFAULT '관심사',  -- '관심사', '질병', '운동'
+  category_type VARCHAR(50) NOT NULL DEFAULT 'interest',  -- 'interest', 'disease', 'exercise'
   category_name VARCHAR(100) NOT NULL,
-  subcategory_types VARCHAR(200),
+  parent_id INTEGER REFERENCES public.content_categories(id) ON DELETE CASCADE,  -- NULL이면 대분류, 있으면 중분류
   description TEXT,
   display_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
@@ -518,6 +518,7 @@ CREATE TABLE IF NOT EXISTS public.content_categories (
 );
 
 CREATE INDEX idx_content_categories_category_type ON public.content_categories(category_type);
+CREATE INDEX idx_content_categories_parent_id ON public.content_categories(parent_id);
 CREATE INDEX idx_content_categories_display_order ON public.content_categories(display_order);
 CREATE INDEX idx_content_categories_is_active ON public.content_categories(is_active);
 

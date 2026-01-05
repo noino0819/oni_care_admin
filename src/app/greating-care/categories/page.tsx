@@ -1,19 +1,31 @@
 "use client";
 
 // ============================================
-// 컨텐츠 카테고리 관리 페이지 - 기획서 반영
+// 컨텐츠 카테고리 관리 페이지 - 계층 구조 (parent_id 기반)
 // ============================================
 
 import { useState, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout";
 import { Button, DataTable, AlertModal, ConfirmModal, Checkbox } from "@/components/common";
 import { CategoryFormModal } from "./CategoryFormModal";
-import { SubcategoryFormModal } from "./SubcategoryFormModal";
 import { cn } from "@/lib/utils";
 import { RefreshCw, Plus, Trash2, Edit } from "lucide-react";
 import useSWR from "swr";
 import { swrFetcher, apiClient } from "@/lib/api-client";
-import type { SortConfig, TableColumn, ContentCategory, ContentSubcategory, CategorySearchFilters } from "@/types";
+import type { SortConfig, TableColumn, CategorySearchFilters } from "@/types";
+
+// 카테고리 타입 (대분류, 중분류 공용)
+interface Category {
+  id: number;
+  category_type: string;
+  category_name: string;
+  parent_id: number | null;
+  parent_name?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  children?: Category[];
+}
 
 export default function CategoriesPage() {
   const [filters, setFilters] = useState<CategorySearchFilters>({
@@ -26,37 +38,49 @@ export default function CategoriesPage() {
   const [subSort, setSubSort] = useState<SortConfig>({ field: "display_order", direction: "asc" });
   const [selectedMainIds, setSelectedMainIds] = useState<number[]>([]);
   const [selectedSubIds, setSelectedSubIds] = useState<number[]>([]);
+  const [selectedMainCategory, setSelectedMainCategory] = useState<Category | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<ContentCategory | null>(null);
-  const [editingSubcategory, setEditingSubcategory] = useState<ContentSubcategory | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<Category | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [confirmDeleteMain, setConfirmDeleteMain] = useState(false);
   const [confirmDeleteSub, setConfirmDeleteSub] = useState(false);
 
+  // 대분류 조회 (parent_id IS NULL)
   const buildMainQuery = () => {
     const params = new URLSearchParams();
     if (filters.category_name) params.set("category_name", filters.category_name);
-    if (filters.is_active) params.set("is_active", filters.is_active);
+    if (filters.is_active === "true") params.set("is_active", "Y");
+    else if (filters.is_active === "false") params.set("is_active", "N");
     return params.toString();
   };
 
+  // 중분류 조회 (선택된 대분류의 하위)
   const buildSubQuery = () => {
     const params = new URLSearchParams();
-    if (filters.subcategory_name) params.set("subcategory_name", filters.subcategory_name);
-    if (filters.is_active) params.set("is_active", filters.is_active);
+    if (selectedMainCategory) {
+      params.set("parent_id", String(selectedMainCategory.id));
+    }
+    if (filters.subcategory_name) params.set("category_name", filters.subcategory_name);
+    if (filters.is_active === "true") params.set("is_active", "Y");
+    else if (filters.is_active === "false") params.set("is_active", "N");
     return params.toString();
   };
 
   const { data: categoriesData, mutate: mutateCategories } = useSWR<{
     success: boolean;
-    data: ContentCategory[];
+    data: Category[];
   }>(`/admin/content-categories?${buildMainQuery()}`, swrFetcher, { revalidateOnFocus: false });
 
   const { data: subcategoriesData, mutate: mutateSubcategories } = useSWR<{
     success: boolean;
-    data: ContentSubcategory[];
-  }>(`/admin/content-subcategories?${buildSubQuery()}`, swrFetcher, { revalidateOnFocus: false });
+    data: Category[];
+  }>(
+    selectedMainCategory ? `/admin/content-categories?${buildSubQuery()}` : null,
+    swrFetcher,
+    { revalidateOnFocus: false }
+  );
 
   const categories = categoriesData?.data || [];
   const subcategories = subcategoriesData?.data || [];
@@ -67,15 +91,17 @@ export default function CategoriesPage() {
 
   const handleSearch = () => {
     mutateCategories();
-    mutateSubcategories();
+    if (selectedMainCategory) {
+      mutateSubcategories();
+    }
   };
 
   const handleRefresh = () => {
     setFilters({ category_name: "", subcategory_name: "", is_active: "" });
     setSelectedMainIds([]);
     setSelectedSubIds([]);
+    setSelectedMainCategory(null);
     mutateCategories();
-    mutateSubcategories();
   };
 
   const handleMainSort = useCallback((field: string) => {
@@ -112,17 +138,26 @@ export default function CategoriesPage() {
     setSelectedSubIds((prev) => (checked ? [...prev, id] : prev.filter((v) => v !== id)));
   };
 
+  // 대분류 행 클릭 - 해당 대분류의 중분류 조회
+  const handleMainRowClick = (category: Category) => {
+    setSelectedMainCategory(category);
+    setSelectedSubIds([]);
+  };
+
   // 대분류 삭제
   const handleDeleteMain = async () => {
     if (selectedMainIds.length === 0) return;
 
     try {
-      await apiClient.delete("/admin/content-categories/batch-delete", { ids: selectedMainIds });
+      // 각 카테고리 개별 삭제
+      for (const id of selectedMainIds) {
+        await apiClient.delete(`/admin/content-categories/${id}`);
+      }
 
       setAlertMessage("대분류가 삭제되었습니다.");
       setSelectedMainIds([]);
+      setSelectedMainCategory(null);
       mutateCategories();
-      mutateSubcategories();
     } catch (error) {
       setAlertMessage(error instanceof Error ? error.message : "삭제에 실패했습니다.");
     } finally {
@@ -135,7 +170,10 @@ export default function CategoriesPage() {
     if (selectedSubIds.length === 0) return;
 
     try {
-      await apiClient.delete("/admin/content-subcategories/batch-delete", { ids: selectedSubIds });
+      // 각 카테고리 개별 삭제
+      for (const id of selectedSubIds) {
+        await apiClient.delete(`/admin/content-categories/${id}`);
+      }
 
       setAlertMessage("중분류가 삭제되었습니다.");
       setSelectedSubIds([]);
@@ -147,8 +185,18 @@ export default function CategoriesPage() {
     }
   };
 
+  // 카테고리 타입 한글 변환
+  const getCategoryTypeLabel = (type: string) => {
+    switch (type) {
+      case "interest": return "관심사";
+      case "disease": return "질병";
+      case "exercise": return "운동";
+      default: return type;
+    }
+  };
+
   // 대분류 컬럼
-  const mainColumns: TableColumn<ContentCategory>[] = useMemo(
+  const mainColumns: TableColumn<Category>[] = useMemo(
     () => [
       {
         key: "checkbox",
@@ -174,6 +222,12 @@ export default function CategoriesPage() {
         sortable: true,
       },
       {
+        key: "category_type",
+        label: "분류유형",
+        sortable: true,
+        render: (value) => getCategoryTypeLabel(value as string),
+      },
+      {
         key: "display_order",
         label: "정렬순서",
         sortable: true,
@@ -189,12 +243,6 @@ export default function CategoriesPage() {
             {value ? "Y" : "N"}
           </span>
         ),
-      },
-      {
-        key: "subcategory_types",
-        label: "세분류 종류",
-        sortable: false,
-        render: (value) => (value as string) || "-",
       },
       {
         key: "id",
@@ -221,7 +269,7 @@ export default function CategoriesPage() {
   );
 
   // 중분류 컬럼
-  const subColumns: TableColumn<ContentSubcategory>[] = useMemo(
+  const subColumns: TableColumn<Category>[] = useMemo(
     () => [
       {
         key: "checkbox",
@@ -243,11 +291,6 @@ export default function CategoriesPage() {
       },
       {
         key: "category_name",
-        label: "대분류명",
-        sortable: true,
-      },
-      {
-        key: "subcategory_name",
         label: "중분류명",
         sortable: true,
       },
@@ -372,6 +415,7 @@ export default function CategoriesPage() {
               totalCount={categories.length}
               sorting={mainSort}
               onSort={handleMainSort}
+              onRowClick={handleMainRowClick}
               isLoading={false}
               emptyMessage="대분류가 없습니다."
               getRowKey={(row) => String(row.id)}
@@ -418,9 +462,9 @@ export default function CategoriesPage() {
               sorting={subSort}
               onSort={handleSubSort}
               isLoading={false}
-              emptyMessage="중분류가 없습니다."
+              emptyMessage={selectedMainCategory ? "중분류가 없습니다." : "대분류를 선택해주세요."}
               getRowKey={(row) => String(row.id)}
-              title="중분류 리스트"
+              title={selectedMainCategory ? `중분류 리스트 (${selectedMainCategory.category_name})` : "중분류 리스트"}
               headerAction={
                 <div className="flex gap-2">
                   <Button
@@ -434,6 +478,7 @@ export default function CategoriesPage() {
                       setConfirmDeleteSub(true);
                     }}
                     className="flex items-center gap-1"
+                    disabled={!selectedMainCategory}
                   >
                     <Trash2 className="w-3 h-3" />
                     삭제
@@ -441,10 +486,15 @@ export default function CategoriesPage() {
                   <Button
                     size="sm"
                     onClick={() => {
+                      if (!selectedMainCategory) {
+                        setAlertMessage("대분류를 먼저 선택해주세요.");
+                        return;
+                      }
                       setEditingSubcategory(null);
                       setIsSubcategoryModalOpen(true);
                     }}
                     className="flex items-center gap-1"
+                    disabled={!selectedMainCategory}
                   >
                     <Plus className="w-3 h-3" />
                     추가
@@ -460,6 +510,7 @@ export default function CategoriesPage() {
       <CategoryFormModal
         isOpen={isCategoryModalOpen}
         category={editingCategory}
+        parentId={null}
         onClose={() => {
           setIsCategoryModalOpen(false);
           setEditingCategory(null);
@@ -472,10 +523,11 @@ export default function CategoriesPage() {
       />
 
       {/* 중분류 등록/수정 모달 */}
-      <SubcategoryFormModal
+      <CategoryFormModal
         isOpen={isSubcategoryModalOpen}
-        subcategory={editingSubcategory}
-        categories={categories}
+        category={editingSubcategory}
+        parentId={selectedMainCategory?.id || null}
+        parentName={selectedMainCategory?.category_name}
         onClose={() => {
           setIsSubcategoryModalOpen(false);
           setEditingSubcategory(null);
@@ -509,5 +561,3 @@ export default function CategoriesPage() {
     </AdminLayout>
   );
 }
-
-

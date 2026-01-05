@@ -19,16 +19,27 @@ router = APIRouter(prefix="/api/v1/admin/content-categories", tags=["Content Cat
 async def get_content_categories(
     category_name: Optional[str] = Query(None, description="카테고리명"),
     is_active: Optional[str] = Query(None, description="활성 여부 (Y/N)"),
+    parent_id: Optional[int] = Query(None, description="상위 카테고리 ID (null이면 대분류만)"),
+    include_children: bool = Query(False, description="하위 카테고리 포함 여부"),
     page: int = Query(1, ge=1, description="페이지"),
     page_size: int = Query(100, ge=1, le=500, description="페이지 크기"),
     current_user=Depends(get_current_user)
 ):
     """
-    컨텐츠 대분류 목록 조회
+    컨텐츠 카테고리 목록 조회 (계층 구조)
+    - parent_id가 없으면 대분류만 조회
+    - parent_id가 있으면 해당 대분류의 중분류 조회
     """
     try:
         conditions = []
         params = {}
+        
+        # parent_id 필터
+        if parent_id is not None:
+            conditions.append("parent_id = %(parent_id)s")
+            params["parent_id"] = parent_id
+        else:
+            conditions.append("parent_id IS NULL")
         
         if category_name:
             conditions.append("category_name ILIKE %(category_name)s")
@@ -46,23 +57,38 @@ async def get_content_categories(
         count_result = await query_one(count_sql, params)
         total = int(count_result.get("count", 0)) if count_result else 0
         
-        # 대분류 목록 조회
+        # 카테고리 목록 조회
         offset = (page - 1) * page_size
         params["limit"] = page_size
         params["offset"] = offset
         
         categories = await query(
             f"""
-            SELECT id, COALESCE(category_type, '관심사') as category_type, category_name,
-                   subcategory_types, COALESCE(display_order, 0) as display_order,
+            SELECT id, COALESCE(category_type, 'interest') as category_type, category_name,
+                   parent_id, COALESCE(display_order, 0) as display_order,
                    is_active, created_at
             FROM public.content_categories
             {where_clause}
-            ORDER BY category_type, display_order, id ASC
+            ORDER BY display_order, id ASC
             LIMIT %(limit)s OFFSET %(offset)s
             """,
             params
         )
+        
+        # 하위 카테고리 포함 옵션
+        if include_children and parent_id is None:
+            for cat in categories:
+                children = await query(
+                    """
+                    SELECT id, category_type, category_name, parent_id, 
+                           COALESCE(display_order, 0) as display_order, is_active, created_at
+                    FROM public.content_categories
+                    WHERE parent_id = %(parent_id)s
+                    ORDER BY display_order, id ASC
+                    """,
+                    {"parent_id": cat["id"]}
+                )
+                cat["children"] = children
         
         return {
             "success": True,
@@ -87,21 +113,65 @@ async def get_categories_simple_list(
     current_user=Depends(get_current_user)
 ):
     """
-    카테고리 간단 목록 (Select용)
+    카테고리 간단 목록 (Select용) - 계층 구조
+    대분류와 각 대분류에 속한 중분류를 함께 반환
     """
     try:
-        categories = await query(
+        # 대분류 조회 (parent_id IS NULL)
+        main_categories = await query(
             """
             SELECT id, category_type, category_name, display_order
             FROM public.content_categories
-            WHERE is_active = true
-            ORDER BY category_type, display_order, id
+            WHERE is_active = true AND parent_id IS NULL
+            ORDER BY display_order, id
+            """
+        )
+        
+        # 각 대분류의 중분류 조회
+        for cat in main_categories:
+            children = await query(
+                """
+                SELECT id, category_type, category_name, parent_id, display_order
+                FROM public.content_categories
+                WHERE is_active = true AND parent_id = %(parent_id)s
+                ORDER BY display_order, id
+                """,
+                {"parent_id": cat["id"]}
+            )
+            cat["children"] = children
+        
+        return {"success": True, "data": main_categories}
+    except Exception as e:
+        logger.error(f"카테고리 목록 조회 오류: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
+        )
+
+
+@router.get("/flat")
+async def get_categories_flat_list(
+    current_user=Depends(get_current_user)
+):
+    """
+    카테고리 플랫 목록 (중분류만, 컨텐츠 등록용)
+    """
+    try:
+        # 중분류만 조회 (parent_id IS NOT NULL)
+        categories = await query(
+            """
+            SELECT c.id, c.category_type, c.category_name, c.parent_id, c.display_order,
+                   p.category_name as parent_name
+            FROM public.content_categories c
+            LEFT JOIN public.content_categories p ON c.parent_id = p.id
+            WHERE c.is_active = true AND c.parent_id IS NOT NULL
+            ORDER BY p.display_order, c.display_order, c.id
             """
         )
         
         return {"success": True, "data": categories}
     except Exception as e:
-        logger.error(f"카테고리 목록 조회 오류: {str(e)}", exc_info=True)
+        logger.error(f"카테고리 플랫 목록 조회 오류: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
@@ -156,12 +226,14 @@ async def create_content_category(
     current_user=Depends(get_current_user)
 ):
     """
-    컨텐츠 대분류 등록
+    컨텐츠 카테고리 등록 (대분류/중분류)
+    - parent_id가 없으면 대분류
+    - parent_id가 있으면 해당 대분류의 중분류
     """
     try:
-        category_type = body.get("category_type", "관심사")
+        category_type = body.get("category_type", "interest")
         category_name = body.get("category_name")
-        subcategory_types = body.get("subcategory_types")
+        parent_id = body.get("parent_id")  # 상위 카테고리 ID
         display_order = body.get("display_order", 0)
         is_active = body.get("is_active", True)
         
@@ -171,16 +243,25 @@ async def create_content_category(
                 detail={"error": "VALIDATION_ERROR", "message": "카테고리 이름을 입력해주세요."}
             )
         
+        # parent_id가 있으면 상위 카테고리의 category_type 상속
+        if parent_id:
+            parent = await query_one(
+                "SELECT category_type FROM public.content_categories WHERE id = %(parent_id)s",
+                {"parent_id": parent_id}
+            )
+            if parent:
+                category_type = parent.get("category_type", category_type)
+        
         result = await execute_returning(
             """
-            INSERT INTO public.content_categories (category_type, category_name, subcategory_types, display_order, is_active)
-            VALUES (%(category_type)s, %(category_name)s, %(subcategory_types)s, %(display_order)s, %(is_active)s)
+            INSERT INTO public.content_categories (category_type, category_name, parent_id, display_order, is_active)
+            VALUES (%(category_type)s, %(category_name)s, %(parent_id)s, %(display_order)s, %(is_active)s)
             RETURNING id
             """,
             {
                 "category_type": category_type,
                 "category_name": category_name.strip(),
-                "subcategory_types": subcategory_types,
+                "parent_id": parent_id,
                 "display_order": display_order,
                 "is_active": is_active
             }
@@ -204,7 +285,7 @@ async def update_content_category(
     current_user=Depends(get_current_user)
 ):
     """
-    컨텐츠 대분류 수정
+    컨텐츠 카테고리 수정
     """
     try:
         update_fields = []
@@ -218,9 +299,9 @@ async def update_content_category(
             update_fields.append("category_name = %(category_name)s")
             params["category_name"] = body["category_name"]
         
-        if "subcategory_types" in body:
-            update_fields.append("subcategory_types = %(subcategory_types)s")
-            params["subcategory_types"] = body["subcategory_types"]
+        if "parent_id" in body:
+            update_fields.append("parent_id = %(parent_id)s")
+            params["parent_id"] = body["parent_id"]
         
         if "display_order" in body:
             update_fields.append("display_order = %(display_order)s")

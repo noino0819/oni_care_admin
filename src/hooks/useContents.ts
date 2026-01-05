@@ -62,12 +62,19 @@ interface ContentDetailResponse {
   data: ContentDetail;
 }
 
+// 계층 구조 카테고리 타입
+interface HierarchicalCategory {
+  id: number;
+  category_type: string;
+  category_name: string;
+  parent_id: number | null;
+  display_order: number;
+  children?: HierarchicalCategory[];
+}
+
 interface ContentCategoryResponse {
   success: boolean;
-  data: {
-    categories: ContentCategory[];
-    subcategories: unknown[];
-  };
+  data: HierarchicalCategory[];
 }
 
 // 컨텐츠 목록 조회 훅
@@ -86,9 +93,9 @@ export function useContents(
     }
   );
 
-  // 카테고리 목록도 함께 로드
+  // 카테고리 목록도 함께 로드 (계층 구조)
   const { data: categoriesData } = useSWR<ContentCategoryResponse>(
-    '/admin/content-categories',
+    '/admin/content-categories/list',
     swrFetcher,
     {
       revalidateOnFocus: false,
@@ -103,7 +110,7 @@ export function useContents(
   return {
     contents: data?.data || [],
     pagination: data?.pagination || null,
-    categories: categoriesData?.data?.categories || [],
+    categories: categoriesData?.data || [],
     isLoading,
     error,
     refetch: mutate,
@@ -129,10 +136,10 @@ export function useContentDetail(id: string | null) {
   };
 }
 
-// 컨텐츠 카테고리 목록 조회 훅
+// 컨텐츠 카테고리 목록 조회 훅 (계층 구조)
 export function useContentCategories() {
   const { data, error, isLoading, mutate } = useSWR<ContentCategoryResponse>(
-    '/admin/content-categories',
+    '/admin/content-categories/list',
     swrFetcher,
     {
       revalidateOnFocus: false,
@@ -140,7 +147,7 @@ export function useContentCategories() {
   );
 
   return {
-    categories: data?.data?.categories || [],
+    categories: data?.data || [],
     isLoading,
     error,
     refetch: mutate,
