@@ -72,11 +72,10 @@ export async function GET(request: NextRequest) {
       display_order: number;
       is_active: boolean;
       created_at: string;
-      updated_at: string;
     }>(
       `SELECT id, COALESCE(category_type, '관심사') as category_type, category_name, 
               subcategory_types, COALESCE(display_order, 0) as display_order, 
-              is_active, created_at, updated_at
+              is_active, created_at
        FROM public.content_categories
        ${catWhereClause}
        ORDER BY category_type, display_order, id ASC

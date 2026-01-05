@@ -155,12 +155,15 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     // 토큰 없으면 API 호출 안 함
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_token")
+        : null;
     if (!token) {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const res = await apiClient.get("/admin/dashboard");

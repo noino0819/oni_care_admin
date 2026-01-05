@@ -318,21 +318,47 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                       </div>
                       
                       {isCategoryOpen && categories && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 max-h-[200px] overflow-y-auto">
-                          {categories.map((cat: ContentCategory) => (
-                            <label 
-                              key={cat.id} 
-                              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-[13px]"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={form.category_ids?.includes(cat.id) || false}
-                                onChange={() => handleCategoryToggle(cat.id)}
-                                className="w-4 h-4 accent-[#333]"
-                              />
-                              <span>{cat.category_name}</span>
-                            </label>
-                          ))}
+                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 p-5 min-w-[550px]">
+                          {/* 카테고리 타입별 그룹화 - 레퍼런스 이미지 스타일 */}
+                          <div className="flex gap-8">
+                            {['관심사', '질병', '운동'].map((type) => {
+                              const typeCategories = categories.filter(
+                                (cat: ContentCategory) => cat.category_type === type
+                              );
+                              return (
+                                <div key={type} className="min-w-[140px]">
+                                  {/* 카테고리 타입 헤더 */}
+                                  <div className="font-bold text-[15px] text-black pb-2 mb-3 border-b-2 border-black">
+                                    {type}
+                                  </div>
+                                  {/* 체크박스 리스트 */}
+                                  <div className="space-y-3">
+                                    {typeCategories.length > 0 ? (
+                                      typeCategories.map((cat: ContentCategory) => (
+                                        <label 
+                                          key={cat.id} 
+                                          className="flex items-center gap-3 cursor-pointer"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={form.category_ids?.includes(cat.id) || false}
+                                            onChange={() => handleCategoryToggle(cat.id)}
+                                            className="w-[18px] h-[18px] border-2 border-gray-400 rounded-sm appearance-none checked:bg-black checked:border-black relative cursor-pointer
+                                              after:content-[''] after:absolute after:hidden checked:after:block
+                                              after:left-[5px] after:top-[1px] after:w-[5px] after:h-[10px]
+                                              after:border-white after:border-r-2 after:border-b-2 after:rotate-45"
+                                          />
+                                          <span className="text-[14px] text-[#333]">{cat.category_name}</span>
+                                        </label>
+                                      ))
+                                    ) : (
+                                      <span className="text-[13px] text-gray-400">항목 없음</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>

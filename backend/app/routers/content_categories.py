@@ -55,7 +55,7 @@ async def get_content_categories(
             f"""
             SELECT id, COALESCE(category_type, '관심사') as category_type, category_name,
                    subcategory_types, COALESCE(display_order, 0) as display_order,
-                   is_active, created_at, updated_at
+                   is_active, created_at
             FROM public.content_categories
             {where_clause}
             ORDER BY category_type, display_order, id ASC
