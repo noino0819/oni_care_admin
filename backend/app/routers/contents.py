@@ -20,7 +20,8 @@ router = APIRouter(prefix="/api/v1/admin/contents", tags=["Contents"])
 @router.get("")
 async def get_contents(
     title: Optional[str] = Query(None, description="제목 검색"),
-    category_id: Optional[int] = Query(None, description="카테고리 ID"),
+    category_id: Optional[int] = Query(None, description="카테고리 ID (단일)"),
+    category_ids: Optional[str] = Query(None, description="카테고리 ID 목록 (쉼표 구분)"),
     tag: Optional[str] = Query(None, description="태그"),
     visibility_scope: Optional[str] = Query(None, description="공개범위 (쉼표 구분)"),
     company_code: Optional[str] = Query(None, description="기업코드"),
@@ -44,9 +45,15 @@ async def get_contents(
         if visibility_scope:
             scope_list = [s.strip() for s in visibility_scope.split(",") if s.strip()]
         
+        # category_ids 파싱 (쉼표로 구분된 문자열 → 정수 리스트)
+        category_id_list = None
+        if category_ids:
+            category_id_list = [int(x.strip()) for x in category_ids.split(",") if x.strip()]
+        
         result = await ContentService.get_list(
             title=title,
             category_id=category_id,
+            category_ids=category_id_list,
             tag=tag,
             visibility_scope=scope_list,
             company_code=company_code,

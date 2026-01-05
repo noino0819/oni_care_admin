@@ -79,7 +79,12 @@ export default function ContentsPage() {
         : [...prev, categoryId];
       
       // filters에도 반영
-      setFilters(f => ({ ...f, category_ids: newIds.length > 0 ? newIds : undefined }));
+      console.log('[Category Check] newIds:', newIds);
+      setFilters(f => {
+        const newFilters = { ...f, category_ids: newIds.length > 0 ? newIds : undefined };
+        console.log('[Category Check] newFilters:', newFilters);
+        return newFilters;
+      });
       return newIds;
     });
   };

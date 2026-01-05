@@ -37,8 +37,13 @@ export async function GET(request: NextRequest) {
     // 필터 조건
     const title = searchParams.get('title');
     const categoryId = searchParams.get('category_id');
-    const categoryIds = searchParams.get('category_ids')?.split(',').filter(Boolean).map(Number);
+    const categoryIdsRaw = searchParams.get('category_ids');
+    const categoryIds = categoryIdsRaw?.split(',').filter(Boolean).map(Number);
     const tag = searchParams.get('tag');
+    
+    // 디버깅 로그
+    console.log('[Contents API] category_ids raw:', categoryIdsRaw);
+    console.log('[Contents API] category_ids parsed:', categoryIds);
     const visibilityScope = searchParams.get('visibility_scope')?.split(',').filter(Boolean);
     const companyCode = searchParams.get('company_code');
     const updatedFrom = searchParams.get('updated_from');
@@ -69,7 +74,9 @@ export async function GET(request: NextRequest) {
     // 다중 카테고리 선택 (category_ids)
     if (categoryIds && categoryIds.length > 0) {
       const placeholders = categoryIds.map((_, i) => `$${paramIndex + i}`).join(',');
-      conditions.push(`c.category_id IN (${placeholders})`);
+      const condition = `c.category_id IN (${placeholders})`;
+      console.log('[Contents API] Adding condition:', condition, 'with params:', categoryIds);
+      conditions.push(condition);
       params.push(...categoryIds);
       paramIndex += categoryIds.length;
     }

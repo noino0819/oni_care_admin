@@ -19,6 +19,7 @@ class ContentService:
         cls,
         title: Optional[str] = None,
         category_id: Optional[int] = None,
+        category_ids: Optional[List[int]] = None,
         tag: Optional[str] = None,
         visibility_scope: Optional[List[str]] = None,
         company_code: Optional[str] = None,
@@ -50,6 +51,11 @@ class ContentService:
         if category_id:
             conditions.append("c.category_id = %(category_id)s")
             params["category_id"] = category_id
+        
+        # 다중 카테고리 선택 (category_ids)
+        if category_ids and len(category_ids) > 0:
+            conditions.append("c.category_id = ANY(%(category_ids)s)")
+            params["category_ids"] = category_ids
         
         if tag:
             conditions.append("%(tag)s = ANY(c.tags)")

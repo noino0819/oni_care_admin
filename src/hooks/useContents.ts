@@ -25,6 +25,9 @@ function filtersToQuery(
 ): string {
   const params = new URLSearchParams();
   
+  console.log('[filtersToQuery] filters:', filters);
+  console.log('[filtersToQuery] category_ids:', filters.category_ids);
+  
   if (filters.title) params.append('title', filters.title);
   if (filters.category_id) params.append('category_id', String(filters.category_id));
   if (filters.category_ids?.length) params.append('category_ids', filters.category_ids.join(','));
