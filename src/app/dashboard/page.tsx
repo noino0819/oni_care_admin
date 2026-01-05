@@ -62,7 +62,8 @@ interface DashboardData {
 }
 
 // 숫자 포맷팅
-function formatNumber(num: number): string {
+function formatNumber(num: number | undefined | null): string {
+  if (num === undefined || num === null) return "0";
   return num.toLocaleString("ko-KR");
 }
 

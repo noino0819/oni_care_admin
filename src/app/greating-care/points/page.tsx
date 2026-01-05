@@ -219,7 +219,7 @@ export default function PointsPage() {
       key: "total_points",
       label: "누적 포인트",
       sortable: true,
-      render: (value) => `${(value as number).toLocaleString()}P`,
+      render: (value) => `${(value as number ?? 0).toLocaleString()}P`,
     },
   ];
 
@@ -247,7 +247,7 @@ export default function PointsPage() {
       key: "points",
       label: "액수",
       sortable: true,
-      render: (value) => `${Math.abs(value as number).toLocaleString()}P`,
+      render: (value) => `${Math.abs((value as number) ?? 0).toLocaleString()}P`,
     },
     {
       key: "created_at",

@@ -79,10 +79,10 @@ export function PointDetailModal({ pointId, onClose }: PointDetailModalProps) {
               <div className="flex">
                 <span className="w-24 flex-shrink-0 text-sm text-gray-500">포인트</span>
                 <span className={`text-sm font-medium ${point.transaction_type === 'earn' ? 'text-green-600' : 'text-red-600'}`}>
-                  {point.transaction_type === 'earn' ? '+' : ''}{point.points.toLocaleString()}P
+                  {point.transaction_type === 'earn' ? '+' : ''}{(point.points ?? 0).toLocaleString()}P
                 </span>
               </div>
-              <InfoRow label="잔여포인트" value={`${point.balance_after.toLocaleString()}P`} />
+              <InfoRow label="잔여포인트" value={`${(point.balance_after ?? 0).toLocaleString()}P`} />
               <InfoRow label="거래일시" value={formatDate(point.created_at, 'YYYY-MM-DD HH:mm:ss')} />
               <div className="flex">
                 <span className="w-24 flex-shrink-0 text-sm text-gray-500">상태</span>
