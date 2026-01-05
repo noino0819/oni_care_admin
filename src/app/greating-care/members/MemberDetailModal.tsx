@@ -9,6 +9,7 @@ import { Modal, Button, AlertModal } from '@/components/common';
 import { useMemberDetail } from '@/hooks/useMembers';
 import { formatDate, cn } from '@/lib/utils';
 import { X } from 'lucide-react';
+import { apiClient } from '@/lib/api-client';
 
 interface MemberDetailModalProps {
   memberId: string | null;
@@ -101,25 +102,12 @@ export function MemberDetailModal({ memberId, onClose, onSave }: MemberDetailMod
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem('admin_token');
-      const response = await fetch(`/api/members/${memberId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify({
-          ...formData,
-          birth_date: formData.birth_date 
-            ? `${formData.birth_date.substring(0, 4)}-${formData.birth_date.substring(4, 6)}-${formData.birth_date.substring(6, 8)}`
-            : null,
-        }),
+      await apiClient.put(`/admin/members/${memberId}`, {
+        ...formData,
+        birth_date: formData.birth_date 
+          ? `${formData.birth_date.substring(0, 4)}-${formData.birth_date.substring(4, 6)}-${formData.birth_date.substring(6, 8)}`
+          : null,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || '저장에 실패했습니다.');
-      }
 
       setIsEditing(false);
       refetch();

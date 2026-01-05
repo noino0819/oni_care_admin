@@ -101,14 +101,14 @@ export default function PointsPage() {
   };
 
   const { data: summaryData, mutate: mutateSummary } = useSWR<{ success: boolean; data: PointSummary[] }>(
-    hasSearched ? `/api/admin/points?${buildQueryString()}` : null,
-    fetcher,
+    hasSearched ? `/admin/points?${buildQueryString()}` : null,
+    swrFetcher,
     { revalidateOnFocus: false }
   );
 
   const { data: historyData, mutate: mutateHistory } = useSWR<{ success: boolean; data: PointHistoryItem[] }>(
-    selectedUserId ? `/api/admin/points/${selectedUserId}` : null,
-    fetcher,
+    selectedUserId ? `/admin/points/${selectedUserId}` : null,
+    swrFetcher,
     { revalidateOnFocus: false }
   );
 
@@ -158,19 +158,7 @@ export default function PointsPage() {
     if (!confirmData) return;
 
     try {
-      const token = localStorage.getItem("admin_token");
-      const response = await fetch(`/api/admin/points/${confirmData.historyId}/revoke`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "회수에 실패했습니다.");
-      }
+      await apiClient.post(`/admin/points/${confirmData.historyId}/revoke`);
 
       setAlertMessage("포인트가 회수되었습니다.");
       mutateHistory();
