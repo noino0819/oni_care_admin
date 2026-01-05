@@ -3,28 +3,8 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { jwtVerify } from 'jose';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function verifyAdmin(req: NextRequest) {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null;
-  }
-  
-  const token = authHeader.split(' ')[1];
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
-    const { payload } = await jwtVerify(token, secret);
-    return payload as { userId: string; loginId: string };
-  } catch {
-    return null;
-  }
-}
+import { appQuery, appQueryOne } from '@/lib/app-db';
+import { verifyToken, extractToken } from '@/lib/auth';
 
 // 중분류 상세 조회
 export async function GET(
@@ -32,15 +12,33 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 인증 확인
+    const authHeader = req.headers.get('authorization');
+    const token = extractToken(authHeader);
+    
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: { message: '인증이 필요합니다.' } },
+        { status: 401 }
+      );
+    }
+
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return NextResponse.json(
+        { success: false, error: { message: '유효하지 않은 토큰입니다.' } },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
-    const { data, error } = await supabase
-      .from('content_subcategories')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const data = await appQueryOne(
+      `SELECT * FROM content_subcategories WHERE id = $1`,
+      [id]
+    );
 
-    if (error) {
+    if (!data) {
       return NextResponse.json(
         { success: false, error: { message: '중분류를 찾을 수 없습니다.' } },
         { status: 404 }
@@ -49,7 +47,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('API 오류:', error);
+    console.error('중분류 조회 오류:', error);
     return NextResponse.json(
       { success: false, error: { message: '서버 오류가 발생했습니다.' } },
       { status: 500 }
@@ -63,10 +61,21 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await verifyAdmin(req);
-    if (!admin) {
+    // 인증 확인
+    const authHeader = req.headers.get('authorization');
+    const token = extractToken(authHeader);
+    
+    if (!token) {
       return NextResponse.json(
         { success: false, error: { message: '인증이 필요합니다.' } },
+        { status: 401 }
+      );
+    }
+
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return NextResponse.json(
+        { success: false, error: { message: '유효하지 않은 토큰입니다.' } },
         { status: 401 }
       );
     }
@@ -89,30 +98,24 @@ export async function PUT(
       );
     }
 
-    const { data, error } = await supabase
-      .from('content_subcategories')
-      .update({
-        category_id,
-        subcategory_name,
-        display_order: display_order || 1,
-        is_active: is_active ?? true,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const result = await appQueryOne(
+      `UPDATE content_subcategories 
+       SET category_id = $1, subcategory_name = $2, display_order = $3, is_active = $4, updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [category_id, subcategory_name, display_order || 1, is_active ?? true, id]
+    );
 
-    if (error) {
-      console.error('중분류 수정 오류:', error);
+    if (!result) {
       return NextResponse.json(
-        { success: false, error: { message: '중분류 수정 중 오류가 발생했습니다.' } },
-        { status: 500 }
+        { success: false, error: { message: '중분류를 찾을 수 없습니다.' } },
+        { status: 404 }
       );
     }
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
-    console.error('API 오류:', error);
+    console.error('중분류 수정 오류:', error);
     return NextResponse.json(
       { success: false, error: { message: '서버 오류가 발생했습니다.' } },
       { status: 500 }
@@ -126,36 +129,38 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await verifyAdmin(req);
-    if (!admin) {
+    // 인증 확인
+    const authHeader = req.headers.get('authorization');
+    const token = extractToken(authHeader);
+    
+    if (!token) {
       return NextResponse.json(
         { success: false, error: { message: '인증이 필요합니다.' } },
         { status: 401 }
       );
     }
 
-    const { id } = await params;
-
-    const { error } = await supabase
-      .from('content_subcategories')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('중분류 삭제 오류:', error);
+    const payload = await verifyToken(token);
+    if (!payload) {
       return NextResponse.json(
-        { success: false, error: { message: '중분류 삭제 중 오류가 발생했습니다.' } },
-        { status: 500 }
+        { success: false, error: { message: '유효하지 않은 토큰입니다.' } },
+        { status: 401 }
       );
     }
 
+    const { id } = await params;
+
+    await appQuery(
+      `DELETE FROM content_subcategories WHERE id = $1`,
+      [id]
+    );
+
     return NextResponse.json({ success: true, message: '중분류가 삭제되었습니다.' });
   } catch (error) {
-    console.error('API 오류:', error);
+    console.error('중분류 삭제 오류:', error);
     return NextResponse.json(
       { success: false, error: { message: '서버 오류가 발생했습니다.' } },
       { status: 500 }
     );
   }
 }
-

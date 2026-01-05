@@ -3,38 +3,29 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { jwtVerify } from 'jose';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function verifyAdmin(req: NextRequest) {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null;
-  }
-  
-  const token = authHeader.split(' ')[1];
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key');
-    const { payload } = await jwtVerify(token, secret);
-    return payload as { userId: string; loginId: string };
-  } catch {
-    return null;
-  }
-}
+import { appQuery, appQueryOne, withAppTransaction } from '@/lib/app-db';
+import { verifyToken, extractToken } from '@/lib/auth';
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await verifyAdmin(req);
-    if (!admin) {
+    // 인증 확인
+    const authHeader = req.headers.get('authorization');
+    const token = extractToken(authHeader);
+    
+    if (!token) {
       return NextResponse.json(
         { success: false, error: { message: '인증이 필요합니다.' } },
+        { status: 401 }
+      );
+    }
+
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return NextResponse.json(
+        { success: false, error: { message: '유효하지 않은 토큰입니다.' } },
         { status: 401 }
       );
     }
@@ -42,13 +33,19 @@ export async function POST(
     const { id: historyId } = await params;
 
     // 포인트 내역 조회
-    const { data: history, error: historyError } = await supabase
-      .from('point_history')
-      .select('*')
-      .eq('id', historyId)
-      .single();
+    const history = await appQueryOne<{
+      id: string;
+      user_id: string;
+      transaction_type: string;
+      points: number;
+      is_revoked: boolean;
+    }>(
+      `SELECT id, user_id, transaction_type, points, COALESCE(is_revoked, false) as is_revoked 
+       FROM point_history WHERE id = $1`,
+      [historyId]
+    );
 
-    if (historyError || !history) {
+    if (!history) {
       return NextResponse.json(
         { success: false, error: { message: '포인트 내역을 찾을 수 없습니다.' } },
         { status: 404 }
@@ -70,13 +67,12 @@ export async function POST(
     }
 
     // 사용자 현재 포인트 조회
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('total_points')
-      .eq('id', history.user_id)
-      .single();
+    const user = await appQueryOne<{ total_points: number }>(
+      `SELECT COALESCE(total_points, 0) as total_points FROM users WHERE id = $1`,
+      [history.user_id]
+    );
 
-    if (userError || !user) {
+    if (!user) {
       return NextResponse.json(
         { success: false, error: { message: '사용자를 찾을 수 없습니다.' } },
         { status: 404 }
@@ -91,66 +87,38 @@ export async function POST(
       );
     }
 
-    // 포인트 회수 처리
-    const newBalance = user.total_points - history.points;
+    // 트랜잭션으로 포인트 회수 처리
+    await withAppTransaction(async (client) => {
+      const newBalance = user.total_points - history.points;
 
-    // 사용자 포인트 차감
-    const { error: updateUserError } = await supabase
-      .from('users')
-      .update({ total_points: newBalance })
-      .eq('id', history.user_id);
-
-    if (updateUserError) {
-      console.error('사용자 포인트 업데이트 오류:', updateUserError);
-      return NextResponse.json(
-        { success: false, error: { message: '포인트 회수 중 오류가 발생했습니다.' } },
-        { status: 500 }
+      // 사용자 포인트 차감
+      await client.query(
+        `UPDATE users SET total_points = $1 WHERE id = $2`,
+        [newBalance, history.user_id]
       );
-    }
 
-    // 포인트 내역 회수 표시
-    const { error: updateHistoryError } = await supabase
-      .from('point_history')
-      .update({
-        is_revoked: true,
-        revoked_at: new Date().toISOString(),
-        revoked_by: admin.loginId,
-      })
-      .eq('id', historyId);
-
-    if (updateHistoryError) {
-      console.error('포인트 내역 업데이트 오류:', updateHistoryError);
-      // 롤백 처리
-      await supabase
-        .from('users')
-        .update({ total_points: user.total_points })
-        .eq('id', history.user_id);
-      
-      return NextResponse.json(
-        { success: false, error: { message: '포인트 회수 중 오류가 발생했습니다.' } },
-        { status: 500 }
+      // 포인트 내역 회수 표시
+      await client.query(
+        `UPDATE point_history 
+         SET is_revoked = true, revoked_at = NOW(), revoked_by = $1 
+         WHERE id = $2`,
+        [payload.name || payload.email || 'admin', historyId]
       );
-    }
 
-    // 회수 내역 추가
-    await supabase
-      .from('point_history')
-      .insert({
-        user_id: history.user_id,
-        transaction_type: 'use',
-        source: 'admin_revoke',
-        source_detail: `관리자 회수 (원본 ID: ${historyId})`,
-        points: -history.points,
-        balance_after: newBalance,
-      });
+      // 회수 내역 추가
+      await client.query(
+        `INSERT INTO point_history (user_id, transaction_type, source, source_detail, points, balance_after)
+         VALUES ($1, 'use', 'admin_revoke', $2, $3, $4)`,
+        [history.user_id, `관리자 회수 (원본 ID: ${historyId})`, -history.points, newBalance]
+      );
+    });
 
     return NextResponse.json({ success: true, message: '포인트가 회수되었습니다.' });
   } catch (error) {
-    console.error('API 오류:', error);
+    console.error('포인트 회수 오류:', error);
     return NextResponse.json(
       { success: false, error: { message: '서버 오류가 발생했습니다.' } },
       { status: 500 }
     );
   }
 }
-
