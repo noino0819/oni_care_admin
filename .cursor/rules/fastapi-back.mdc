@@ -1,0 +1,416 @@
+---
+name: fastapi-enterprise-backend-spec
+description: FastAPI 엔터프라이즈 백엔드의 공식 아키텍처 및 구현 표준. psycopg3, Redis, 트랜잭션 전략, 레이어 분리를 포함한 모든 코드는 이 SPEC을 따라야 함.
+alwaysApply: true
+tools: Read, Write, Edit, Grep
+---
+
+# SPEC: FastAPI Enterprise Backend
+
+```yaml
+spec_id: SPEC-FASTAPI-BACKEND
+version: 1.0.0
+created: 2025-01-01
+status: draft
+```
+
+## 1. 개요
+
+### 1.1 목적
+
+대용량 요청을 처리할 수 있는 비동기 기반 FastAPI 엔터프라이즈 백엔드 서버 구축.
+
+### 1.2 기술 스택
+
+| 항목        | 기술                            | 버전          |
+| ----------- | ------------------------------- | ------------- |
+| Language    | Python                          | 3.10+         |
+| Framework   | FastAPI                         | Latest Stable |
+| DB Driver   | psycopg3 (psycopg[binary,pool]) | 3.1+          |
+| Database    | PostgreSQL                      | 16+           |
+| Token Store | Redis                           | 7+            |
+| ASGI Server | Uvicorn                         | Latest        |
+
+---
+
+## 2. 기능 요구사항
+
+### 2.1 인증 (Auth)
+
+| 기능      | 설명                                  |
+| --------- | ------------------------------------- |
+| 로그인    | 이메일/비밀번호로 로그인, 토큰 발급   |
+| 회원가입  | 신규 사용자 등록                      |
+| 토큰 갱신 | Refresh Token으로 Access Token 재발급 |
+| 로그아웃  | 토큰 무효화                           |
+
+### 2.2 사용자 (User)
+
+| 기능         | 설명                      |
+| ------------ | ------------------------- |
+| 내 정보 조회 | 로그인한 사용자 정보 반환 |
+| 정보 수정    | 이름, 비밀번호 변경       |
+
+### 2.3 주문 (Order) - 확장용
+
+| 기능      | 설명                      |
+| --------- | ------------------------- |
+| 주문 생성 | 상품 주문 (트랜잭션 필수) |
+| 주문 조회 | 주문 내역 조회            |
+
+---
+
+## 3. API 설계
+
+### 3.1 Base URL
+
+```
+/api/v1/{도메인}/{경로}
+```
+
+### 3.2 인증 API
+
+| Method | Endpoint                | 설명      | 인증 |
+| ------ | ----------------------- | --------- | ---- |
+| POST   | `/api/v1/auth/login`    | 로그인    | X    |
+| POST   | `/api/v1/auth/register` | 회원가입  | X    |
+| POST   | `/api/v1/auth/refresh`  | 토큰 갱신 | X    |
+| POST   | `/api/v1/auth/logout`   | 로그아웃  | O    |
+
+#### POST /api/v1/auth/login
+
+**Request:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "user_id": 1,
+  "email": "user@example.com",
+  "name": "홍길동",
+  "tokens": {
+    "access_token": "eyJ...",
+    "refresh_token": "eyJ...",
+    "token_type": "bearer",
+    "expires_in": 1800
+  }
+}
+```
+
+#### POST /api/v1/auth/register
+
+**Request:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "홍길동"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "name": "홍길동",
+  "created_at": "2025-01-01T00:00:00Z"
+}
+```
+
+### 3.3 사용자 API
+
+| Method | Endpoint          | 설명         | 인증 |
+| ------ | ----------------- | ------------ | ---- |
+| GET    | `/api/v1/user/me` | 내 정보 조회 | O    |
+| PUT    | `/api/v1/user/me` | 내 정보 수정 | O    |
+
+### 3.4 에러 응답 형식
+
+```json
+{
+  "error": "AUTH_ERROR",
+  "message": "이메일 또는 비밀번호가 올바르지 않습니다",
+  "timestamp": "2025-01-01T00:00:00Z"
+}
+```
+
+| HTTP Status | error 코드       | 설명             |
+| ----------- | ---------------- | ---------------- |
+| 400         | VALIDATION_ERROR | 입력값 검증 실패 |
+| 401         | AUTH_ERROR       | 인증 실패        |
+| 403         | FORBIDDEN        | 권한 없음        |
+| 404         | NOT_FOUND        | 리소스 없음      |
+| 500         | INTERNAL_ERROR   | 서버 오류        |
+
+---
+
+## 4. 데이터베이스 설계
+
+### 4.1 ERD
+
+```
+users (사용자)
+├── id (PK)
+├── email (UNIQUE)
+├── password_hash
+├── name
+├── is_active
+├── created_at
+├── updated_at
+└── last_login
+
+login_attempts (로그인 시도)
+├── id (PK)
+├── user_id (FK → users)
+├── ip_address
+├── success
+└── attempted_at
+
+orders (주문) - 확장용
+├── id (PK)
+├── user_id (FK → users)
+├── status
+├── total_amount
+├── created_at
+└── updated_at
+
+order_items (주문 상품) - 확장용
+├── id (PK)
+├── order_id (FK → orders)
+├── product_id
+├── quantity
+├── unit_price
+└── subtotal
+```
+
+### 4.2 테이블 DDL
+
+```sql
+-- 사용자 테이블
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    last_login TIMESTAMPTZ
+);
+
+-- 로그인 시도 기록
+CREATE TABLE login_attempts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    ip_address VARCHAR(45),
+    success BOOLEAN NOT NULL,
+    attempted_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 인덱스
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_login_attempts_user_id ON login_attempts(user_id);
+CREATE INDEX idx_login_attempts_attempted_at ON login_attempts(attempted_at);
+```
+
+---
+
+## 5. 환경변수
+
+### 5.1 필수 환경변수
+
+```env
+# Application
+APP_NAME=GFHC Backend
+APP_ENV=development
+DEBUG=true
+
+# Server
+HOST=0.0.0.0
+PORT=8000
+
+# Database - PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=gfhc_db
+DB_USER=postgres
+DB_PASSWORD=password
+DB_MIN_CONN=5
+DB_MAX_CONN=20
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_PASSWORD=
+
+# Token
+TOKEN_SECRET_KEY=your-secret-key-change-in-production
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+```
+
+---
+
+## 6. 비기능 요구사항
+
+### 6.1 성능
+
+| 항목        | 요구사항                              |
+| ----------- | ------------------------------------- |
+| 비동기 처리 | 이벤트 루프 블로킹 방지 (async/await) |
+| 커넥션 풀   | 동기/비동기 풀 모두 생성              |
+| 풀 크기     | 최소 5, 최대 20 커넥션                |
+
+### 6.2 보안
+
+| 항목      | 요구사항                      |
+| --------- | ----------------------------- |
+| CORS      | 허용 도메인 화이트리스트      |
+| XSS       | 위험 패턴 필터링              |
+| 토큰 검증 | 모든 요청에서 미들웨어로 검증 |
+| 비밀번호  | bcrypt 해싱                   |
+
+### 6.3 미들웨어 순서
+
+```
+요청 → CORS → XSS Filter → Auth → Router → 응답
+```
+
+### 6.4 토큰 검증 제외 경로
+
+```
+/api/v1/auth/login
+/api/v1/auth/register
+/api/v1/auth/refresh
+/health
+/docs
+/openapi.json
+```
+
+---
+
+## 7. 제약조건
+
+### 7.1 코드 제약
+
+| 항목          | 제약                                |
+| ------------- | ----------------------------------- |
+| 쿼리 파라미터 | Named Parameter만 사용 `%(name)s`   |
+| SQL 파일      | `sql/` 폴더에 분리, router명과 일치 |
+| 레이어 분리   | Router (Controller) + Service 필수  |
+| 주석          | 모든 소스에 한글 주석               |
+
+### 7.2 데이터 반환 규칙
+
+| 작업          | 입력   | 반환               |
+| ------------- | ------ | ------------------ |
+| SELECT (단일) | `dict` | `Optional[Dict]`   |
+| SELECT (복수) | `dict` | `List[Dict]`       |
+| INSERT        | `dict` | `Dict` (RETURNING) |
+| UPDATE        | `dict` | `Dict` (RETURNING) |
+| DELETE        | `dict` | `int` (삭제 행 수) |
+
+### 7.3 트랜잭션 전략
+
+| 케이스      | 전략             | 예시                                |
+| ----------- | ---------------- | ----------------------------------- |
+| 독립 작업   | `@auto_commit`   | 로그인 (시도 로그 ↔ 성공 처리 분리) |
+| 원자적 작업 | `@transactional` | 주문 (전체 롤백 필요)               |
+
+### 7.4 로깅
+
+| 항목      | 요구사항                           |
+| --------- | ---------------------------------- |
+| 로테이션  | 일별 또는 재기동 시                |
+| 에러 로그 | traceback 필수 포함                |
+| 포맷      | `[시간] 레벨 [모듈:라인] - 메시지` |
+
+---
+
+## 8. 프로젝트 구조
+
+```
+project_root/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── config/
+│   │   ├── settings.py
+│   │   ├── database.py
+│   │   └── redis.py
+│   ├── middleware/
+│   │   ├── cors.py
+│   │   ├── xss_filter.py
+│   │   └── auth.py
+│   ├── routers/
+│   │   ├── auth.py
+│   │   └── user.py
+│   ├── services/
+│   │   ├── auth_service.py
+│   │   └── user_service.py
+│   ├── models/
+│   │   ├── auth.py
+│   │   └── user.py
+│   ├── core/
+│   │   ├── decorators.py
+│   │   ├── exceptions.py
+│   │   ├── logger.py
+│   │   └── token_store.py
+│   └── utils/
+│       └── sql_loader.py
+├── sql/
+│   ├── auth.sql
+│   └── user.sql
+├── db/
+│   └── schema.sql
+├── logs/
+├── .env
+├── .env.example
+└── requirements.txt
+```
+
+---
+
+## 9. 의존성
+
+```txt
+# requirements.txt
+
+# FastAPI
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Database
+psycopg[binary,pool]>=3.1.17
+
+# Redis
+redis>=5.0.0
+
+# Auth
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Validation
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+email-validator>=2.1.0
+
+# Utils
+python-dotenv>=1.0.0
+```
+
+---
+
+**End of SPEC**

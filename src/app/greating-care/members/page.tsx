@@ -1,12 +1,12 @@
 "use client";
 
 // ============================================
-// 회원정보 관리 페이지 - 크기 조정
+// 회원정보 관리 페이지 - 기획서 반영
 // ============================================
 
 import { useState, useCallback } from "react";
 import { AdminLayout } from "@/components/layout";
-import { Button, DataTable, Pagination, AlertModal } from "@/components/common";
+import { Button, DataTable, Pagination, AlertModal, DatePicker } from "@/components/common";
 import { MemberDetailModal } from "./MemberDetailModal";
 import { useMembers } from "@/hooks/useMembers";
 import {
@@ -15,10 +15,8 @@ import {
   maskBirthDate,
   maskPhone,
   formatDate,
-  generateYearOptions,
-  generateMonthOptions,
-  generateDayOptions,
   getGenderLabel,
+  cn,
 } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
 import type {
@@ -39,6 +37,40 @@ const GENDER_OPTIONS = [
   { value: "male", label: "남성" },
   { value: "female", label: "여성" },
 ];
+
+// 년도 옵션 생성 (1925~2012)
+const generateYearOptions = () => {
+  const years = [];
+  for (let year = 2012; year >= 1925; year--) {
+    years.push({ value: String(year), label: `${year}년` });
+  }
+  return years;
+};
+
+// 월 옵션 생성
+const generateMonthOptions = () => {
+  return Array.from({ length: 12 }, (_, i) => ({
+    value: String(i + 1).padStart(2, '0'),
+    label: `${i + 1}월`,
+  }));
+};
+
+// 일 옵션 생성
+const generateDayOptions = () => {
+  return Array.from({ length: 31 }, (_, i) => ({
+    value: String(i + 1).padStart(2, '0'),
+    label: `${i + 1}일`,
+  }));
+};
+
+const getMemberTypeLabel = (type: string) => {
+  switch (type) {
+    case 'normal': return '일반';
+    case 'fs': return 'FS';
+    case 'affiliate': return '제휴사';
+    default: return type;
+  }
+};
 
 export default function MembersPage() {
   const [filters, setFilters] = useState<MemberSearchFilters>({
@@ -62,13 +94,14 @@ export default function MembersPage() {
   const [page, setPage] = useState(1);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const { members, pagination, isLoading, refetch } = useMembers(
     filters,
     sort,
     page,
     20,
-    true
+    hasSearched
   );
 
   const handleFilterChange = (
@@ -78,8 +111,30 @@ export default function MembersPage() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  // 조회조건 유효성 검사
+  const hasAnyFilter = () => {
+    return (
+      filters.name?.trim() ||
+      filters.id?.trim() ||
+      filters.birth_year ||
+      filters.birth_month ||
+      filters.birth_day ||
+      filters.gender ||
+      (filters.member_types && filters.member_types.length > 0) ||
+      filters.phone?.trim() ||
+      filters.business_code?.trim() ||
+      filters.created_from ||
+      filters.created_to
+    );
+  };
+
   const handleSearch = () => {
+    if (!hasAnyFilter()) {
+      setAlertMessage("조회조건 중 1개 이상을 입력해주세요.");
+      return;
+    }
     setPage(1);
+    setHasSearched(true);
     refetch();
   };
 
@@ -99,6 +154,7 @@ export default function MembersPage() {
     });
     setSort({ field: "created_at", direction: "desc" });
     setPage(1);
+    setHasSearched(false);
   };
 
   const handleSort = useCallback((field: string) => {
@@ -129,30 +185,31 @@ export default function MembersPage() {
     {
       key: "birth_date",
       label: "생년월일",
-      sortable: true,
+      sortable: false,
       render: (value) => (value ? maskBirthDate(value as string) : "-"),
     },
     {
       key: "gender",
       label: "성별",
-      sortable: true,
+      sortable: false,
       render: (value) => getGenderLabel(value as string),
     },
     {
       key: "member_type",
       label: "회원구분",
-      sortable: true,
+      sortable: false,
+      render: (value) => getMemberTypeLabel(value as string),
     },
     {
       key: "business_code",
       label: "기업/사업자 코드",
-      sortable: true,
+      sortable: false,
       render: (value) => (value as string) || "-",
     },
     {
       key: "phone",
       label: "휴대폰 번호",
-      sortable: true,
+      sortable: false,
       render: (value) => (value ? maskPhone(value as string) : "-"),
     },
     {
@@ -160,6 +217,25 @@ export default function MembersPage() {
       label: "가입일",
       sortable: true,
       render: (value) => formatDate(value as string),
+    },
+    {
+      key: "id",
+      label: "관리",
+      sortable: false,
+      align: "center",
+      render: (_, row) => (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedMemberId(row.id);
+          }}
+          className="px-3 py-1 text-[12px]"
+        >
+          관리
+        </Button>
+      ),
     },
   ];
 
@@ -208,7 +284,7 @@ export default function MembersPage() {
                 type="text"
                 value={filters.name}
                 onChange={(e) => handleFilterChange("name", e.target.value)}
-                className={cn(inputClass, "w-[160px]")}
+                className={cn(inputClass, "w-[140px]")}
               />
             </div>
 
@@ -233,7 +309,7 @@ export default function MembersPage() {
                 onChange={(e) =>
                   handleFilterChange("birth_month", e.target.value)
                 }
-                className={cn(selectClass, "w-[60px]")}
+                className={cn(selectClass, "w-[65px]")}
               >
                 <option value="">월</option>
                 {generateMonthOptions().map((opt) => (
@@ -247,7 +323,7 @@ export default function MembersPage() {
                 onChange={(e) =>
                   handleFilterChange("birth_day", e.target.value)
                 }
-                className={cn(selectClass, "w-[60px]")}
+                className={cn(selectClass, "w-[65px]")}
               >
                 <option value="">일</option>
                 {generateDayOptions().map((opt) => (
@@ -325,7 +401,7 @@ export default function MembersPage() {
                 onChange={(e) =>
                   handleFilterChange("business_code", e.target.value)
                 }
-                className={cn(inputClass, "w-[160px]")}
+                className={cn(inputClass, "w-[140px]")}
               />
             </div>
           </div>
@@ -338,7 +414,7 @@ export default function MembersPage() {
                 type="text"
                 value={filters.id}
                 onChange={(e) => handleFilterChange("id", e.target.value)}
-                className={cn(inputClass, "w-[160px]")}
+                className={cn(inputClass, "w-[140px]")}
               />
             </div>
 
@@ -363,8 +439,23 @@ export default function MembersPage() {
                 type="text"
                 value={filters.phone}
                 onChange={(e) => handleFilterChange("phone", e.target.value)}
-                placeholder="010********"
-                className={cn(inputClass, "w-[160px]")}
+                placeholder="01012345678"
+                className={cn(inputClass, "w-[140px]")}
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={labelClass}>가입일</span>
+              <DatePicker
+                value={filters.created_from ? new Date(filters.created_from) : null}
+                onChange={(date) => handleFilterChange("created_from", date ? date.toISOString().split('T')[0] : "")}
+                placeholder="시작일"
+              />
+              <span className="text-gray-400">~</span>
+              <DatePicker
+                value={filters.created_to ? new Date(filters.created_to) : null}
+                onChange={(date) => handleFilterChange("created_to", date ? date.toISOString().split('T')[0] : "")}
+                placeholder="종료일"
               />
             </div>
           </div>
@@ -373,18 +464,17 @@ export default function MembersPage() {
         {/* 데이터 테이블 */}
         <DataTable
           columns={columns}
-          data={members}
-          totalCount={pagination?.total}
+          data={hasSearched ? members : []}
+          totalCount={hasSearched ? pagination?.total : 0}
           sorting={sort}
           onSort={handleSort}
-          onRowClick={(row) => setSelectedMemberId(row.id)}
-          isLoading={isLoading}
-          emptyMessage="조회 결과가 없습니다."
+          isLoading={isLoading && hasSearched}
+          emptyMessage={hasSearched ? "조회 결과가 없습니다." : "조회조건을 입력하고 조회 버튼을 클릭해주세요."}
           getRowKey={(row) => row.id}
           title="고객 리스트"
         />
 
-        {pagination && pagination.totalPages > 1 && (
+        {hasSearched && pagination && pagination.totalPages > 1 && (
           <Pagination
             currentPage={page}
             totalPages={pagination.totalPages}
@@ -396,6 +486,7 @@ export default function MembersPage() {
       <MemberDetailModal
         memberId={selectedMemberId}
         onClose={() => setSelectedMemberId(null)}
+        onSave={() => refetch()}
       />
 
       <AlertModal
@@ -405,8 +496,4 @@ export default function MembersPage() {
       />
     </AdminLayout>
   );
-}
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(" ");
 }

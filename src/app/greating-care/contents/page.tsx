@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { AdminLayout } from '@/components/layout';
-import { Button, DataTable, Pagination, ConfirmModal, AlertModal } from '@/components/common';
+import { Button, DataTable, Pagination, ConfirmModal, AlertModal, DatePicker } from '@/components/common';
 import { ContentFormModal } from './ContentFormModal';
 import { useContents } from '@/hooks/useContents';
 import { formatDate } from '@/lib/utils';
@@ -285,35 +285,31 @@ export default function ContentsPage() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <span className={labelClass}>최종수정일</span>
-              <input
-                type="date"
-                value={filters.updated_from}
-                onChange={(e) => handleFilterChange('updated_from', e.target.value)}
-                className={`${inputClass} w-[130px]`}
+              <DatePicker
+                value={filters.updated_from ? new Date(filters.updated_from) : null}
+                onChange={(date) => handleFilterChange('updated_from', date ? date.toISOString().split('T')[0] : '')}
+                placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
-              <input
-                type="date"
-                value={filters.updated_to}
-                onChange={(e) => handleFilterChange('updated_to', e.target.value)}
-                className={`${inputClass} w-[130px]`}
+              <DatePicker
+                value={filters.updated_to ? new Date(filters.updated_to) : null}
+                onChange={(date) => handleFilterChange('updated_to', date ? date.toISOString().split('T')[0] : '')}
+                placeholder="종료일"
               />
             </div>
 
             <div className="flex items-center gap-2">
               <span className={labelClass}>게시기간</span>
-              <input
-                type="date"
-                value={filters.start_from}
-                onChange={(e) => handleFilterChange('start_from', e.target.value)}
-                className={`${inputClass} w-[130px]`}
+              <DatePicker
+                value={filters.start_from ? new Date(filters.start_from) : null}
+                onChange={(date) => handleFilterChange('start_from', date ? date.toISOString().split('T')[0] : '')}
+                placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
-              <input
-                type="date"
-                value={filters.start_to}
-                onChange={(e) => handleFilterChange('start_to', e.target.value)}
-                className={`${inputClass} w-[130px]`}
+              <DatePicker
+                value={filters.start_to ? new Date(filters.start_to) : null}
+                onChange={(date) => handleFilterChange('start_to', date ? date.toISOString().split('T')[0] : '')}
+                placeholder="종료일"
               />
             </div>
 
@@ -325,6 +321,19 @@ export default function ContentsPage() {
                 onChange={(e) => handleFilterChange('company_code', e.target.value)}
                 className={`${inputClass} w-[160px]`}
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={labelClass}>명언여부</span>
+              <select
+                value={filters.has_quote || ''}
+                onChange={(e) => handleFilterChange('has_quote', e.target.value)}
+                className={`${selectClass} w-[100px]`}
+              >
+                <option value="">전체</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+              </select>
             </div>
           </div>
         </div>
