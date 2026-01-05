@@ -35,7 +35,7 @@ async def get_points_summary(
     포인트 요약 조회 (사용자별 그룹화)
     """
     try:
-        conditions = []
+        conditions = ["u.is_active = true"]  # 활성 사용자만
         params = {}
         
         if name:
@@ -47,9 +47,15 @@ async def get_points_summary(
             params["id"] = f"%{id}%"
         
         if member_types:
+            # member_types: normal, fs, affiliate
             types = [t.strip() for t in member_types.split(",")]
-            conditions.append("u.member_type = ANY(%(member_types)s)")
-            params["member_types"] = types
+            type_conditions = []
+            if "fs" in types:
+                type_conditions.append("u.is_fs_member = true")
+            if "normal" in types:
+                type_conditions.append("(u.is_fs_member = false OR u.is_fs_member IS NULL)")
+            if type_conditions:
+                conditions.append(f"({' OR '.join(type_conditions)})")
         
         if business_code:
             conditions.append("u.business_code = %(business_code)s")
@@ -64,7 +70,7 @@ async def get_points_summary(
             safe_fields = {
                 "name": "u.name",
                 "email": "u.email",
-                "total_points": "COALESCE(u.total_points, 0)",
+                "total_points": "total_points",
                 "created_at": "u.created_at"
             }
             if sort_field in safe_fields:
@@ -79,7 +85,7 @@ async def get_points_summary(
         count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
-        # 사용자별 포인트 요약 조회
+        # 사용자별 포인트 요약 조회 (point_history에서 합계 계산)
         offset = (page - 1) * page_size
         params["limit"] = page_size
         params["offset"] = offset
@@ -90,9 +96,21 @@ async def get_points_summary(
                 u.id as user_id,
                 u.email,
                 u.name,
-                COALESCE(u.member_type, 'normal') as member_type,
+                CASE 
+                    WHEN u.is_fs_member = true THEN 'fs'
+                    ELSE 'normal'
+                END as member_type,
                 u.business_code,
-                COALESCE(u.total_points, 0) as total_points
+                COALESCE(
+                    (SELECT SUM(
+                        CASE 
+                            WHEN ph.transaction_type = 'earn' AND COALESCE(ph.is_revoked, false) = false THEN ph.points
+                            WHEN ph.transaction_type = 'use' AND COALESCE(ph.is_revoked, false) = false THEN -ph.points
+                            ELSE 0
+                        END
+                    ) FROM point_history ph WHERE ph.user_id = u.id),
+                    0
+                ) as total_points
             FROM users u
             {where_clause}
             ORDER BY {order_by}
