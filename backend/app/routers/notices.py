@@ -76,25 +76,26 @@ async def get_notices(
             conditions.append("created_at <= %(created_to)s")
             params["created_to"] = created_to + " 23:59:59"
         
-        # 상태 필터
+        # TODO: DB에 start_date, end_date 컬럼 추가 후 활성화
+        # 상태 필터 (현재 비활성화)
         status_filter = ""
-        if status:
-            status_list = [s.strip() for s in status.split(",") if s.strip()]
-            if status_list and len(status_list) < 3:
-                status_conditions = []
-                if "before" in status_list:
-                    status_conditions.append("(start_date IS NULL OR start_date > CURRENT_DATE)")
-                if "active" in status_list:
-                    status_conditions.append("(start_date IS NOT NULL AND start_date <= CURRENT_DATE AND (end_date IS NULL OR end_date >= CURRENT_DATE))")
-                if "ended" in status_list:
-                    status_conditions.append("(end_date IS NOT NULL AND end_date < CURRENT_DATE)")
-                if status_conditions:
-                    status_filter = f"AND ({' OR '.join(status_conditions)})"
+        # if status:
+        #     status_list = [s.strip() for s in status.split(",") if s.strip()]
+        #     if status_list and len(status_list) < 3:
+        #         status_conditions = []
+        #         if "before" in status_list:
+        #             status_conditions.append("(start_date IS NULL OR start_date > CURRENT_DATE)")
+        #         if "active" in status_list:
+        #             status_conditions.append("(start_date IS NOT NULL AND start_date <= CURRENT_DATE AND (end_date IS NULL OR end_date >= CURRENT_DATE))")
+        #         if "ended" in status_list:
+        #             status_conditions.append("(end_date IS NOT NULL AND end_date < CURRENT_DATE)")
+        #         if status_conditions:
+        #             status_filter = f"AND ({' OR '.join(status_conditions)})"
         
         where_clause = f"WHERE {' AND '.join(conditions)} {status_filter}" if conditions else (f"WHERE 1=1 {status_filter}" if status_filter else "")
         
         # 정렬 검증
-        allowed_sort_fields = ["title", "created_at", "start_date", "end_date"]
+        allowed_sort_fields = ["title", "created_at"]
         safe_field = sort_field if sort_field in allowed_sort_fields else "created_at"
         safe_direction = "ASC" if sort_direction.upper() == "ASC" else "DESC"
         
@@ -113,7 +114,7 @@ async def get_notices(
         
         notices = await query(
             f"""
-            SELECT id, title, start_date, end_date, created_at
+            SELECT *
             FROM notices
             {where_clause}
             ORDER BY {safe_field} {safe_direction}
