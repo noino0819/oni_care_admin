@@ -656,3 +656,40 @@ COMMENT ON COLUMN public.content_media.media_url IS '미디어 URL';
 COMMENT ON COLUMN public.content_media.display_order IS '표시 순서';
 COMMENT ON COLUMN public.content_media.alt_text IS '대체 텍스트';
 
+-- ============================================
+-- 24. 공지사항 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.notices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(500) NOT NULL,
+  content TEXT,
+  image_url TEXT,
+  visibility_scope TEXT[] DEFAULT '{all}',
+  company_codes TEXT[] DEFAULT '{}',
+  start_date DATE,
+  end_date DATE,
+  store_visible BOOLEAN DEFAULT false,
+  created_by VARCHAR(50),
+  updated_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_notices_title ON public.notices(title);
+CREATE INDEX idx_notices_start_date ON public.notices(start_date);
+CREATE INDEX idx_notices_end_date ON public.notices(end_date);
+CREATE INDEX idx_notices_visibility_scope ON public.notices USING GIN(visibility_scope);
+CREATE INDEX idx_notices_created_at ON public.notices(created_at);
+
+COMMENT ON TABLE public.notices IS '공지사항';
+COMMENT ON COLUMN public.notices.title IS '공지 제목';
+COMMENT ON COLUMN public.notices.content IS '공지 내용';
+COMMENT ON COLUMN public.notices.image_url IS '이미지 URL';
+COMMENT ON COLUMN public.notices.visibility_scope IS '공개범위 (all, normal, affiliate, fs)';
+COMMENT ON COLUMN public.notices.company_codes IS '기업/사업장 코드 배열';
+COMMENT ON COLUMN public.notices.start_date IS '게시 시작일';
+COMMENT ON COLUMN public.notices.end_date IS '게시 종료일';
+COMMENT ON COLUMN public.notices.store_visible IS '스토어 노출 여부';
+COMMENT ON COLUMN public.notices.created_by IS '생성자';
+COMMENT ON COLUMN public.notices.updated_by IS '수정자';
+

@@ -5,7 +5,8 @@
 
 from typing import Optional, List
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 
 from app.config.database import query, query_one, execute_returning, execute
 from app.models.common import ApiResponse
@@ -41,7 +42,8 @@ async def get_notices(
     sort_field: str = Query("created_at", description="정렬 필드"),
     sort_direction: str = Query("desc", description="정렬 방향"),
     page: int = Query(1, ge=1, description="페이지"),
-    page_size: int = Query(20, ge=1, le=100, description="페이지 크기"),
+    page_size: Optional[int] = Query(None, ge=1, le=100, description="페이지 크기"),
+    limit: int = Query(20, ge=1, le=100, description="페이지 크기 (page_size 별칭)"),
     current_user=Depends(get_current_user)
 ):
     """
@@ -100,9 +102,12 @@ async def get_notices(
         count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
+        # 페이지 크기 결정 (page_size가 있으면 사용, 없으면 limit 사용)
+        actual_page_size = page_size if page_size is not None else limit
+        
         # 데이터 조회
-        offset = (page - 1) * page_size
-        params["limit"] = page_size
+        offset = (page - 1) * actual_page_size
+        params["limit"] = actual_page_size
         params["offset"] = offset
         
         notices = await query(
@@ -130,15 +135,15 @@ async def get_notices(
             "data": formatted_notices,
             "pagination": {
                 "page": page,
-                "limit": page_size,
+                "limit": actual_page_size,
                 "total": total,
-                "total_pages": (total + page_size - 1) // page_size if page_size > 0 else 0
+                "total_pages": (total + actual_page_size - 1) // actual_page_size if actual_page_size > 0 else 0
             }
         }
     except Exception as e:
         logger.error(f"공지사항 조회 오류: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
 
@@ -160,7 +165,7 @@ async def get_notice(
         
         if not notice:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail={"error": "NOT_FOUND", "message": "공지사항을 찾을 수 없습니다."}
             )
         
@@ -172,12 +177,12 @@ async def get_notice(
     except Exception as e:
         logger.error(f"공지사항 조회 오류: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=http_status.HTTP_201_CREATED)
 async def create_notice(
     body: dict,
     current_user=Depends(get_current_user)
@@ -197,7 +202,7 @@ async def create_notice(
         
         if not title or not title.strip() or not content or not content.strip():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail={"error": "VALIDATION_ERROR", "message": "제목과 내용을 입력해주세요."}
             )
         
@@ -232,7 +237,7 @@ async def create_notice(
     except Exception as e:
         logger.error(f"공지사항 등록 오류: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
 
@@ -280,7 +285,7 @@ async def update_notice(
         
         if not result:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail={"error": "NOT_FOUND", "message": "공지사항을 찾을 수 없습니다."}
             )
         
@@ -290,7 +295,7 @@ async def update_notice(
     except Exception as e:
         logger.error(f"공지사항 수정 오류: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
 
@@ -312,7 +317,7 @@ async def delete_notice(
         
         if affected == 0:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail={"error": "NOT_FOUND", "message": "공지사항을 찾을 수 없습니다."}
             )
         
@@ -322,7 +327,7 @@ async def delete_notice(
     except Exception as e:
         logger.error(f"공지사항 삭제 오류: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
 
