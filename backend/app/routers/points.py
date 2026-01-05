@@ -132,13 +132,63 @@ async def get_points(
         )
 
 
-@router.get("/{point_id}")
-async def get_point_detail(
-    point_id: str,
+@router.get("/{user_id}")
+async def get_user_point_history(
+    user_id: str,
+    sort_field: Optional[str] = Query(None, description="정렬 필드"),
+    sort_direction: Optional[str] = Query("desc", description="정렬 방향"),
     current_user=Depends(get_current_user)
 ):
     """
-    포인트 내역 상세 조회
+    특정 사용자의 포인트 내역 조회
+    """
+    try:
+        # 정렬
+        order_by = "ph.created_at DESC"
+        if sort_field:
+            direction = "ASC" if sort_direction == "asc" else "DESC"
+            safe_fields = {"created_at": "ph.created_at", "points": "ph.points", "balance_after": "ph.balance_after"}
+            if sort_field in safe_fields:
+                order_by = f"{safe_fields[sort_field]} {direction}"
+        
+        rows = await query(
+            f"""
+            SELECT 
+                ph.id,
+                ph.user_id,
+                u.email,
+                ph.transaction_type,
+                ph.source,
+                ph.source_detail,
+                ph.points,
+                ph.balance_after,
+                ph.created_at,
+                COALESCE(ph.is_revoked, false) as is_revoked
+            FROM point_history ph
+            LEFT JOIN users u ON ph.user_id = u.id
+            WHERE ph.user_id = %(user_id)s::uuid
+            ORDER BY {order_by}
+            """,
+            {"user_id": user_id},
+            use_app_db=True
+        )
+        
+        return {"success": True, "data": rows}
+    except Exception as e:
+        logger.error(f"사용자 포인트 내역 조회 오류: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
+        )
+
+
+@router.get("/history/{history_id}")
+async def get_point_detail(
+    history_id: str,
+    current_user=Depends(get_current_user)
+):
+    """
+    포인트 내역 상세 조회 (단일)
     """
     try:
         row = await query_one(
@@ -156,9 +206,9 @@ async def get_point_detail(
                 COALESCE(ph.is_revoked, false) as is_revoked
             FROM point_history ph
             LEFT JOIN users u ON ph.user_id = u.id
-            WHERE ph.id = %(point_id)s
+            WHERE ph.id = %(history_id)s
             """,
-            {"point_id": point_id},
+            {"history_id": history_id},
             use_app_db=True
         )
         
@@ -179,9 +229,9 @@ async def get_point_detail(
         )
 
 
-@router.post("/{point_id}/revoke")
+@router.post("/{history_id}/revoke")
 async def revoke_point_transaction(
-    point_id: str,
+    history_id: str,
     current_user=Depends(get_current_user)
 ):
     """
@@ -190,8 +240,8 @@ async def revoke_point_transaction(
     try:
         # 기존 내역 조회
         existing = await query_one(
-            "SELECT * FROM point_history WHERE id = %(point_id)s",
-            {"point_id": point_id},
+            "SELECT * FROM point_history WHERE id = %(history_id)s",
+            {"history_id": history_id},
             use_app_db=True
         )
         
@@ -212,10 +262,10 @@ async def revoke_point_transaction(
             """
             UPDATE point_history 
             SET is_revoked = true, updated_at = NOW()
-            WHERE id = %(point_id)s
+            WHERE id = %(history_id)s
             RETURNING id
             """,
-            {"point_id": point_id},
+            {"history_id": history_id},
             use_app_db=True
         )
         
