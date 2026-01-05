@@ -10,6 +10,7 @@ from .companies import router as companies_router
 from .security_groups import router as security_groups_router
 from .logs import router as logs_router
 from .content_categories import router as content_categories_router
+from .content_subcategories import router as content_subcategories_router
 from .common_codes import router as common_codes_router
 from .system_settings import router as system_settings_router
 from .notices import router as notices_router
@@ -20,6 +21,7 @@ from .upload import router as upload_router
 from .departments import router as departments_router
 from .apis import router as apis_router
 from .dashboard import router as dashboard_router
+from .points import router as points_router
 
 __all__ = [
     'auth_router', 
@@ -31,6 +33,7 @@ __all__ = [
     'security_groups_router',
     'logs_router',
     'content_categories_router',
+    'content_subcategories_router',
     'common_codes_router',
     'system_settings_router',
     'notices_router',
@@ -41,5 +44,6 @@ __all__ = [
     'departments_router',
     'apis_router',
     'dashboard_router',
+    'points_router',
 ]
 

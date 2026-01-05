@@ -26,6 +26,7 @@ from app.routers import (
     security_groups_router,
     logs_router,
     content_categories_router,
+    content_subcategories_router,
     common_codes_router,
     system_settings_router,
     notices_router,
@@ -36,6 +37,7 @@ from app.routers import (
     departments_router,
     apis_router,
     dashboard_router,
+    points_router,
 )
 
 
@@ -156,6 +158,7 @@ app.include_router(companies_router)
 app.include_router(security_groups_router)
 app.include_router(logs_router)
 app.include_router(content_categories_router)
+app.include_router(content_subcategories_router)
 app.include_router(common_codes_router)
 app.include_router(system_settings_router)
 app.include_router(notices_router)
@@ -166,6 +169,7 @@ app.include_router(upload_router)
 app.include_router(departments_router)
 app.include_router(apis_router)
 app.include_router(dashboard_router)
+app.include_router(points_router)
 
 
 # 개발용 실행

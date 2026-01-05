@@ -44,7 +44,7 @@ export default function LoginPage() {
         // 토큰 저장
         setToken(tokens.access_token);
         // 로그인 성공
-        login({ ...user, id: String(user.id) }, tokens.access_token);
+        login(user, tokens.access_token);
         router.push('/dashboard');
       } else {
         setError(data.error?.message || '로그인에 실패했습니다.');

@@ -304,7 +304,7 @@ export default function DashboardPage() {
   }));
 
   const challengesData =
-    dashboardData.challenges.data.length > 0
+    dashboardData.challenges?.data && dashboardData.challenges.data.length > 0
       ? dashboardData.challenges.data
       : defaultChallenges;
 
