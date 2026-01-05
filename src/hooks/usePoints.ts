@@ -1,32 +1,16 @@
 // ============================================
 // 포인트 관리 훅 - SWR 기반 데이터 페칭
 // ============================================
+// FastAPI 백엔드 연동
 
 import useSWR, { mutate as globalMutate } from 'swr';
+import { swrFetcher, apiClient } from '@/lib/api-client';
 import type {
   PointHistoryItem,
   PointSearchFilters,
   SortConfig,
   PaginationInfo,
 } from '@/types';
-
-// 인증 토큰을 포함한 fetcher
-const fetcher = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  });
-  
-  if (!res.ok) {
-    throw new Error('데이터를 불러오는데 실패했습니다.');
-  }
-  
-  return res.json();
-};
 
 // 검색 필터를 쿼리스트링으로 변환
 function filtersToQuery(
@@ -76,8 +60,8 @@ export function usePoints(
 ) {
   const queryString = filtersToQuery(filters, sort, page, pageSize);
   const { data, error, isLoading, mutate } = useSWR<PointHistoryResponse>(
-    `/api/admin/points?${queryString}`,
-    fetcher,
+    `/admin/points?${queryString}`,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -95,8 +79,8 @@ export function usePoints(
 // 포인트 상세 조회 훅
 export function usePointDetail(id: string | null) {
   const { data, error, isLoading, mutate } = useSWR<PointDetailResponse>(
-    id ? `/api/admin/points/${id}` : null,
-    fetcher,
+    id ? `/admin/points/${id}` : null,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -112,21 +96,8 @@ export function usePointDetail(id: string | null) {
 
 // 포인트 거래 취소 함수
 export async function revokePointTransaction(id: string): Promise<void> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const response = await fetch(`/api/admin/points/${id}/revoke`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('포인트 취소에 실패했습니다.');
-  }
-
-  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/points'), undefined, { revalidate: true });
+  await apiClient.post(`/admin/points/${id}/revoke`);
+  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/points'), undefined, { revalidate: true });
 }
 
 // 포인트 조정 함수
@@ -136,22 +107,6 @@ export async function adjustPoints(params: {
   reason: string;
   memo?: string;
 }): Promise<void> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const response = await fetch('/api/admin/points/adjust', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: JSON.stringify(params),
-  });
-
-  if (!response.ok) {
-    throw new Error('포인트 조정에 실패했습니다.');
-  }
-
-  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/points'), undefined, { revalidate: true });
+  await apiClient.post('/admin/points/adjust', params);
+  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/points'), undefined, { revalidate: true });
 }
-
-

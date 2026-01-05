@@ -3,12 +3,14 @@
 // ============================================
 // 로그인 페이지
 // ============================================
+// FastAPI 백엔드 연동
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Input } from '@/components/common';
 import { useSession } from '@/hooks/useSession';
 import { getSafeErrorMessage } from '@/lib/utils';
+import { apiClient, setToken } from '@/lib/api-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,27 +33,23 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // FastAPI 백엔드로 로그인 요청
+      const data = await apiClient.post<{
+        user: { id: string; email: string; name: string; role: string };
+        token: string;
+      }>('/auth/login', { email, password });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(getSafeErrorMessage(response.status));
-        return;
+      if (data.success && data.data) {
+        // 토큰 저장
+        setToken(data.data.token);
+        // 로그인 성공
+        login(data.data.user, data.data.token);
+        router.push('/dashboard');
+      } else {
+        setError(data.error?.message || '로그인에 실패했습니다.');
       }
-
-      // 로그인 성공
-      login(data.user, data.token);
-      router.push('/dashboard');
-    } catch {
-      setError(getSafeErrorMessage());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : getSafeErrorMessage());
     } finally {
       setIsLoading(false);
       // 비밀번호 필드 초기화

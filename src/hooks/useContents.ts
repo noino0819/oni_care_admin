@@ -1,8 +1,10 @@
 // ============================================
 // 컨텐츠 관리 훅 - SWR 기반 데이터 페칭
 // ============================================
+// FastAPI 백엔드 연동
 
 import useSWR, { mutate as globalMutate } from 'swr';
+import { swrFetcher, apiClient } from '@/lib/api-client';
 import type {
   ContentListItem,
   ContentDetail,
@@ -13,24 +15,6 @@ import type {
   ApiResponse,
   PaginationInfo,
 } from '@/types';
-
-// 인증 토큰을 포함한 fetcher
-const fetcher = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  });
-  
-  if (!res.ok) {
-    throw new Error('데이터를 불러오는데 실패했습니다.');
-  }
-  
-  return res.json();
-};
 
 // 검색 필터를 쿼리스트링으로 변환
 function filtersToQuery(
@@ -91,8 +75,8 @@ export function useContents(
 ) {
   const queryString = filtersToQuery(filters, sort, page, pageSize);
   const { data, error, isLoading, mutate } = useSWR<ContentListResponse>(
-    `/api/admin/contents?${queryString}`,
-    fetcher,
+    `/admin/contents?${queryString}`,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -100,8 +84,8 @@ export function useContents(
 
   // 카테고리 목록도 함께 로드
   const { data: categoriesData } = useSWR<ContentCategoryResponse>(
-    '/api/admin/content-categories',
-    fetcher,
+    '/admin/content-categories',
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -109,20 +93,7 @@ export function useContents(
 
   // 컨텐츠 삭제 함수
   const deleteContents = async (ids: string[]): Promise<void> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-    const response = await fetch('/api/admin/contents/batch-delete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: JSON.stringify({ ids }),
-    });
-
-    if (!response.ok) {
-      throw new Error('삭제에 실패했습니다.');
-    }
+    await apiClient.post('/admin/contents/batch-delete', { ids });
   };
 
   return {
@@ -139,8 +110,8 @@ export function useContents(
 // 컨텐츠 상세 조회 훅
 export function useContentDetail(id: string | null) {
   const { data, error, isLoading, mutate } = useSWR<ContentDetailResponse>(
-    id ? `/api/admin/contents/${id}` : null,
-    fetcher,
+    id ? `/admin/contents/${id}` : null,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -157,8 +128,8 @@ export function useContentDetail(id: string | null) {
 // 컨텐츠 카테고리 목록 조회 훅
 export function useContentCategories() {
   const { data, error, isLoading, mutate } = useSWR<ContentCategoryResponse>(
-    '/api/admin/content-categories',
-    fetcher,
+    '/admin/content-categories',
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -174,49 +145,17 @@ export function useContentCategories() {
 
 // 컨텐츠 등록 함수
 export async function createContent(form: ContentForm): Promise<ApiResponse<ContentDetail>> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const response = await fetch('/api/admin/contents', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: JSON.stringify(form),
-  });
-
-  if (!response.ok) {
-    throw new Error('컨텐츠 등록에 실패했습니다.');
-  }
-
-  const result = await response.json();
+  const result = await apiClient.post<ContentDetail>('/admin/contents', form);
   // 목록 캐시 갱신
-  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/contents'), undefined, { revalidate: true });
+  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/contents'), undefined, { revalidate: true });
   return result;
 }
 
 // 컨텐츠 수정 함수
 export async function updateContent(id: string, form: ContentForm): Promise<ApiResponse<ContentDetail>> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const response = await fetch(`/api/admin/contents/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: JSON.stringify(form),
-  });
-
-  if (!response.ok) {
-    throw new Error('컨텐츠 수정에 실패했습니다.');
-  }
-
-  const result = await response.json();
+  const result = await apiClient.put<ContentDetail>(`/admin/contents/${id}`, form);
   // 상세 및 목록 캐시 갱신
-  globalMutate(`/api/admin/contents/${id}`);
-  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/contents'), undefined, { revalidate: true });
+  globalMutate(`/admin/contents/${id}`);
+  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/contents'), undefined, { revalidate: true });
   return result;
 }
-
-

@@ -1,8 +1,10 @@
 // ============================================
 // 공지사항 관리 훅 - SWR 기반 데이터 페칭
 // ============================================
+// FastAPI 백엔드 연동
 
 import useSWR, { mutate as globalMutate } from 'swr';
+import { swrFetcher, apiClient } from '@/lib/api-client';
 import type {
   NoticeListItem,
   NoticeDetail,
@@ -12,24 +14,6 @@ import type {
   ApiResponse,
   PaginationInfo,
 } from '@/types';
-
-// 인증 토큰을 포함한 fetcher
-const fetcher = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const res = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  });
-  
-  if (!res.ok) {
-    throw new Error('데이터를 불러오는데 실패했습니다.');
-  }
-  
-  return res.json();
-};
 
 // 검색 필터를 쿼리스트링으로 변환
 function filtersToQuery(
@@ -78,8 +62,8 @@ export function useNotices(
 ) {
   const queryString = filtersToQuery(filters, sort, page, pageSize);
   const { data, error, isLoading, mutate } = useSWR<NoticeListResponse>(
-    `/api/admin/notices?${queryString}`,
-    fetcher,
+    `/admin/notices?${queryString}`,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -87,20 +71,7 @@ export function useNotices(
 
   // 공지사항 삭제 함수
   const deleteNotices = async (ids: string[]): Promise<void> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-    const response = await fetch('/api/admin/notices/batch-delete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: JSON.stringify({ ids }),
-    });
-
-    if (!response.ok) {
-      throw new Error('삭제에 실패했습니다.');
-    }
+    await apiClient.post('/admin/notices/batch-delete', { ids });
   };
 
   return {
@@ -116,8 +87,8 @@ export function useNotices(
 // 공지사항 상세 조회 훅
 export function useNoticeDetail(id: string | null) {
   const { data, error, isLoading, mutate } = useSWR<NoticeDetailResponse>(
-    id ? `/api/admin/notices/${id}` : null,
-    fetcher,
+    id ? `/admin/notices/${id}` : null,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -133,47 +104,15 @@ export function useNoticeDetail(id: string | null) {
 
 // 공지사항 등록 함수
 export async function createNotice(form: NoticeForm): Promise<ApiResponse<NoticeDetail>> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const response = await fetch('/api/admin/notices', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: JSON.stringify(form),
-  });
-
-  if (!response.ok) {
-    throw new Error('공지사항 등록에 실패했습니다.');
-  }
-
-  const result = await response.json();
-  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/notices'), undefined, { revalidate: true });
+  const result = await apiClient.post<NoticeDetail>('/admin/notices', form);
+  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/notices'), undefined, { revalidate: true });
   return result;
 }
 
 // 공지사항 수정 함수
 export async function updateNotice(id: string, form: NoticeForm): Promise<ApiResponse<NoticeDetail>> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  const response = await fetch(`/api/admin/notices/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: JSON.stringify(form),
-  });
-
-  if (!response.ok) {
-    throw new Error('공지사항 수정에 실패했습니다.');
-  }
-
-  const result = await response.json();
-  globalMutate(`/api/admin/notices/${id}`);
-  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/notices'), undefined, { revalidate: true });
+  const result = await apiClient.put<NoticeDetail>(`/admin/notices/${id}`, form);
+  globalMutate(`/admin/notices/${id}`);
+  globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/notices'), undefined, { revalidate: true });
   return result;
 }
-
-

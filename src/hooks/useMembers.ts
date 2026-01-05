@@ -3,9 +3,11 @@
 // ============================================
 // 회원 데이터 훅
 // ============================================
+// FastAPI 백엔드 연동
 
 import { useState } from 'react';
 import useSWR from 'swr';
+import { swrFetcher, apiClient } from '@/lib/api-client';
 import type { MemberListItem, MemberDetail, MemberSearchFilters, SortConfig } from '@/types';
 
 interface MembersResponse {
@@ -23,24 +25,6 @@ interface MemberDetailResponse {
   success: boolean;
   data: MemberDetail;
 }
-
-// SWR fetcher
-const fetcher = async (url: string) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('API 요청 실패');
-  }
-
-  return response.json();
-};
 
 // 필터를 쿼리 문자열로 변환
 function filtersToQuery(filters: MemberSearchFilters, sort?: SortConfig, page = 1, limit = 20): string {
@@ -80,8 +64,8 @@ export function useMembers(
   const queryString = filtersToQuery(filters, sort, page, limit);
 
   const { data, error, isLoading, mutate } = useSWR<MembersResponse>(
-    enabled ? `/api/members?${queryString}` : null,
-    fetcher,
+    enabled ? `/members?${queryString}` : null,
+    swrFetcher,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -100,8 +84,8 @@ export function useMembers(
 // 회원 상세 조회 훅
 export function useMemberDetail(id: string | null) {
   const { data, error, isLoading, mutate } = useSWR<MemberDetailResponse>(
-    id ? `/api/members/${id}` : null,
-    fetcher,
+    id ? `/members/${id}` : null,
+    swrFetcher,
     {
       revalidateOnFocus: false,
     }
@@ -122,23 +106,8 @@ export function useMemberUpdate() {
   const updateMember = async (id: string, data: Record<string, unknown>) => {
     setIsUpdating(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-      
-      const response = await fetch(`/api/members/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('수정 요청 실패');
-      }
-
-      return await response.json();
+      const result = await apiClient.put(`/members/${id}`, data);
+      return result;
     } finally {
       setIsUpdating(false);
     }
@@ -146,4 +115,3 @@ export function useMemberUpdate() {
 
   return { updateMember, isUpdating };
 }
-
