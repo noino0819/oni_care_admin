@@ -68,9 +68,10 @@ export async function GET(request: NextRequest) {
 
     // 다중 카테고리 선택 (category_ids)
     if (categoryIds && categoryIds.length > 0) {
-      conditions.push(`c.category_id = ANY($${paramIndex}::int[])`);
-      params.push(`{${categoryIds.join(',')}}`);
-      paramIndex++;
+      const placeholders = categoryIds.map((_, i) => `$${paramIndex + i}`).join(',');
+      conditions.push(`c.category_id IN (${placeholders})`);
+      params.push(...categoryIds);
+      paramIndex += categoryIds.length;
     }
 
     if (tag) {
