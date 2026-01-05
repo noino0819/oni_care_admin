@@ -3,7 +3,8 @@
 # ============================================
 # 컨텐츠 중분류 CRUD
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from app.config.database import query, query_one, execute_returning, execute
 from app.models.common import ApiResponse
@@ -12,6 +13,42 @@ from app.core.logger import logger
 
 
 router = APIRouter(prefix="/api/v1/admin/content-subcategories", tags=["Content Subcategories"])
+
+
+@router.get("")
+async def get_content_subcategories(
+    category_id: Optional[int] = Query(None, description="대분류 ID"),
+    current_user=Depends(get_current_user)
+):
+    """
+    컨텐츠 중분류 목록 조회
+    """
+    try:
+        params = {}
+        where_clause = ""
+        
+        if category_id:
+            where_clause = "WHERE cs.category_id = %(category_id)s"
+            params["category_id"] = category_id
+        
+        subcategories = await query(
+            f"""
+            SELECT cs.*, cc.category_name
+            FROM public.content_subcategories cs
+            LEFT JOIN public.content_categories cc ON cs.category_id = cc.id
+            {where_clause}
+            ORDER BY cs.category_id, cs.display_order, cs.subcategory_name
+            """,
+            params
+        )
+        
+        return {"success": True, "data": subcategories}
+    except Exception as e:
+        logger.error(f"중분류 목록 조회 오류: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
+        )
 
 
 @router.get("/{subcategory_id}")
