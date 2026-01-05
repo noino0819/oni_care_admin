@@ -124,9 +124,10 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     formData.append('folder', folder);
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
     
     try {
-      const res = await fetch('/api/admin/upload', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/admin/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

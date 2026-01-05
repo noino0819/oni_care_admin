@@ -12,18 +12,8 @@ import { SubcategoryFormModal } from "./SubcategoryFormModal";
 import { cn } from "@/lib/utils";
 import { RefreshCw, Plus, Trash2, Edit } from "lucide-react";
 import useSWR from "swr";
+import { swrFetcher, apiClient } from "@/lib/api-client";
 import type { SortConfig, TableColumn, ContentCategory, ContentSubcategory, CategorySearchFilters } from "@/types";
-
-const fetcher = async (url: string) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
-  if (!response.ok) throw new Error("API 요청 실패");
-  return response.json();
-};
 
 export default function CategoriesPage() {
   const [filters, setFilters] = useState<CategorySearchFilters>({
@@ -61,12 +51,12 @@ export default function CategoriesPage() {
   const { data: categoriesData, mutate: mutateCategories } = useSWR<{
     success: boolean;
     data: ContentCategory[];
-  }>(`/api/admin/categories?${buildMainQuery()}`, fetcher, { revalidateOnFocus: false });
+  }>(`/admin/content-categories?${buildMainQuery()}`, swrFetcher, { revalidateOnFocus: false });
 
   const { data: subcategoriesData, mutate: mutateSubcategories } = useSWR<{
     success: boolean;
     data: ContentSubcategory[];
-  }>(`/api/admin/subcategories?${buildSubQuery()}`, fetcher, { revalidateOnFocus: false });
+  }>(`/admin/content-subcategories?${buildSubQuery()}`, swrFetcher, { revalidateOnFocus: false });
 
   const categories = categoriesData?.data || [];
   const subcategories = subcategoriesData?.data || [];
@@ -127,20 +117,7 @@ export default function CategoriesPage() {
     if (selectedMainIds.length === 0) return;
 
     try {
-      const token = localStorage.getItem("admin_token");
-      const response = await fetch("/api/admin/categories/bulk-delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ ids: selectedMainIds }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "삭제에 실패했습니다.");
-      }
+      await apiClient.delete("/admin/content-categories/batch-delete", { ids: selectedMainIds });
 
       setAlertMessage("대분류가 삭제되었습니다.");
       setSelectedMainIds([]);
@@ -158,20 +135,7 @@ export default function CategoriesPage() {
     if (selectedSubIds.length === 0) return;
 
     try {
-      const token = localStorage.getItem("admin_token");
-      const response = await fetch("/api/admin/subcategories/bulk-delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ ids: selectedSubIds }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "삭제에 실패했습니다.");
-      }
+      await apiClient.delete("/admin/content-subcategories/batch-delete", { ids: selectedSubIds });
 
       setAlertMessage("중분류가 삭제되었습니다.");
       setSelectedSubIds([]);

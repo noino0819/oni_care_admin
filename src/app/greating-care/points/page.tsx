@@ -10,6 +10,7 @@ import { Button, DataTable, AlertModal, ConfirmModal, DatePicker } from "@/compo
 import { maskEmail, maskName, formatDate, cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
 import useSWR from "swr";
+import { swrFetcher, apiClient } from "@/lib/api-client";
 import type { SortConfig, TableColumn } from "@/types";
 
 interface PointSummary {
@@ -58,17 +59,6 @@ const TRANSACTION_TYPE_OPTIONS = [
   { value: "use", label: "사용" },
   { value: "expire", label: "소멸" },
 ];
-
-const fetcher = async (url: string) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
-  if (!response.ok) throw new Error("API 요청 실패");
-  return response.json();
-};
 
 export default function PointsPage() {
   const [filters, setFilters] = useState<PointSearchFilters>({

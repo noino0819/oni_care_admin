@@ -11,6 +11,7 @@ import { NoticeFormModal } from "./NoticeFormModal";
 import { formatDate, cn } from "@/lib/utils";
 import { RefreshCw, Plus, Trash2 } from "lucide-react";
 import useSWR from "swr";
+import { swrFetcher, apiClient } from "@/lib/api-client";
 import type { SortConfig, TableColumn, NoticeListItem, NoticeSearchFilters } from "@/types";
 
 const EXPOSURE_SCOPE_OPTIONS = [
@@ -25,17 +26,6 @@ const STATUS_OPTIONS = [
   { value: "active", label: "게시중" },
   { value: "ended", label: "종료" },
 ];
-
-const fetcher = async (url: string) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
-  if (!response.ok) throw new Error("API 요청 실패");
-  return response.json();
-};
 
 export default function NoticesPage() {
   const [filters, setFilters] = useState<NoticeSearchFilters>({
@@ -78,7 +68,7 @@ export default function NoticesPage() {
     success: boolean;
     data: NoticeListItem[];
     pagination: { page: number; limit: number; total: number; totalPages: number };
-  }>(hasSearched ? `/api/admin/notices?${buildQueryString()}` : null, fetcher, { revalidateOnFocus: false });
+  }>(hasSearched ? `/admin/notices?${buildQueryString()}` : null, swrFetcher, { revalidateOnFocus: false });
 
   const notices = data?.data || [];
   const pagination = data?.pagination;
@@ -138,20 +128,7 @@ export default function NoticesPage() {
     if (selectedIds.length === 0) return;
 
     try {
-      const token = localStorage.getItem("admin_token");
-      const response = await fetch("/api/admin/notices/bulk-delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "삭제에 실패했습니다.");
-      }
+      await apiClient.delete("/admin/notices/batch-delete", { ids: selectedIds });
 
       setAlertMessage("공지사항이 삭제되었습니다.");
       setSelectedIds([]);

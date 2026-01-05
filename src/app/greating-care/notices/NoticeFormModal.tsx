@@ -6,8 +6,9 @@
 
 import { useState, useEffect } from "react";
 import { Button, AlertModal, DatePicker } from "@/components/common";
-import { cn, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { X, Upload } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 import type { NoticeListItem, NoticeForm } from "@/types";
 
 interface NoticeFormModalProps {
@@ -64,26 +65,18 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
 
   const fetchNoticeDetail = async (id: string) => {
     try {
-      const token = localStorage.getItem("admin_token");
-      const response = await fetch(`/api/admin/notices/${id}`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setFormData({
-            title: data.data.title,
-            content: data.data.content || "",
-            image_url: data.data.image_url,
-            visibility_scope: data.data.visibility_scope || ["all"],
-            company_codes: data.data.company_codes || [],
-            store_visible: data.data.store_visible || false,
-            start_date: data.data.start_date || "",
-            end_date: data.data.end_date || "",
-          });
-        }
+      const response = await apiClient.get<NoticeListItem>(`/admin/notices/${id}`);
+      if (response.success && response.data) {
+        setFormData({
+          title: response.data.title,
+          content: response.data.content || "",
+          image_url: response.data.image_url,
+          visibility_scope: response.data.visibility_scope || ["all"],
+          company_codes: response.data.company_codes || [],
+          store_visible: response.data.store_visible || false,
+          start_date: response.data.start_date || "",
+          end_date: response.data.end_date || "",
+        });
       }
     } catch (error) {
       console.error("공지사항 상세 조회 실패:", error);
@@ -161,9 +154,11 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
     try {
       const formDataUpload = new FormData();
       formDataUpload.append("file", file);
+      formDataUpload.append("folder", "notices");
 
       const token = localStorage.getItem("admin_token");
-      const response = await fetch("/api/upload", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/upload`, {
         method: "POST",
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
@@ -176,7 +171,7 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
       }
 
       const data = await response.json();
-      handleChange("image_url", data.url);
+      handleChange("image_url", data.data?.url || data.url);
     } catch (error) {
       setAlertMessage(error instanceof Error ? error.message : "업로드에 실패했습니다.");
     } finally {
@@ -209,22 +204,10 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("admin_token");
-      const url = notice ? `/api/admin/notices/${notice.id}` : "/api/admin/notices";
-      const method = notice ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "저장에 실패했습니다.");
+      if (notice) {
+        await apiClient.put(`/admin/notices/${notice.id}`, formData);
+      } else {
+        await apiClient.post("/admin/notices", formData);
       }
 
       onSuccess();

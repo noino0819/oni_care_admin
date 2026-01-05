@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { Button, AlertModal } from "@/components/common";
 import { X } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 import type { ContentCategory, ContentSubcategory, SubcategoryForm } from "@/types";
 
 interface SubcategoryFormModalProps {
@@ -76,24 +77,10 @@ export function SubcategoryFormModal({
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("admin_token");
-      const url = subcategory
-        ? `/api/admin/subcategories/${subcategory.id}`
-        : "/api/admin/subcategories";
-      const method = subcategory ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "저장에 실패했습니다.");
+      if (subcategory) {
+        await apiClient.put(`/admin/content-subcategories/${subcategory.id}`, formData);
+      } else {
+        await apiClient.post("/admin/content-subcategories", formData);
       }
 
       onSuccess();

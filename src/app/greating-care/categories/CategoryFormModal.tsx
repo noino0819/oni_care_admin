@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { Button, AlertModal } from "@/components/common";
 import { X } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 import type { ContentCategory, CategoryForm } from "@/types";
 
 interface CategoryFormModalProps {
@@ -74,22 +75,10 @@ export function CategoryFormModal({ isOpen, category, onClose, onSuccess }: Cate
 
     setIsSaving(true);
     try {
-      const token = localStorage.getItem("admin_token");
-      const url = category ? `/api/admin/categories/${category.id}` : "/api/admin/categories";
-      const method = category ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error?.message || "저장에 실패했습니다.");
+      if (category) {
+        await apiClient.put(`/admin/content-categories/${category.id}`, formData);
+      } else {
+        await apiClient.post("/admin/content-categories", formData);
       }
 
       onSuccess();
