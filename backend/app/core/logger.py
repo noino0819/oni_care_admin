@@ -78,3 +78,4 @@ def setup_logger(name: str = "oni_care") -> logging.Logger:
 # 전역 로거 인스턴스
 logger = setup_logger()
 
+

@@ -302,3 +302,4 @@ async def delete_menu(
             detail={"error": "DELETE_ERROR", "message": "메뉴 삭제 중 오류가 발생했습니다."}
         )
 
+

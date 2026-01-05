@@ -67,3 +67,4 @@ class ResetPasswordRequest(BaseModel):
     """비밀번호 초기화 요청"""
     new_password: Optional[str] = Field(None, description="새 비밀번호 (미입력 시 기본값)")
 
+

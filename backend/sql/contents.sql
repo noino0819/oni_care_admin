@@ -67,3 +67,4 @@ DELETE FROM public.contents WHERE id = %(content_id)s;
 -- 컨텐츠 일괄 삭제
 DELETE FROM public.contents WHERE id = ANY(%(ids)s::uuid[]);
 
+

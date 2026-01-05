@@ -25,3 +25,4 @@ WHERE id = %(user_id)s;
 INSERT INTO admin_login_logs (admin_id, admin_email, ip_address, user_agent)
 VALUES (%(admin_id)s, %(email)s, %(ip)s, %(user_agent)s);
 
+

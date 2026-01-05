@@ -35,15 +35,16 @@ export default function LoginPage() {
     try {
       // FastAPI 백엔드로 로그인 요청
       const data = await apiClient.post<{
-        user: { id: string; email: string; name: string; role: string };
-        token: string;
+        user: { id: number; email: string; name: string; role: string };
+        tokens: { access_token: string; refresh_token: string; token_type: string; expires_in: number };
       }>('/auth/login', { email, password });
 
       if (data.success && data.data) {
+        const { user, tokens } = data.data;
         // 토큰 저장
-        setToken(data.data.token);
+        setToken(tokens.access_token);
         // 로그인 성공
-        login(data.data.user, data.data.token);
+        login({ ...user, id: String(user.id) }, tokens.access_token);
         router.push('/dashboard');
       } else {
         setError(data.error?.message || '로그인에 실패했습니다.');

@@ -326,3 +326,4 @@ async def delete_notice(
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
 
+

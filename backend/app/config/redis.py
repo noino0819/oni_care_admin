@@ -49,3 +49,4 @@ async def get_redis() -> redis.Redis:
         return await create_redis_client()
     return redis_client
 
+

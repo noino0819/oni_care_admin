@@ -181,3 +181,4 @@ async def get_personal_info_logs(
             detail={"error": "FETCH_ERROR", "message": "개인정보 접근로그 조회 중 오류가 발생했습니다."}
         )
 
+

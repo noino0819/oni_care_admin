@@ -58,3 +58,4 @@ class ErrorResponse(BaseModel):
     timestamp: str
     detail: Optional[Any] = None
 
+

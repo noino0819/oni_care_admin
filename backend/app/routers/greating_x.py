@@ -358,3 +358,4 @@ async def reset_greating_x_admin_password(
             detail={"error": "RESET_ERROR", "message": "비밀번호 초기화 중 오류가 발생했습니다."}
         )
 
+

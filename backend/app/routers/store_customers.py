@@ -266,3 +266,4 @@ async def delete_store_customer(
             detail={"error": "DELETE_ERROR", "message": "고객 삭제 중 오류가 발생했습니다."}
         )
 
+

@@ -282,3 +282,4 @@ async def delete_company(
             detail={"error": "DELETE_ERROR", "message": "회사 삭제 중 오류가 발생했습니다."}
         )
 
+

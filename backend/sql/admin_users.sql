@@ -71,3 +71,4 @@ UPDATE public.admin_users
 SET password_hash = %(password_hash)s, updated_at = NOW()
 WHERE id = %(user_id)s;
 
+

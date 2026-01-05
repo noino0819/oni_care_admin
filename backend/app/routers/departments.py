@@ -141,3 +141,4 @@ async def delete_department(
             detail={"error": "DELETE_ERROR", "message": "부서 삭제 중 오류가 발생했습니다."}
         )
 
+

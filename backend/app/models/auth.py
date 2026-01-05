@@ -67,3 +67,4 @@ class RegisterResponse(BaseModel):
     name: str
     created_at: datetime
 
+

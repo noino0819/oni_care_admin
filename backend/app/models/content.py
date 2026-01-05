@@ -103,3 +103,4 @@ class BatchDeleteRequest(BaseModel):
     """일괄 삭제 요청"""
     ids: List[str] = Field(..., min_length=1, description="삭제할 ID 목록")
 
+

@@ -4,11 +4,12 @@
 // 대시보드 페이지 - 글씨 크기 1.3배 확대
 // ============================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdminLayout } from "@/components/layout";
 import { Button } from "@/components/common";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface StatCard {
   value: number;
@@ -150,14 +151,21 @@ function PointCard({
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   const fetchData = async () => {
+    // 토큰 없으면 API 호출 안 함
+    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      const res = await fetch("/api/admin/dashboard");
-      const json = await res.json();
-      if (json.success) {
-        setData(json.data);
+      const res = await apiClient.get("/admin/dashboard");
+      if (res.success && res.data) {
+        setData(res.data as DashboardData);
       }
     } catch (error) {
       console.error("Dashboard data fetch error:", error);
@@ -167,6 +175,9 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    // StrictMode에서 중복 호출 방지
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     fetchData();
   }, []);
 

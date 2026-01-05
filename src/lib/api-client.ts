@@ -111,8 +111,16 @@ async function request<T>(
   // 401 에러 시 토큰 삭제 및 로그인 페이지로 이동
   if (response.status === 401) {
     removeToken();
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-      window.location.href = '/login';
+    // 세션 데이터도 삭제
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_session');
+      localStorage.removeItem('admin_session_expiry');
+      
+      if (!window.location.pathname.includes('/login')) {
+        // 즉시 리다이렉트하고 더 이상 진행하지 않음
+        window.location.replace('/login');
+        return { success: false } as ApiResponse<T>;
+      }
     }
     throw new Error('인증이 필요합니다.');
   }
@@ -177,8 +185,15 @@ export const swrFetcher = async (url: string) => {
   
   if (response.status === 401) {
     removeToken();
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-      window.location.href = '/login';
+    // 세션 데이터도 삭제
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_session');
+      localStorage.removeItem('admin_session_expiry');
+      
+      if (!window.location.pathname.includes('/login')) {
+        window.location.replace('/login');
+        return { success: false };
+      }
     }
     throw new Error('인증이 필요합니다.');
   }
@@ -198,4 +213,5 @@ export function getApiBaseUrl(): string {
 }
 
 export default apiClient;
+
 

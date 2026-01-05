@@ -105,3 +105,4 @@ def load_sql_direct(filename: str) -> str:
     
     return sql_file.read_text(encoding="utf-8")
 
+
