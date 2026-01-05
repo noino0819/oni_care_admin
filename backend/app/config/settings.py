@@ -5,7 +5,11 @@
 
 from pydantic_settings import BaseSettings
 from typing import List
+from pathlib import Path
 import os
+
+# 프로젝트 루트 디렉토리 (backend의 상위)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -29,14 +33,35 @@ class Settings(BaseSettings):
     DB_MIN_CONN: int = 5
     DB_MAX_CONN: int = 20
     
-    # App DB 설정 (oni_care)
-    APP_DB_HOST: str = "localhost"
-    APP_DB_PORT: int = 5432
-    APP_DB_NAME: str = "oni_care"
-    APP_DB_USER: str = "postgres"
-    APP_DB_PASSWORD: str = ""
+    # App DB 설정 (기본: Admin DB와 동일)
+    # APP_DB_* 가 없으면 DB_* 값을 사용
+    APP_DB_HOST: str | None = None
+    APP_DB_PORT: int | None = None
+    APP_DB_NAME: str | None = None
+    APP_DB_USER: str | None = None
+    APP_DB_PASSWORD: str | None = None
     APP_DB_MIN_CONN: int = 5
     APP_DB_MAX_CONN: int = 20
+    
+    @property
+    def app_db_host(self) -> str:
+        return self.APP_DB_HOST or self.DB_HOST
+    
+    @property
+    def app_db_port(self) -> int:
+        return self.APP_DB_PORT or self.DB_PORT
+    
+    @property
+    def app_db_name(self) -> str:
+        return self.APP_DB_NAME or self.DB_NAME
+    
+    @property
+    def app_db_user(self) -> str:
+        return self.APP_DB_USER or self.DB_USER
+    
+    @property
+    def app_db_password(self) -> str:
+        return self.APP_DB_PASSWORD or self.DB_PASSWORD
     
     # Redis 설정
     REDIS_HOST: str = "localhost"
@@ -65,10 +90,15 @@ class Settings(BaseSettings):
     @property
     def app_db_dsn(self) -> str:
         """App DB 연결 문자열"""
-        return f"postgresql://{self.APP_DB_USER}:{self.APP_DB_PASSWORD}@{self.APP_DB_HOST}:{self.APP_DB_PORT}/{self.APP_DB_NAME}"
+        return f"postgresql://{self.app_db_user}:{self.app_db_password}@{self.app_db_host}:{self.app_db_port}/{self.app_db_name}"
     
     class Config:
-        env_file = ".env"
+        # 프로젝트 루트의 .env.local과 backend/.env 모두 읽기
+        env_file = (
+            str(PROJECT_ROOT / ".env.local"),
+            str(PROJECT_ROOT / ".env"),
+            ".env",
+        )
         env_file_encoding = "utf-8"
         extra = "ignore"
 

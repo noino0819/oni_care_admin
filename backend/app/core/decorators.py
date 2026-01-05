@@ -7,9 +7,6 @@ from functools import wraps
 from typing import Callable, Any
 from contextlib import asynccontextmanager
 
-from app.config.database import get_connection
-from app.core.logger import logger
-
 
 @asynccontextmanager
 async def transaction_context(use_app_db: bool = False):
@@ -21,6 +18,10 @@ async def transaction_context(use_app_db: bool = False):
             await conn.execute(query1)
             await conn.execute(query2)
     """
+    # 지연 import로 순환 참조 방지
+    from app.config.database import get_connection
+    from app.core.logger import logger
+    
     async with get_connection(use_app_db) as conn:
         try:
             yield conn
@@ -71,10 +72,12 @@ def auto_commit(use_app_db: bool = False):
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs) -> Any:
+            # 지연 import로 순환 참조 방지
+            from app.config.database import get_connection
+            
             async with get_connection(use_app_db) as conn:
                 conn.autocommit = True
                 kwargs['conn'] = conn
                 return await func(*args, **kwargs)
         return wrapper
     return decorator
-
