@@ -66,10 +66,7 @@ async def get_content_categories(
         
         return {
             "success": True,
-            "data": {
-                "categories": categories,
-                "subcategories": [],
-            },
+            "data": categories,
             "pagination": {
                 "page": page,
                 "limit": page_size,
