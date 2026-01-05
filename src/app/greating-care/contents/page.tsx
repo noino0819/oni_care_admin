@@ -4,14 +4,14 @@
 // 컨텐츠 관리 페이지 - 기획서 스펙 반영
 // ============================================
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout';
 import { Button, DataTable, Pagination, ConfirmModal, AlertModal, DatePicker } from '@/components/common';
 import { ContentFormModal } from './ContentFormModal';
 import { useContents } from '@/hooks/useContents';
 import { formatDate } from '@/lib/utils';
 import { RefreshCw, Plus } from 'lucide-react';
-import type { ContentSearchFilters, SortConfig, TableColumn, ContentListItem } from '@/types';
+import type { ContentSearchFilters, SortConfig, TableColumn, ContentListItem, ContentCategory } from '@/types';
 
 // 공개범위 옵션
 const VISIBILITY_OPTIONS = [
@@ -45,6 +45,9 @@ export default function ContentsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
   const { contents, pagination, categories, isLoading, refetch, deleteContents } = useContents(
     filters,
@@ -53,8 +56,41 @@ export default function ContentsPage() {
     20
   );
 
+  // 외부 클릭 시 카테고리 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleFilterChange = (key: keyof ContentSearchFilters, value: unknown) => {
     setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  // 카테고리 체크박스 토글
+  const handleCategoryCheck = (categoryId: number) => {
+    setSelectedCategoryIds(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  // 선택된 카테고리명 가져오기
+  const getSelectedCategoryNames = () => {
+    if (!categories || selectedCategoryIds.length === 0) return '전체';
+    const names = categories
+      .filter((cat: ContentCategory) => selectedCategoryIds.includes(cat.id))
+      .map((cat: ContentCategory) => cat.category_name);
+    if (names.length === 0) return '전체';
+    if (names.length > 2) return `${names.slice(0, 2).join(', ')} 외 ${names.length - 2}개`;
+    return names.join(', ');
   };
 
   const handleSearch = () => {
@@ -233,16 +269,62 @@ export default function ContentsPage() {
 
             <div className="flex items-center gap-2">
               <span className={labelClass}>카테고리</span>
-              <select
-                value={filters.category_id || ''}
-                onChange={(e) => handleFilterChange('category_id', e.target.value ? Number(e.target.value) : undefined)}
-                className={`${selectClass} w-[160px]`}
-              >
-                <option value="">전체</option>
-                {categories?.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
-                ))}
-              </select>
+              <div ref={categoryDropdownRef} className="relative">
+                <div 
+                  className={`${inputClass} w-[200px] cursor-pointer flex items-center justify-between`}
+                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                >
+                  <span className="text-[13px] text-[#333] truncate">{getSelectedCategoryNames()}</span>
+                  <svg className={`w-4 h-4 transition-transform flex-shrink-0 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                {isCategoryDropdownOpen && categories && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-20 p-5 min-w-[550px]">
+                    {/* 카테고리 타입별 그룹화 */}
+                    <div className="flex gap-8">
+                      {['관심사', '질병', '운동'].map((type) => {
+                        const typeCategories = categories.filter(
+                          (cat: ContentCategory) => cat.category_type === type
+                        );
+                        return (
+                          <div key={type} className="min-w-[140px]">
+                            {/* 카테고리 타입 헤더 */}
+                            <div className="font-bold text-[15px] text-black pb-2 mb-3 border-b-2 border-black">
+                              {type}
+                            </div>
+                            {/* 체크박스 리스트 */}
+                            <div className="space-y-3">
+                              {typeCategories.length > 0 ? (
+                                typeCategories.map((cat: ContentCategory) => (
+                                  <label 
+                                    key={cat.id} 
+                                    className="flex items-center gap-3 cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedCategoryIds.includes(cat.id)}
+                                      onChange={() => handleCategoryCheck(cat.id)}
+                                      className="w-[18px] h-[18px] border-2 border-gray-400 rounded-sm appearance-none checked:bg-black checked:border-black relative cursor-pointer
+                                        after:content-[''] after:absolute after:hidden checked:after:block
+                                        after:left-[5px] after:top-[1px] after:w-[5px] after:h-[10px]
+                                        after:border-white after:border-r-2 after:border-b-2 after:rotate-45"
+                                    />
+                                    <span className="text-[14px] text-[#333]">{cat.category_name}</span>
+                                  </label>
+                                ))
+                              ) : (
+                                <span className="text-[13px] text-gray-400">항목 없음</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
