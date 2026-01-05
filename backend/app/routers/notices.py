@@ -57,15 +57,16 @@ async def get_notices(
             conditions.append("title ILIKE %(title)s")
             params["title"] = f"%{title}%"
         
-        if visibility_scope:
-            scope_list = [s.strip() for s in visibility_scope.split(",") if s.strip()]
-            if scope_list:
-                conditions.append("visibility_scope && %(visibility_scope)s::text[]")
-                params["visibility_scope"] = "{" + ",".join(scope_list) + "}"
-        
-        if company_code:
-            conditions.append("%(company_code)s = ANY(company_codes)")
-            params["company_code"] = company_code
+        # TODO: DB에 visibility_scope, company_codes 컬럼 추가 후 활성화
+        # if visibility_scope:
+        #     scope_list = [s.strip() for s in visibility_scope.split(",") if s.strip()]
+        #     if scope_list:
+        #         conditions.append("visibility_scope && %(visibility_scope)s::text[]")
+        #         params["visibility_scope"] = "{" + ",".join(scope_list) + "}"
+        # 
+        # if company_code:
+        #     conditions.append("%(company_code)s = ANY(company_codes)")
+        #     params["company_code"] = company_code
         
         if created_from:
             conditions.append("created_at >= %(created_from)s")
@@ -112,7 +113,7 @@ async def get_notices(
         
         notices = await query(
             f"""
-            SELECT id, title, visibility_scope, company_codes, start_date, end_date, created_at
+            SELECT id, title, start_date, end_date, created_at
             FROM notices
             {where_clause}
             ORDER BY {safe_field} {safe_direction}
@@ -122,11 +123,13 @@ async def get_notices(
             use_app_db=True
         )
         
-        # 상태 라벨 추가
+        # 상태 라벨 추가 및 기본값 설정
         formatted_notices = []
         for notice in notices:
             formatted_notices.append({
                 **notice,
+                "visibility_scope": notice.get("visibility_scope", ["all"]),
+                "company_codes": notice.get("company_codes", []),
                 "status": calculate_status(notice.get("start_date"), notice.get("end_date"))
             })
         
