@@ -1,0 +1,154 @@
+# ============================================
+# FastAPI 메인 애플리케이션
+# ============================================
+# OniCare Admin Backend
+
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+
+from app.config.settings import settings
+from app.config.database import create_db_pool, create_app_db_pool, close_db_pool
+from app.config.redis import create_redis_client, close_redis_client
+from app.core.exceptions import AppException
+from app.core.logger import logger
+
+# 라우터 임포트
+from app.routers import (
+    auth_router, 
+    admin_users_router, 
+    contents_router,
+    roles_router,
+    menus_router,
+    companies_router,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """애플리케이션 라이프사이클 관리"""
+    # 시작 시 실행
+    logger.info(f"🚀 {settings.APP_NAME} 서버 시작 중...")
+    
+    # DB 커넥션 풀 생성
+    await create_db_pool()
+    await create_app_db_pool()
+    
+    # Redis 연결
+    try:
+        await create_redis_client()
+    except Exception as e:
+        logger.warning(f"Redis 연결 실패 (계속 진행): {str(e)}")
+    
+    logger.info(f"✅ 서버 준비 완료: http://{settings.HOST}:{settings.PORT}")
+    
+    yield
+    
+    # 종료 시 실행
+    logger.info("🛑 서버 종료 중...")
+    await close_db_pool()
+    await close_redis_client()
+    logger.info("👋 서버 종료 완료")
+
+
+# FastAPI 앱 생성
+app = FastAPI(
+    title=settings.APP_NAME,
+    description="OniCare Admin Backend API",
+    version="1.0.0",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    lifespan=lifespan,
+)
+
+
+# CORS 미들웨어
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# 전역 예외 핸들러
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    """애플리케이션 커스텀 예외 핸들러"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"success": False, "error": exc.to_dict()}
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Pydantic 검증 에러 핸들러"""
+    errors = exc.errors()
+    detail = []
+    for error in errors:
+        field = ".".join(str(loc) for loc in error["loc"][1:]) if len(error["loc"]) > 1 else error["loc"][0]
+        detail.append({
+            "field": field,
+            "message": error["msg"],
+        })
+    
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "success": False,
+            "error": {
+                "error": "VALIDATION_ERROR",
+                "message": "입력값 검증에 실패했습니다.",
+                "detail": detail,
+            }
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """전역 예외 핸들러"""
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "success": False,
+            "error": {
+                "error": "INTERNAL_ERROR",
+                "message": "서버 오류가 발생했습니다." if not settings.DEBUG else str(exc),
+            }
+        }
+    )
+
+
+# 헬스체크
+@app.get("/health", tags=["Health"])
+async def health_check():
+    """서버 상태 확인"""
+    return {"status": "healthy", "service": settings.APP_NAME}
+
+
+# 라우터 등록
+app.include_router(auth_router)
+app.include_router(admin_users_router)
+app.include_router(contents_router)
+app.include_router(roles_router)
+app.include_router(menus_router)
+app.include_router(companies_router)
+
+
+# 개발용 실행
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+    )
+
