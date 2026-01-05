@@ -16,6 +16,7 @@ import {
 } from '@/components/common';
 import { RefreshCw } from 'lucide-react';
 import type { CommonCodeMaster, CommonCode, PaginationInfo } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 const IS_ACTIVE_OPTIONS = [
   { value: '', label: '선택해주세요' },
@@ -69,8 +70,7 @@ function CommonCodeDetailContent() {
       if (isActiveFilter) params.set('is_active', isActiveFilter);
       params.set('limit', '100');
 
-      const response = await fetch(`/api/admin/codes/masters?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: CommonCodeMaster[] }>(`/admin/codes/masters?${params}`);
 
       if (result.success) {
         setMasters(result.data || []);
@@ -91,8 +91,7 @@ function CommonCodeDetailContent() {
 
     setIsCodesLoading(true);
     try {
-      const response = await fetch(`/api/admin/codes/${selectedMasterId}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: CommonCode[] }>(`/admin/codes/${selectedMasterId}`);
 
       if (result.success) {
         setCodes(result.data || []);
@@ -174,18 +173,9 @@ function CommonCodeDetailContent() {
 
     setIsSaving(true);
     try {
-      const url = editingItem
-        ? `/api/admin/codes/${selectedMasterId}/${editingItem.id}`
-        : `/api/admin/codes/${selectedMasterId}`;
-      const method = editingItem ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formValues),
-      });
-
-      const result = await response.json();
+      const result = editingItem
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/codes/${selectedMasterId}/${editingItem.id}`, formValues)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>(`/admin/codes/${selectedMasterId}`, formValues);
 
       if (result.success) {
         setIsModalOpen(false);

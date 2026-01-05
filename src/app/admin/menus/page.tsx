@@ -12,6 +12,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { AdminMenu } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 메뉴 모달 컴포넌트
 interface MenuModalProps {
@@ -168,8 +169,7 @@ export default function AdminMenusPage() {
   // 1Depth 메뉴 조회
   const fetchDepth1Menus = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/menus?depth=1&flat=true');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>('/admin/menus?depth=1&flat=true');
       if (result.success) {
         setDepth1Menus(result.data || []);
       }
@@ -181,8 +181,7 @@ export default function AdminMenusPage() {
   // 2Depth 메뉴 조회
   const fetchDepth2Menus = useCallback(async (parentId: number) => {
     try {
-      const response = await fetch(`/api/admin/menus?parent_id=${parentId}&flat=true`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>(`/admin/menus?parent_id=${parentId}&flat=true`);
       if (result.success) {
         setDepth2Menus(result.data || []);
       }
@@ -194,8 +193,7 @@ export default function AdminMenusPage() {
   // 3Depth 메뉴 조회
   const fetchDepth3Menus = useCallback(async (parentId: number) => {
     try {
-      const response = await fetch(`/api/admin/menus?parent_id=${parentId}&flat=true`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>(`/admin/menus?parent_id=${parentId}&flat=true`);
       if (result.success) {
         setDepth3Menus(result.data || []);
       }
@@ -233,17 +231,11 @@ export default function AdminMenusPage() {
     setIsSaving(true);
     try {
       const isEdit = !!menuModal.data;
-      const url = isEdit 
-        ? `/api/admin/menus/${menuModal.data!.id}`
-        : '/api/admin/menus';
       
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = isEdit
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/menus/${menuModal.data!.id}`, data)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/menus', data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
         setMenuModal({ isOpen: false, data: null, parentId: null, depth: 1 });

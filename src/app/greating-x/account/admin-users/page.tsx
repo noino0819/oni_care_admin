@@ -15,6 +15,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { GreatingXAdminUser, Company } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 관리자 회원 모달 컴포넌트
 interface AdminUserModalProps {
@@ -251,8 +252,7 @@ export default function GreatingXAdminUsersPage() {
   // 회사 목록 조회
   const fetchCompanies = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/companies?limit=100');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Company[] }>('/admin/companies?limit=100');
       if (result.success) {
         setCompanies(result.data || []);
       }
@@ -273,8 +273,7 @@ export default function GreatingXAdminUsersPage() {
       params.set('limit', '100');
 
       // 그리팅-X 전용 API 호출
-      const response = await fetch(`/api/greating-x/admin-users?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: GreatingXAdminUser[] }>(`/greating-x/admin-users?${params}`);
 
       if (result.success) {
         setUsers(result.data || []);
@@ -318,18 +317,12 @@ export default function GreatingXAdminUsersPage() {
     setIsSaving(true);
     try {
       const isEdit = !!userModal.data;
-      // 그리팅-X 전용 API 호출
-      const url = isEdit 
-        ? `/api/greating-x/admin-users/${userModal.data!.id}`
-        : '/api/greating-x/admin-users';
       
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      // 그리팅-X 전용 API 호출
+      const result = isEdit
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/greating-x/admin-users/${userModal.data!.id}`, data)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/greating-x/admin-users', data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
         setUserModal({ isOpen: false, data: null });
@@ -353,10 +346,7 @@ export default function GreatingXAdminUsersPage() {
         setConfirmModal(null);
         try {
           // 그리팅-X 전용 API 호출
-          const response = await fetch(`/api/greating-x/admin-users/${user.id}/reset-password`, {
-            method: 'POST',
-          });
-          const result = await response.json();
+          const result = await apiClient.post<{ success: boolean; error?: { message: string } }>(`/greating-x/admin-users/${user.id}/reset-password`, {});
           if (result.success) {
             setAlertMessage('비밀번호가 초기화되었습니다.');
           } else {

@@ -17,6 +17,7 @@ import {
 } from '@/components/common';
 import { RefreshCw } from 'lucide-react';
 import type { PersonalInfoAccessLog, PersonalInfoAccessLogSearchFilters, TableColumn, PaginationInfo } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 마스킹 함수
 function maskUserId(userId: string | null): string {
@@ -65,8 +66,7 @@ export default function PersonalInfoLogsPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const response = await fetch(`/api/admin/logs/personal-info?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: PersonalInfoAccessLog[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/logs/personal-info?${params}`);
 
       if (result.success) {
         setData(result.data || []);

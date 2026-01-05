@@ -14,6 +14,7 @@ import {
 } from '@/components/common';
 import { RefreshCw } from 'lucide-react';
 import type { Role, RoleMenuPermission, AdminMenu } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 메뉴 트리 구조로 변환
 interface MenuTreeNode extends AdminMenu {
@@ -84,8 +85,7 @@ export default function RoleMenuPermissionsPage() {
   // 역할 조회
   const fetchRoles = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/roles?limit=100');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Role[] }>('/admin/roles?limit=100');
       if (result.success) {
         setRoles(result.data || []);
       }
@@ -97,8 +97,7 @@ export default function RoleMenuPermissionsPage() {
   // 메뉴 조회
   const fetchMenus = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/menus?flat=true');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>('/admin/menus?flat=true');
       if (result.success) {
         setMenus(result.data || []);
       }
@@ -111,8 +110,7 @@ export default function RoleMenuPermissionsPage() {
   const fetchPermissions = useCallback(async (roleId: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/roles/${roleId}/menu-permissions`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: RoleMenuPermission[] }>(`/admin/roles/${roleId}/menu-permissions`);
       if (result.success) {
         const perms = result.data || [];
         setPermissions(perms);
@@ -178,13 +176,7 @@ export default function RoleMenuPermissionsPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/roles/${selectedRole.id}/menu-permissions`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ permissions }),
-      });
-
-      const result = await response.json();
+      const result = await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/roles/${selectedRole.id}/menu-permissions`, { permissions });
       if (result.success) {
         setAlertMessage('저장되었습니다.');
         initialPermissionsRef.current = JSON.stringify(permissions);

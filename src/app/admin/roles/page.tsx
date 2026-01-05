@@ -16,6 +16,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { Role } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 역할 모달 컴포넌트
 interface RoleModalProps {
@@ -182,8 +183,7 @@ export default function RolesPage() {
       
       params.set('limit', '100');
 
-      const response = await fetch(`/api/admin/roles?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Role[] }>(`/admin/roles?${params}`);
 
       if (result.success) {
         setRoles(result.data || []);
@@ -225,17 +225,11 @@ export default function RolesPage() {
     setIsSaving(true);
     try {
       const isEdit = !!roleModal.data;
-      const url = isEdit 
-        ? `/api/admin/roles/${roleModal.data!.id}`
-        : '/api/admin/roles';
       
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = isEdit
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/roles/${roleModal.data!.id}`, data)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/roles', data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
         setRoleModal({ isOpen: false, data: null });

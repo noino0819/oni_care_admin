@@ -15,6 +15,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { AdminUserAccount, Company } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 관리자 회원 모달 컴포넌트
 interface AdminUserModalProps {
@@ -251,8 +252,7 @@ export default function AdminUsersPage() {
   // 회사 목록 조회
   const fetchCompanies = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/companies?limit=100');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Company[] }>('/admin/companies?limit=100');
       if (result.success) {
         setCompanies(result.data || []);
       }
@@ -271,8 +271,7 @@ export default function AdminUsersPage() {
       if (filters.department_name) params.set('department_name', filters.department_name);
       params.set('limit', '100');
 
-      const response = await fetch(`/api/admin/admin-users?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AdminUserAccount[] }>(`/admin/admin-users?${params}`);
 
       if (result.success) {
         setUsers(result.data || []);
@@ -316,17 +315,11 @@ export default function AdminUsersPage() {
     setIsSaving(true);
     try {
       const isEdit = !!userModal.data;
-      const url = isEdit 
-        ? `/api/admin/admin-users/${userModal.data!.id}`
-        : '/api/admin/admin-users';
       
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = isEdit
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/admin-users/${userModal.data!.id}`, data)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/admin-users', data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
         setUserModal({ isOpen: false, data: null });
@@ -349,10 +342,7 @@ export default function AdminUsersPage() {
       onConfirm: async () => {
         setConfirmModal(null);
         try {
-          const response = await fetch(`/api/admin/admin-users/${user.id}/reset-password`, {
-            method: 'POST',
-          });
-          const result = await response.json();
+          const result = await apiClient.post<{ success: boolean; error?: { message: string } }>(`/admin/admin-users/${user.id}/reset-password`, {});
           if (result.success) {
             setAlertMessage('비밀번호가 초기화되었습니다.');
           } else {

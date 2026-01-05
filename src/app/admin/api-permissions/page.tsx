@@ -14,6 +14,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { Role, AdminApi, RoleApiPermission } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 역할 모달 컴포넌트
 interface RoleModalProps {
@@ -218,8 +219,7 @@ export default function ApiPermissionsPage() {
   // 역할 조회
   const fetchRoles = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/roles?limit=100');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Role[] }>('/admin/roles?limit=100');
       if (result.success) {
         setRoles(result.data || []);
       }
@@ -231,8 +231,7 @@ export default function ApiPermissionsPage() {
   // API 조회
   const fetchApis = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/apis?limit=100');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AdminApi[] }>('/admin/apis?limit=100');
       if (result.success) {
         setApis(result.data || []);
       }
@@ -245,8 +244,7 @@ export default function ApiPermissionsPage() {
   const fetchPermissions = useCallback(async (roleId: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/roles/${roleId}/api-permissions`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: RoleApiPermission[] }>(`/admin/roles/${roleId}/api-permissions`);
       if (result.success) {
         setPermissions(result.data || []);
       }
@@ -287,13 +285,7 @@ export default function ApiPermissionsPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch('/api/admin/roles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
+      const result = await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/roles', data);
       if (result.success) {
         setAlertMessage('추가되었습니다.');
         setRoleModal(false);
@@ -317,13 +309,7 @@ export default function ApiPermissionsPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch('/api/admin/apis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
+      const result = await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/apis', data);
       if (result.success) {
         setAlertMessage('추가되었습니다.');
         setApiModal(false);
@@ -347,13 +333,7 @@ export default function ApiPermissionsPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/roles/${selectedRole.id}/api-permissions`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ permissions }),
-      });
-
-      const result = await response.json();
+      const result = await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/roles/${selectedRole.id}/api-permissions`, { permissions });
       if (result.success) {
         setAlertMessage('저장되었습니다.');
       } else {

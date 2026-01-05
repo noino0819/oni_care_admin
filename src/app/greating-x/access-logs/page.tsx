@@ -17,6 +17,7 @@ import {
 } from '@/components/common';
 import { RefreshCw } from 'lucide-react';
 import type { AccessLog, AccessLogSearchFilters, TableColumn, PaginationInfo } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 마스킹 함수
 function maskUserId(userId: string | null): string {
@@ -61,8 +62,7 @@ export default function AccessLogsPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const response = await fetch(`/api/admin/logs/access?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: AccessLog[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/logs/access?${params}`);
 
       if (result.success) {
         setData(result.data || []);

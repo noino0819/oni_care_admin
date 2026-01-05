@@ -15,6 +15,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { Company, Department, CompanySearchFilters } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 export default function CompaniesPage() {
   // 필터 상태
@@ -58,8 +59,7 @@ export default function CompaniesPage() {
       if (filters.company_name) params.set('company_name', filters.company_name);
       params.set('limit', '100');
 
-      const response = await fetch(`/api/admin/companies?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Company[] }>(`/admin/companies?${params}`);
 
       if (result.success) {
         setCompanies(result.data || []);
@@ -86,8 +86,7 @@ export default function CompaniesPage() {
       if (filters.department_code) params.set('department_code', filters.department_code);
       if (filters.department_name) params.set('department_name', filters.department_name);
 
-      const response = await fetch(`/api/admin/companies/${selectedCompanyId}/departments?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: Department[] }>(`/admin/companies/${selectedCompanyId}/departments?${params}`);
 
       if (result.success) {
         setDepartments(result.data || []);
@@ -184,13 +183,7 @@ export default function CompaniesPage() {
           return;
         }
 
-        const response = await fetch('/api/admin/companies', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newCompany),
-        });
-
-        const result = await response.json();
+        const result = await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/companies', newCompany);
         if (!result.success) {
           setAlertMessage(result.error?.message || '회사 추가 중 오류가 발생했습니다.');
           return;
@@ -204,13 +197,7 @@ export default function CompaniesPage() {
 
         const updatedCompany = { ...company, ...changes };
         
-        const response = await fetch(`/api/admin/companies/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedCompany),
-        });
-
-        const result = await response.json();
+        const result = await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/companies/${id}`, updatedCompany);
         if (!result.success) {
           setAlertMessage(result.error?.message || '회사 수정 중 오류가 발생했습니다.');
           return;
@@ -253,13 +240,7 @@ export default function CompaniesPage() {
           return;
         }
 
-        const response = await fetch(`/api/admin/companies/${selectedCompanyId}/departments`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newDepartment),
-        });
-
-        const result = await response.json();
+        const result = await apiClient.post<{ success: boolean; error?: { message: string } }>(`/admin/companies/${selectedCompanyId}/departments`, newDepartment);
         if (!result.success) {
           setAlertMessage(result.error?.message || '부서 추가 중 오류가 발생했습니다.');
           return;
@@ -273,13 +254,7 @@ export default function CompaniesPage() {
 
         const updatedDept = { ...dept, ...changes };
         
-        const response = await fetch(`/api/admin/departments/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedDept),
-        });
-
-        const result = await response.json();
+        const result = await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/departments/${id}`, updatedDept);
         if (!result.success) {
           setAlertMessage(result.error?.message || '부서 수정 중 오류가 발생했습니다.');
           return;

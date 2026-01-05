@@ -15,6 +15,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus, Calendar } from 'lucide-react';
 import type { StoreCustomer, SecurityGroup } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 고객 회원 모달 컴포넌트
 interface CustomerModalProps {
@@ -322,8 +323,7 @@ export default function StoreCustomersPage() {
   // 지점 목록 조회
   const fetchStores = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/security-groups?limit=100');
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: SecurityGroup[] }>('/admin/security-groups?limit=100');
       if (result.success) {
         setStores(result.data || []);
       }
@@ -347,8 +347,7 @@ export default function StoreCustomersPage() {
       if (filters.registered_to) params.set('registered_to', filters.registered_to);
       params.set('limit', '100');
 
-      const response = await fetch(`/api/admin/store-customers?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: StoreCustomer[] }>(`/admin/store-customers?${params}`);
 
       if (result.success) {
         setCustomers(result.data || []);
@@ -396,17 +395,11 @@ export default function StoreCustomersPage() {
     setIsSaving(true);
     try {
       const isEdit = !!customerModal.data;
-      const url = isEdit 
-        ? `/api/admin/store-customers/${customerModal.data!.id}`
-        : '/api/admin/store-customers';
       
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = isEdit
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/store-customers/${customerModal.data!.id}`, data)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/store-customers', data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
         setCustomerModal({ isOpen: false, data: null });

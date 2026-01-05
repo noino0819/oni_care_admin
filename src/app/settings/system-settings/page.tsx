@@ -17,6 +17,7 @@ import {
 } from '@/components/common';
 import { RefreshCw } from 'lucide-react';
 import type { SystemSetting, SystemSettingSearchFilters, SortConfig, TableColumn, PaginationInfo } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 const IS_ACTIVE_OPTIONS = [
   { value: '', label: '선택해주세요' },
@@ -62,8 +63,7 @@ export default function SystemSettingsPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const response = await fetch(`/api/admin/settings/system?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: SystemSetting[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/settings/system?${params}`);
 
       if (result.success) {
         setData(result.data || []);
@@ -132,18 +132,9 @@ export default function SystemSettingsPage() {
 
     setIsSaving(true);
     try {
-      const url = editingItem
-        ? `/api/admin/settings/system/${editingItem.id}`
-        : '/api/admin/settings/system';
-      const method = editingItem ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formValues),
-      });
-
-      const result = await response.json();
+      const result = editingItem
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/settings/system/${editingItem.id}`, formValues)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/settings/system', formValues);
 
       if (result.success) {
         setIsModalOpen(false);

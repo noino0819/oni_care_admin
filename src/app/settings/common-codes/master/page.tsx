@@ -18,6 +18,7 @@ import {
 } from '@/components/common';
 import { RefreshCw } from 'lucide-react';
 import type { CommonCodeMaster, CommonCodeMasterSearchFilters, TableColumn, PaginationInfo } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 const IS_ACTIVE_OPTIONS = [
   { value: '', label: '선택해주세요' },
@@ -61,8 +62,7 @@ export default function CommonCodeMasterPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const response = await fetch(`/api/admin/codes/masters?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<{ success: boolean; data: CommonCodeMaster[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/codes/masters?${params}`);
 
       if (result.success) {
         setData(result.data || []);
@@ -134,18 +134,9 @@ export default function CommonCodeMasterPage() {
 
     setIsSaving(true);
     try {
-      const url = editingItem
-        ? `/api/admin/codes/masters/${editingItem.id}`
-        : '/api/admin/codes/masters';
-      const method = editingItem ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formValues),
-      });
-
-      const result = await response.json();
+      const result = editingItem
+        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/codes/masters/${editingItem.id}`, formValues)
+        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/codes/masters', formValues);
 
       if (result.success) {
         setIsModalOpen(false);
