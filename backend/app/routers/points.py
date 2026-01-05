@@ -16,22 +16,23 @@ router = APIRouter(prefix="/api/v1/admin/points", tags=["Points"])
 
 
 @router.get("")
-async def get_points(
+async def get_points_summary(
     name: Optional[str] = Query(None, description="이름"),
     id: Optional[str] = Query(None, description="사용자 ID"),
     member_types: Optional[str] = Query(None, description="회원 유형 (콤마 구분)"),
     business_code: Optional[str] = Query(None, description="사업장 코드"),
-    transaction_type: Optional[str] = Query(None, description="거래 유형"),
-    created_from: Optional[str] = Query(None, description="시작일"),
-    created_to: Optional[str] = Query(None, description="종료일"),
     sort_field: Optional[str] = Query(None, description="정렬 필드"),
     sort_direction: Optional[str] = Query("desc", description="정렬 방향"),
     page: int = Query(1, ge=1, description="페이지"),
     page_size: int = Query(20, ge=1, le=100, description="페이지 크기"),
+    # 아래 파라미터는 프론트엔드 호환용 (사용자별 요약에서는 미사용)
+    transaction_type: Optional[str] = Query(None, description="거래 유형 (미사용)"),
+    created_from: Optional[str] = Query(None, description="시작일 (미사용)"),
+    created_to: Optional[str] = Query(None, description="종료일 (미사용)"),
     current_user=Depends(get_current_user)
 ):
     """
-    포인트 내역 조회
+    포인트 요약 조회 (사용자별 그룹화)
     """
     try:
         conditions = []
@@ -42,7 +43,7 @@ async def get_points(
             params["name"] = f"%{name}%"
         
         if id:
-            conditions.append("CAST(ph.user_id AS TEXT) LIKE %(id)s")
+            conditions.append("CAST(u.id AS TEXT) LIKE %(id)s")
             params["id"] = f"%{id}%"
         
         if member_types:
@@ -54,39 +55,31 @@ async def get_points(
             conditions.append("u.business_code = %(business_code)s")
             params["business_code"] = business_code
         
-        if transaction_type:
-            conditions.append("ph.transaction_type = %(transaction_type)s")
-            params["transaction_type"] = transaction_type
-        
-        if created_from:
-            conditions.append("ph.created_at >= %(created_from)s")
-            params["created_from"] = created_from
-        
-        if created_to:
-            conditions.append("ph.created_at <= %(created_to)s::date + interval '1 day'")
-            params["created_to"] = created_to
-        
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         
         # 정렬
-        order_by = "ph.created_at DESC"
+        order_by = "u.created_at DESC"
         if sort_field:
             direction = "ASC" if sort_direction == "asc" else "DESC"
-            safe_fields = {"created_at": "ph.created_at", "points": "ph.points", "balance_after": "ph.balance_after"}
+            safe_fields = {
+                "name": "u.name",
+                "email": "u.email",
+                "total_points": "COALESCE(u.total_points, 0)",
+                "created_at": "u.created_at"
+            }
             if sort_field in safe_fields:
                 order_by = f"{safe_fields[sort_field]} {direction}"
         
-        # 전체 개수 조회
+        # 전체 개수 조회 (사용자 수)
         count_sql = f"""
             SELECT COUNT(*) as count 
-            FROM point_history ph
-            LEFT JOIN users u ON ph.user_id = u.id
+            FROM users u
             {where_clause}
         """
         count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
-        # 목록 조회
+        # 사용자별 포인트 요약 조회
         offset = (page - 1) * page_size
         params["limit"] = page_size
         params["offset"] = offset
@@ -94,18 +87,13 @@ async def get_points(
         rows = await query(
             f"""
             SELECT 
-                ph.id,
-                ph.user_id,
+                u.id as user_id,
                 u.email,
-                ph.transaction_type,
-                ph.source,
-                ph.source_detail,
-                ph.points,
-                ph.balance_after,
-                ph.created_at,
-                COALESCE(ph.is_revoked, false) as is_revoked
-            FROM point_history ph
-            LEFT JOIN users u ON ph.user_id = u.id
+                u.name,
+                COALESCE(u.member_type, 'normal') as member_type,
+                u.business_code,
+                COALESCE(u.total_points, 0) as total_points
+            FROM users u
             {where_clause}
             ORDER BY {order_by}
             LIMIT %(limit)s OFFSET %(offset)s
@@ -125,7 +113,7 @@ async def get_points(
             }
         }
     except Exception as e:
-        logger.error(f"포인트 내역 조회 오류: {str(e)}", exc_info=True)
+        logger.error(f"포인트 요약 조회 오류: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
