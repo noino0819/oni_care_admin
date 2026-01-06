@@ -2,15 +2,6 @@
 # 공지사항 API 라우터
 # ============================================
 # 공지사항 CRUD (App DB 사용)
-# 
-# 실제 테이블 구조:
-#   id: uuid
-#   title: text
-#   content: text
-#   image_url: text
-#   is_active: boolean
-#   created_at: timestamp with time zone
-#   updated_at: timestamp with time zone
 
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -25,6 +16,25 @@ from app.core.logger import logger
 router = APIRouter(prefix="/api/v1/admin/notices", tags=["Notices"])
 
 
+def calculate_status(notice: dict) -> str:
+    """공지 상태 계산"""
+    from datetime import date
+    
+    if not notice.get("is_active"):
+        return "ended"
+    
+    today = date.today()
+    start_date = notice.get("start_date")
+    end_date = notice.get("end_date")
+    
+    if start_date and today < start_date:
+        return "scheduled"
+    if end_date and today > end_date:
+        return "ended"
+    
+    return "active"
+
+
 @router.get("")
 async def get_notices(
     title: Optional[str] = Query(None, description="제목"),
@@ -36,10 +46,9 @@ async def get_notices(
     page: int = Query(1, ge=1, description="페이지"),
     page_size: Optional[int] = Query(None, ge=1, le=100, description="페이지 크기"),
     limit: int = Query(20, ge=1, le=100, description="페이지 크기 (page_size 별칭)"),
-    # 아래 파라미터들은 프론트엔드 호환용 (현재 미사용)
-    status: Optional[str] = Query(None, description="상태 (미사용)"),
-    visibility_scope: Optional[str] = Query(None, description="공개범위 (미사용)"),
-    company_code: Optional[str] = Query(None, description="기업코드 (미사용)"),
+    status: Optional[str] = Query(None, description="상태"),
+    visibility_scope: Optional[str] = Query(None, description="공개범위"),
+    company_code: Optional[str] = Query(None, description="기업코드"),
     current_user=Depends(get_current_user)
 ):
     """
@@ -65,10 +74,18 @@ async def get_notices(
             conditions.append("created_at <= %(created_to)s")
             params["created_to"] = created_to + " 23:59:59"
         
+        if visibility_scope:
+            conditions.append("%(visibility_scope)s = ANY(visibility_scope)")
+            params["visibility_scope"] = visibility_scope
+        
+        if company_code:
+            conditions.append("%(company_code)s = ANY(company_codes)")
+            params["company_code"] = company_code
+        
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         
         # 정렬 검증
-        allowed_sort_fields = ["title", "created_at", "updated_at", "is_active"]
+        allowed_sort_fields = ["title", "created_at", "updated_at", "is_active", "start_date", "end_date"]
         safe_field = sort_field if sort_field in allowed_sort_fields else "created_at"
         safe_direction = "ASC" if sort_direction.upper() == "ASC" else "DESC"
         
@@ -87,7 +104,12 @@ async def get_notices(
         
         notices = await query(
             f"""
-            SELECT id, title, content, image_url, is_active, created_at, updated_at
+            SELECT id, title, content, image_url, 
+                   COALESCE(visibility_scope, ARRAY['all']) as visibility_scope,
+                   COALESCE(company_codes, ARRAY[]::TEXT[]) as company_codes,
+                   COALESCE(store_visible, false) as store_visible,
+                   start_date, end_date,
+                   is_active, created_at, updated_at
             FROM notices
             {where_clause}
             ORDER BY {safe_field} {safe_direction}
@@ -97,17 +119,12 @@ async def get_notices(
             use_app_db=True
         )
         
-        # 프론트엔드 호환을 위한 기본값 설정
+        # 상태 계산 추가
         formatted_notices = []
         for notice in notices:
             formatted_notices.append({
                 **notice,
-                # 프론트엔드에서 기대하는 필드 기본값
-                "visibility_scope": ["all"],
-                "company_codes": [],
-                "start_date": None,
-                "end_date": None,
-                "status": "active" if notice.get("is_active", True) else "ended"
+                "status": calculate_status(notice)
             })
         
         return {
@@ -138,7 +155,16 @@ async def get_notice(
     """
     try:
         notice = await query_one(
-            "SELECT * FROM notices WHERE id = %(notice_id)s",
+            """
+            SELECT id, title, content, image_url, 
+                   COALESCE(visibility_scope, ARRAY['all']) as visibility_scope,
+                   COALESCE(company_codes, ARRAY[]::TEXT[]) as company_codes,
+                   COALESCE(store_visible, false) as store_visible,
+                   start_date, end_date,
+                   is_active, created_at, updated_at
+            FROM notices 
+            WHERE id = %(notice_id)s
+            """,
             {"notice_id": notice_id},
             use_app_db=True
         )
@@ -149,12 +175,7 @@ async def get_notice(
                 detail={"error": "NOT_FOUND", "message": "공지사항을 찾을 수 없습니다."}
             )
         
-        # 프론트엔드 호환을 위한 기본값 설정
-        notice["visibility_scope"] = ["all"]
-        notice["company_codes"] = []
-        notice["start_date"] = None
-        notice["end_date"] = None
-        notice["status"] = "active" if notice.get("is_active", True) else "ended"
+        notice["status"] = calculate_status(notice)
         
         return ApiResponse(success=True, data=notice)
     except HTTPException:
@@ -179,6 +200,11 @@ async def create_notice(
         title = body.get("title")
         content = body.get("content")
         image_url = body.get("image_url")
+        visibility_scope = body.get("visibility_scope", ["all"])
+        company_codes = body.get("company_codes", [])
+        store_visible = body.get("store_visible", False)
+        start_date = body.get("start_date") or None
+        end_date = body.get("end_date") or None
         is_active = body.get("is_active", True)
         
         if not title or not title.strip():
@@ -189,14 +215,21 @@ async def create_notice(
         
         result = await execute_returning(
             """
-            INSERT INTO notices (title, content, image_url, is_active)
-            VALUES (%(title)s, %(content)s, %(image_url)s, %(is_active)s)
+            INSERT INTO notices (title, content, image_url, visibility_scope, company_codes, 
+                                store_visible, start_date, end_date, is_active)
+            VALUES (%(title)s, %(content)s, %(image_url)s, %(visibility_scope)s, %(company_codes)s,
+                    %(store_visible)s, %(start_date)s, %(end_date)s, %(is_active)s)
             RETURNING id
             """,
             {
                 "title": title.strip(),
                 "content": content.strip() if content else None,
                 "image_url": image_url,
+                "visibility_scope": visibility_scope,
+                "company_codes": company_codes,
+                "store_visible": store_visible,
+                "start_date": start_date,
+                "end_date": end_date,
                 "is_active": is_active
             },
             use_app_db=True
@@ -226,11 +259,20 @@ async def update_notice(
         update_fields = []
         params = {"notice_id": notice_id}
         
-        # 실제 테이블에 존재하는 컬럼만 업데이트
-        for field in ["title", "content", "image_url", "is_active"]:
+        # 업데이트 가능한 필드들
+        updatable_fields = [
+            "title", "content", "image_url", "visibility_scope", 
+            "company_codes", "store_visible", "start_date", "end_date", "is_active"
+        ]
+        
+        for field in updatable_fields:
             if field in body:
+                value = body[field]
+                # 빈 문자열을 None으로 변환 (날짜 필드)
+                if field in ["start_date", "end_date"] and value == "":
+                    value = None
                 update_fields.append(f"{field} = %({field})s")
-                params[field] = body[field]
+                params[field] = value
         
         if not update_fields:
             existing = await query_one(

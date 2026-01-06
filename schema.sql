@@ -667,6 +667,11 @@ CREATE TABLE IF NOT EXISTS public.notices (
   title TEXT NOT NULL,
   content TEXT,
   image_url TEXT,
+  visibility_scope TEXT[] DEFAULT ARRAY['all'],
+  company_codes TEXT[] DEFAULT ARRAY[]::TEXT[],
+  store_visible BOOLEAN DEFAULT false,
+  start_date DATE,
+  end_date DATE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -675,10 +680,17 @@ CREATE TABLE IF NOT EXISTS public.notices (
 CREATE INDEX IF NOT EXISTS idx_notices_title ON public.notices(title);
 CREATE INDEX IF NOT EXISTS idx_notices_is_active ON public.notices(is_active);
 CREATE INDEX IF NOT EXISTS idx_notices_created_at ON public.notices(created_at);
+CREATE INDEX IF NOT EXISTS idx_notices_start_date ON public.notices(start_date);
+CREATE INDEX IF NOT EXISTS idx_notices_end_date ON public.notices(end_date);
 
 COMMENT ON TABLE public.notices IS '공지사항';
 COMMENT ON COLUMN public.notices.title IS '공지 제목';
 COMMENT ON COLUMN public.notices.content IS '공지 내용';
 COMMENT ON COLUMN public.notices.image_url IS '이미지 URL';
+COMMENT ON COLUMN public.notices.visibility_scope IS '노출 범위 (all, normal, affiliate, fs)';
+COMMENT ON COLUMN public.notices.company_codes IS '기업/사업장 코드 목록';
+COMMENT ON COLUMN public.notices.store_visible IS '스토어 공개 여부';
+COMMENT ON COLUMN public.notices.start_date IS '공지 시작일';
+COMMENT ON COLUMN public.notices.end_date IS '공지 종료일';
 COMMENT ON COLUMN public.notices.is_active IS '활성화 여부';
 
