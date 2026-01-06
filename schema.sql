@@ -694,3 +694,34 @@ COMMENT ON COLUMN public.notices.start_date IS '공지 시작일';
 COMMENT ON COLUMN public.notices.end_date IS '공지 종료일';
 COMMENT ON COLUMN public.notices.is_active IS '활성화 여부';
 
+-- ============================================
+-- 25. 챌린지 관리 테이블 (어드민용 확장)
+-- ============================================
+-- 쿠폰 마스터 테이블 (챌린지 보상용)
+CREATE TABLE IF NOT EXISTS public.coupon_master (
+  id SERIAL PRIMARY KEY,
+  coupon_code VARCHAR(50) NOT NULL UNIQUE,
+  coupon_name VARCHAR(200) NOT NULL,
+  coupon_type VARCHAR(50) DEFAULT 'discount',  -- discount, free_item, etc
+  discount_value INTEGER DEFAULT 0,
+  discount_type VARCHAR(20) DEFAULT 'fixed',  -- fixed, percentage
+  min_order_amount INTEGER DEFAULT 0,
+  max_discount_amount INTEGER,
+  valid_days INTEGER DEFAULT 30,  -- 발급 후 유효기간
+  is_active BOOLEAN DEFAULT true,
+  created_by VARCHAR(50),
+  updated_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_coupon_master_code ON public.coupon_master(coupon_code);
+CREATE INDEX idx_coupon_master_is_active ON public.coupon_master(is_active);
+
+COMMENT ON TABLE public.coupon_master IS '쿠폰 마스터 (챌린지 보상용)';
+COMMENT ON COLUMN public.coupon_master.coupon_code IS '쿠폰 코드';
+COMMENT ON COLUMN public.coupon_master.coupon_name IS '쿠폰명';
+COMMENT ON COLUMN public.coupon_master.coupon_type IS '쿠폰 유형';
+COMMENT ON COLUMN public.coupon_master.discount_value IS '할인 금액/율';
+COMMENT ON COLUMN public.coupon_master.discount_type IS '할인 타입 (정액/정률)';
+

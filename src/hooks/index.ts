@@ -5,4 +5,5 @@
 export { useSession } from './useSession';
 export { useRecentMenus } from './useRecentMenus';
 export { useMembers, useMemberDetail } from './useMembers';
+export * from './useChallenges';
 

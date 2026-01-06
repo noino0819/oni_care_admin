@@ -22,6 +22,7 @@ from .departments import router as departments_router
 from .apis import router as apis_router
 from .dashboard import router as dashboard_router
 from .points import router as points_router
+from .challenges import router as challenges_router
 
 __all__ = [
     'auth_router', 
@@ -45,5 +46,6 @@ __all__ = [
     'apis_router',
     'dashboard_router',
     'points_router',
+    'challenges_router',
 ]
 

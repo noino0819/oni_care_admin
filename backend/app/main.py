@@ -40,6 +40,7 @@ from app.routers import (
     apis_router,
     dashboard_router,
     points_router,
+    challenges_router,
 )
 
 
@@ -172,6 +173,7 @@ app.include_router(departments_router)
 app.include_router(apis_router)
 app.include_router(dashboard_router)
 app.include_router(points_router)
+app.include_router(challenges_router)
 
 # 정적 파일 서빙 (업로드된 이미지)
 uploads_dir = Path(__file__).parent.parent / "uploads"

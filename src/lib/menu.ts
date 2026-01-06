@@ -35,6 +35,7 @@ export const menuItems: MenuItem[] = [
       { id: 'care-points', label: '포인트 관리', path: '/greating-care/points' },
       { id: 'care-notices', label: '공지사항 관리', path: '/greating-care/notices' },
       { id: 'care-challenges', label: '챌린지 관리', path: '/greating-care/challenges' },
+      { id: 'care-challenge-quizzes', label: '챌린지 퀴즈 관리', path: '/greating-care/challenge-quizzes' },
       { id: 'care-supplements', label: '영양제 관리', path: '/greating-care/supplements' },
       { id: 'care-banners', label: '배너 관리', path: '/greating-care/banners' },
     ],
