@@ -334,8 +334,8 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
                 </div>
 
                 {/* 공지 기간 */}
-                <div className="flex items-center border border-gray-200 rounded overflow-hidden">
-                  <div className={labelClass}>공지 기간</div>
+                <div className="flex items-center border border-gray-200 rounded">
+                  <div className={cn(labelClass, "rounded-l")}>공지 기간</div>
                   <div className="flex-1 flex items-center gap-2 px-3 py-2">
                     <DatePicker
                       value={formData.start_date ? new Date(formData.start_date) : null}
