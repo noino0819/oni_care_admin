@@ -4,10 +4,12 @@
 # OniCare Admin Backend
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 
 from app.config.settings import settings
 from app.config.database import create_db_pool, create_app_db_pool, close_db_pool
@@ -170,6 +172,11 @@ app.include_router(departments_router)
 app.include_router(apis_router)
 app.include_router(dashboard_router)
 app.include_router(points_router)
+
+# 정적 파일 서빙 (업로드된 이미지)
+uploads_dir = Path(__file__).parent.parent / "uploads"
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 
 # 개발용 실행

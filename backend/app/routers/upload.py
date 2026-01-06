@@ -28,7 +28,8 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 
 def get_upload_dir() -> Path:
     """업로드 디렉토리 경로 반환"""
-    return Path(os.getcwd()) / "uploads"
+    # backend/uploads 디렉토리 사용
+    return Path(__file__).parent.parent.parent / "uploads"
 
 
 @router.post("")
