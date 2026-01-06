@@ -7,13 +7,11 @@ from datetime import date
 from fastapi import APIRouter, Depends, Query, HTTPException, Request
 
 from app.models.challenge import (
-    ChallengeCreate,
-    ChallengeUpdate,
-    ChallengeInDB,
+    ChallengeCreateRequest,
+    ChallengeUpdateRequest,
     ChallengeListItem,
-    ChallengeQuizCreate,
-    ChallengeQuizUpdate,
-    ChallengeQuizInDB
+    QuizCreateRequest,
+    QuizUpdateRequest,
 )
 from app.services.challenge_service import ChallengeService, QuizService
 
@@ -79,7 +77,7 @@ async def get_challenge_detail(
 @router.post("", summary="챌린지 생성", status_code=201)
 async def create_challenge(
     request: Request,
-    data: ChallengeCreate,
+    data: ChallengeCreateRequest,
     service: ChallengeService = Depends()
 ):
     """새 챌린지를 생성합니다."""
@@ -96,7 +94,7 @@ async def create_challenge(
 async def update_challenge(
     request: Request,
     challenge_id: str,
-    data: ChallengeUpdate,
+    data: ChallengeUpdateRequest,
     service: ChallengeService = Depends()
 ):
     """챌린지를 수정합니다."""
@@ -160,7 +158,7 @@ async def get_quiz_detail(
 @router.post("/quizzes", summary="퀴즈 생성", status_code=201)
 async def create_quiz(
     request: Request,
-    data: ChallengeQuizCreate,
+    data: QuizCreateRequest,
     service: QuizService = Depends()
 ):
     """새 퀴즈를 생성합니다."""
@@ -177,7 +175,7 @@ async def create_quiz(
 async def update_quiz(
     request: Request,
     quiz_id: str,
-    data: ChallengeQuizUpdate,
+    data: QuizUpdateRequest,
     service: QuizService = Depends()
 ):
     """퀴즈를 수정합니다."""
