@@ -153,7 +153,7 @@ export function useChallenges(
   queryParams.append('limit', limit.toString());
 
   const { data, error, isLoading, mutate } = useSWR<ChallengeListResponse>(
-    `/api/v1/challenges?${queryParams.toString()}`,
+    `/challenges?${queryParams.toString()}`,
     (url: string) => apiClient.get(url)
   );
 
@@ -172,7 +172,7 @@ export function useChallenges(
 
 export function useChallenge(challengeId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<Challenge>(
-    challengeId ? `/api/v1/challenges/${challengeId}` : null,
+    challengeId ? `/challenges/${challengeId}` : null,
     (url: string) => apiClient.get(url)
   );
 
@@ -189,16 +189,16 @@ export function useChallenge(challengeId: string | null) {
 // ============================================
 
 export async function createChallenge(data: Partial<Challenge>): Promise<Challenge> {
-  return apiClient.post('/api/v1/challenges', data);
+  return apiClient.post('/challenges', data);
 }
 
 export async function updateChallenge(challengeId: string, data: Partial<Challenge>): Promise<Challenge> {
-  return apiClient.put(`/api/v1/challenges/${challengeId}`, data);
+  return apiClient.put(`/challenges/${challengeId}`, data);
 }
 
 export async function deleteChallenges(challengeIds: string[]): Promise<{ message: string; count: number }> {
   const queryParams = challengeIds.map(id => `challenge_ids=${id}`).join('&');
-  return apiClient.delete(`/api/v1/challenges?${queryParams}`);
+  return apiClient.delete(`/challenges?${queryParams}`);
 }
 
 // ============================================
@@ -218,7 +218,7 @@ export function useQuizzes(
   queryParams.append('limit', limit.toString());
 
   const { data, error, isLoading, mutate } = useSWR<QuizListResponse>(
-    `/api/v1/challenges/quizzes/list?${queryParams.toString()}`,
+    `/challenges/quizzes/list?${queryParams.toString()}`,
     (url: string) => apiClient.get(url)
   );
 
@@ -233,7 +233,7 @@ export function useQuizzes(
 
 export function useQuiz(quizId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<ChallengeQuiz>(
-    quizId ? `/api/v1/challenges/quizzes/${quizId}` : null,
+    quizId ? `/challenges/quizzes/${quizId}` : null,
     (url: string) => apiClient.get(url)
   );
 
@@ -250,16 +250,16 @@ export function useQuiz(quizId: string | null) {
 // ============================================
 
 export async function createQuiz(data: Partial<ChallengeQuiz>): Promise<ChallengeQuiz> {
-  return apiClient.post('/api/v1/challenges/quizzes', data);
+  return apiClient.post('/challenges/quizzes', data);
 }
 
 export async function updateQuiz(quizId: string, data: Partial<ChallengeQuiz>): Promise<ChallengeQuiz> {
-  return apiClient.put(`/api/v1/challenges/quizzes/${quizId}`, data);
+  return apiClient.put(`/challenges/quizzes/${quizId}`, data);
 }
 
 export async function deleteQuizzes(quizIds: string[]): Promise<{ message: string; count: number }> {
   const queryParams = quizIds.map(id => `quiz_ids=${id}`).join('&');
-  return apiClient.delete(`/api/v1/challenges/quizzes?${queryParams}`);
+  return apiClient.delete(`/challenges/quizzes?${queryParams}`);
 }
 
 // ============================================
@@ -268,7 +268,7 @@ export async function deleteQuizzes(quizIds: string[]): Promise<{ message: strin
 
 export function useChallengeQuizzes(challengeId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<ChallengeQuiz[]>(
-    challengeId ? `/api/v1/challenges/${challengeId}/quizzes` : null,
+    challengeId ? `/challenges/${challengeId}/quizzes` : null,
     (url: string) => apiClient.get(url)
   );
 
@@ -286,14 +286,14 @@ export async function addQuizToChallenge(
   displayOrder?: number
 ): Promise<unknown> {
   const queryParams = displayOrder !== undefined ? `?display_order=${displayOrder}` : '';
-  return apiClient.post(`/api/v1/challenges/${challengeId}/quizzes/${quizId}${queryParams}`, {});
+  return apiClient.post(`/challenges/${challengeId}/quizzes/${quizId}${queryParams}`, {});
 }
 
 export async function removeQuizFromChallenge(
   challengeId: string,
   quizId: string
 ): Promise<{ message: string; success: boolean }> {
-  return apiClient.delete(`/api/v1/challenges/${challengeId}/quizzes/${quizId}`);
+  return apiClient.delete(`/challenges/${challengeId}/quizzes/${quizId}`);
 }
 
 // ============================================
@@ -316,7 +316,7 @@ export function useQuizManagementChallenges(
   if (filters.display_to) queryParams.append('display_to', filters.display_to);
 
   const { data, error, isLoading, mutate } = useSWR<Challenge[]>(
-    `/api/v1/challenges/quiz-management/challenges?${queryParams.toString()}`,
+    `/challenges/quiz-management/challenges?${queryParams.toString()}`,
     (url: string) => apiClient.get(url)
   );
 
