@@ -106,3 +106,71 @@ def load_sql_direct(filename: str) -> str:
     return sql_file.read_text(encoding="utf-8")
 
 
+# ============================================
+# SQLLoader 클래스 (새로운 방식)
+# ============================================
+
+class SQLLoader:
+    """
+    SQL 파일에서 쿼리 로드 (-- name: 형식 지원)
+    
+    사용:
+        sql = SQLLoader("challenges")
+        query = sql.get("get_challenges_list")
+    """
+
+    def __init__(self, module_name: str):
+        """
+        Args:
+            module_name: sql 폴더 내 파일명 (확장자 제외)
+        """
+        self.module_name = module_name
+        self.queries = self._load()
+
+    def _load(self) -> Dict[str, str]:
+        """SQL 파일 파싱 (-- name: 형식)"""
+        sql_file = SQL_DIR / f"{self.module_name}.sql"
+
+        if not sql_file.exists():
+            raise FileNotFoundError(f"SQL 파일을 찾을 수 없습니다: {sql_file}")
+
+        content = sql_file.read_text(encoding="utf-8")
+        queries = {}
+        current_name = None
+        current_sql = []
+
+        for line in content.split('\n'):
+            stripped = line.strip()
+
+            # -- name: query_name 형식 확인
+            if stripped.startswith('-- name:'):
+                # 이전 쿼리 저장
+                if current_name and current_sql:
+                    queries[current_name] = '\n'.join(current_sql).strip()
+
+                # 새 쿼리 시작
+                current_name = stripped.replace('-- name:', '').strip()
+                current_sql = []
+            elif current_name is not None:
+                # 쿼리 내용 추가
+                current_sql.append(line)
+
+        # 마지막 쿼리 저장
+        if current_name and current_sql:
+            queries[current_name] = '\n'.join(current_sql).strip()
+
+        return queries
+
+    def get(self, name: str) -> str:
+        """쿼리 반환"""
+        if name not in self.queries:
+            raise KeyError(f"쿼리를 찾을 수 없습니다: {name} ({self.module_name}.sql)")
+        return self.queries[name]
+
+
+@lru_cache()
+def get_sql(module: str) -> SQLLoader:
+    """SQLLoader 캐싱"""
+    return SQLLoader(module)
+
+
