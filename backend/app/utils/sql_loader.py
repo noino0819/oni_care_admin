@@ -168,9 +168,9 @@ class SQLLoader:
         return self.queries[name]
 
 
-@lru_cache()
 def get_sql(module: str) -> SQLLoader:
-    """SQLLoader 캐싱"""
+    """SQLLoader 생성 (개발 환경에서 실시간 SQL 수정 지원)"""
+    # 개발 환경에서는 캐시하지 않음 - SQL 파일 변경 즉시 반영
     return SQLLoader(module)
 
 

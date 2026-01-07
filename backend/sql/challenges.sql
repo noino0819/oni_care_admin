@@ -7,104 +7,37 @@
 SELECT COUNT(*) as total
 FROM challenges
 WHERE is_active = true
-  AND (%(title)s IS NULL OR title ILIKE '%%' || %(title)s || '%%')
-  AND (%(challenge_type)s IS NULL OR challenge_type = %(challenge_type)s)
-  AND (%(verification_method)s IS NULL OR verification_method = %(verification_method)s)
-  AND (%(operation_from)s IS NULL OR operation_start_date >= %(operation_from)s)
-  AND (%(operation_to)s IS NULL OR operation_end_date <= %(operation_to)s)
-  AND (%(recruitment_from)s IS NULL OR recruitment_start_date >= %(recruitment_from)s)
-  AND (%(recruitment_to)s IS NULL OR recruitment_end_date <= %(recruitment_to)s)
-  AND (%(display_from)s IS NULL OR display_start_date >= %(display_from)s)
-  AND (%(display_to)s IS NULL OR display_end_date <= %(display_to)s);
+  AND (%(title)s::text IS NULL OR title ILIKE '%%' || %(title)s::text || '%%')
+  AND (%(challenge_type)s::text IS NULL OR challenge_type = %(challenge_type)s::text)
+  AND (%(verification_method)s::text IS NULL OR verification_method = %(verification_method)s::text)
+  AND (%(operation_from)s::date IS NULL OR operation_start_date >= %(operation_from)s::date)
+  AND (%(operation_to)s::date IS NULL OR operation_end_date <= %(operation_to)s::date)
+  AND (%(recruitment_from)s::date IS NULL OR recruitment_start_date >= %(recruitment_from)s::date)
+  AND (%(recruitment_to)s::date IS NULL OR recruitment_end_date <= %(recruitment_to)s::date)
+  AND (%(display_from)s::date IS NULL OR display_start_date >= %(display_from)s::date)
+  AND (%(display_to)s::date IS NULL OR display_end_date <= %(display_to)s::date);
 
 -- name: get_challenges_list
 SELECT 
-    c.id,
-    c.challenge_type,
-    c.verification_method,
-    c.title,
-    c.subtitle,
-    c.description,
-    c.max_participants,
-    c.challenge_duration_days,
-    c.display_order,
-    c.recruitment_start_date,
-    c.recruitment_end_date,
-    c.operation_start_date,
-    c.operation_end_date,
-    c.display_start_date,
-    c.display_end_date,
-    c.visibility_scope,
-    c.company_codes,
-    c.store_visible,
-    c.rank_display_type,
-    c.is_active,
-    c.is_suspended,
-    c.status,
-    c.current_participants,
-    c.daily_verification_count,
-    c.daily_verification_settings,
-    c.daily_achievement_count,
-    c.total_achievement_days,
-    c.reward_settings,
-    c.type_settings,
-    c.images,
-    c.created_at,
-    c.updated_at,
-    c.created_by,
-    c.updated_by
+    c.*
 FROM challenges c
 WHERE c.is_active = true
-  AND (%(title)s IS NULL OR c.title ILIKE '%%' || %(title)s || '%%')
-  AND (%(challenge_type)s IS NULL OR c.challenge_type = %(challenge_type)s)
-  AND (%(verification_method)s IS NULL OR c.verification_method = %(verification_method)s)
-  AND (%(operation_from)s IS NULL OR c.operation_start_date >= %(operation_from)s)
-  AND (%(operation_to)s IS NULL OR c.operation_end_date <= %(operation_to)s)
-  AND (%(recruitment_from)s IS NULL OR c.recruitment_start_date >= %(recruitment_from)s)
-  AND (%(recruitment_to)s IS NULL OR c.recruitment_end_date <= %(recruitment_to)s)
-  AND (%(display_from)s IS NULL OR c.display_start_date >= %(display_from)s)
-  AND (%(display_to)s IS NULL OR c.display_end_date <= %(display_to)s)
+  AND (%(title)s::text IS NULL OR c.title ILIKE '%%' || %(title)s::text || '%%')
+  AND (%(challenge_type)s::text IS NULL OR c.challenge_type = %(challenge_type)s::text)
+  AND (%(verification_method)s::text IS NULL OR c.verification_method = %(verification_method)s::text)
+  AND (%(operation_from)s::date IS NULL OR c.operation_start_date >= %(operation_from)s::date)
+  AND (%(operation_to)s::date IS NULL OR c.operation_end_date <= %(operation_to)s::date)
+  AND (%(recruitment_from)s::date IS NULL OR c.recruitment_start_date >= %(recruitment_from)s::date)
+  AND (%(recruitment_to)s::date IS NULL OR c.recruitment_end_date <= %(recruitment_to)s::date)
+  AND (%(display_from)s::date IS NULL OR c.display_start_date >= %(display_from)s::date)
+  AND (%(display_to)s::date IS NULL OR c.display_end_date <= %(display_to)s::date)
 ORDER BY c.display_order ASC, c.created_at DESC
-LIMIT %(limit)s OFFSET %(offset)s;
+LIMIT %(limit)s::integer OFFSET %(offset)s::integer;
 
 -- name: get_challenge_by_id
-SELECT 
-    c.id,
-    c.challenge_type,
-    c.verification_method,
-    c.title,
-    c.subtitle,
-    c.description,
-    c.max_participants,
-    c.challenge_duration_days,
-    c.display_order,
-    c.recruitment_start_date,
-    c.recruitment_end_date,
-    c.operation_start_date,
-    c.operation_end_date,
-    c.display_start_date,
-    c.display_end_date,
-    c.visibility_scope,
-    c.company_codes,
-    c.store_visible,
-    c.rank_display_type,
-    c.is_active,
-    c.is_suspended,
-    c.status,
-    c.current_participants,
-    c.daily_verification_count,
-    c.daily_verification_settings,
-    c.daily_achievement_count,
-    c.total_achievement_days,
-    c.reward_settings,
-    c.type_settings,
-    c.images,
-    c.created_at,
-    c.updated_at,
-    c.created_by,
-    c.updated_by
-FROM challenges c
-WHERE c.id = %(challenge_id)s::uuid;
+SELECT *
+FROM challenges
+WHERE id = %(challenge_id)s::uuid;
 
 -- name: insert_challenge
 INSERT INTO challenges (
@@ -210,8 +143,8 @@ RETURNING id;
 SELECT COUNT(*) as total
 FROM quiz_master
 WHERE is_active = true
-  AND (%(quiz_name)s IS NULL OR quiz_name ILIKE '%%' || %(quiz_name)s || '%%')
-  AND (%(quiz_type)s IS NULL OR quiz_type = %(quiz_type)s);
+  AND (%(quiz_name)s::text IS NULL OR quiz_name ILIKE '%%' || %(quiz_name)s::text || '%%')
+  AND (%(quiz_type)s::text IS NULL OR quiz_type = %(quiz_type)s::text);
 
 -- name: get_quizzes_list
 SELECT 
@@ -229,10 +162,10 @@ SELECT
     updated_by
 FROM quiz_master
 WHERE is_active = true
-  AND (%(quiz_name)s IS NULL OR quiz_name ILIKE '%%' || %(quiz_name)s || '%%')
-  AND (%(quiz_type)s IS NULL OR quiz_type = %(quiz_type)s)
+  AND (%(quiz_name)s::text IS NULL OR quiz_name ILIKE '%%' || %(quiz_name)s::text || '%%')
+  AND (%(quiz_type)s::text IS NULL OR quiz_type = %(quiz_type)s::text)
 ORDER BY created_at DESC
-LIMIT %(limit)s OFFSET %(offset)s;
+LIMIT %(limit)s::integer OFFSET %(offset)s::integer;
 
 -- name: get_quiz_by_id
 SELECT 
@@ -329,28 +262,16 @@ RETURNING *;
 
 -- name: get_quiz_challenges_list
 SELECT 
-    c.id,
-    c.challenge_type,
-    c.verification_method,
-    c.title,
-    c.subtitle,
-    c.operation_start_date,
-    c.operation_end_date,
-    c.recruitment_start_date,
-    c.recruitment_end_date,
-    c.display_start_date,
-    c.display_end_date,
-    c.visibility_scope,
-    c.status as challenge_status,
+    c.*,
     (SELECT COUNT(*) FROM challenge_quiz_mapping WHERE challenge_id = c.id) as quiz_count
 FROM challenges c
 WHERE c.is_active = true
   AND c.challenge_type = 'quiz'
-  AND (%(title)s IS NULL OR c.title ILIKE '%%' || %(title)s || '%%')
-  AND (%(operation_from)s IS NULL OR c.operation_start_date >= %(operation_from)s)
-  AND (%(operation_to)s IS NULL OR c.operation_end_date <= %(operation_to)s)
-  AND (%(recruitment_from)s IS NULL OR c.recruitment_start_date >= %(recruitment_from)s)
-  AND (%(recruitment_to)s IS NULL OR c.recruitment_end_date <= %(recruitment_to)s)
-  AND (%(display_from)s IS NULL OR c.display_start_date >= %(display_from)s)
-  AND (%(display_to)s IS NULL OR c.display_end_date <= %(display_to)s)
+  AND (%(title)s::text IS NULL OR c.title ILIKE '%%' || %(title)s::text || '%%')
+  AND (%(operation_from)s::date IS NULL OR c.operation_start_date >= %(operation_from)s::date)
+  AND (%(operation_to)s::date IS NULL OR c.operation_end_date <= %(operation_to)s::date)
+  AND (%(recruitment_from)s::date IS NULL OR c.recruitment_start_date >= %(recruitment_from)s::date)
+  AND (%(recruitment_to)s::date IS NULL OR c.recruitment_end_date <= %(recruitment_to)s::date)
+  AND (%(display_from)s::date IS NULL OR c.display_start_date >= %(display_from)s::date)
+  AND (%(display_to)s::date IS NULL OR c.display_end_date <= %(display_to)s::date)
 ORDER BY c.display_order ASC, c.created_at DESC;

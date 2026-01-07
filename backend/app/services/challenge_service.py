@@ -6,19 +6,18 @@ import json
 from typing import Optional, List, Dict, Any
 from datetime import date
 
-from app.core.decorators import auto_commit
 from app.core.exceptions import ValidationError, NotFoundError
 from app.utils.sql_loader import get_sql
-from app.lib.app_db import app_db_manager
+from app.config.database import get_connection
 
 
 class ChallengeService:
     """챌린지 관리 서비스 (App DB 사용)"""
 
     def __init__(self):
+        # SQL 쿼리 로더 (캐시 없이 매번 로드)
         self.sql = get_sql("challenges")
 
-    @auto_commit
     async def get_challenges(
         self,
         title: Optional[str] = None,
@@ -33,8 +32,7 @@ class ChallengeService:
         display_from: Optional[date] = None,
         display_to: Optional[date] = None,
         page: int = 1,
-        limit: int = 20,
-        _conn=None
+        limit: int = 20
     ) -> Dict[str, Any]:
         """
         챌린지 목록 조회
@@ -74,7 +72,7 @@ class ChallengeService:
         }
         
         # App DB에서 조회
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             # 전체 개수 조회
             count_query = self.sql.get("count_challenges")
             async with conn.cursor() as cur:
@@ -115,11 +113,9 @@ class ChallengeService:
             }
         }
 
-    @auto_commit
     async def get_challenge_by_id(
         self,
-        challenge_id: str,
-        _conn=None
+        challenge_id: str
     ) -> Optional[Dict[str, Any]]:
         """
         챌린지 상세 조회
@@ -130,7 +126,7 @@ class ChallengeService:
         Returns:
             dict: 챌린지 상세 정보
         """
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("get_challenge_by_id")
             async with conn.cursor() as cur:
                 await cur.execute(query, {"challenge_id": challenge_id})
@@ -141,12 +137,10 @@ class ChallengeService:
         
         return dict(challenge)
 
-    @auto_commit
     async def create_challenge(
         self,
         data: Dict[str, Any],
-        created_by: str,
-        _conn=None
+        created_by: str
     ) -> Dict[str, Any]:
         """
         챌린지 생성
@@ -193,7 +187,7 @@ class ChallengeService:
             "created_by": created_by
         }
         
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("insert_challenge")
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
@@ -202,13 +196,11 @@ class ChallengeService:
         
         return dict(result) if result else {}
 
-    @auto_commit
     async def update_challenge(
         self,
         challenge_id: str,
         data: Dict[str, Any],
-        updated_by: str,
-        _conn=None
+        updated_by: str
     ) -> Dict[str, Any]:
         """
         챌린지 수정
@@ -267,7 +259,7 @@ class ChallengeService:
             "updated_by": updated_by
         }
         
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("update_challenge")
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
@@ -276,12 +268,10 @@ class ChallengeService:
         
         return dict(result) if result else {}
 
-    @auto_commit
     async def delete_challenges(
         self,
         challenge_ids: List[str],
-        deleted_by: str,
-        _conn=None
+        deleted_by: str
     ) -> int:
         """
         챌린지 삭제 (소프트 삭제)
@@ -293,7 +283,7 @@ class ChallengeService:
         Returns:
             int: 삭제된 개수
         """
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("delete_challenges_batch")
             async with conn.cursor() as cur:
                 await cur.execute(query, {
@@ -391,14 +381,12 @@ class QuizService:
     def __init__(self):
         self.sql = get_sql("challenges")
 
-    @auto_commit
     async def get_quizzes(
         self,
         quiz_name: Optional[str] = None,
         quiz_type: Optional[str] = None,
         page: int = 1,
-        limit: int = 20,
-        _conn=None
+        limit: int = 20
     ) -> Dict[str, Any]:
         """퀴즈 목록 조회"""
         offset = (page - 1) * limit
@@ -410,7 +398,7 @@ class QuizService:
             "offset": offset
         }
         
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             # 전체 개수 조회
             count_query = self.sql.get("count_quizzes")
             async with conn.cursor() as cur:
@@ -436,14 +424,12 @@ class QuizService:
             }
         }
 
-    @auto_commit
     async def get_quiz_by_id(
         self,
-        quiz_id: str,
-        _conn=None
+        quiz_id: str
     ) -> Optional[Dict[str, Any]]:
         """퀴즈 상세 조회"""
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("get_quiz_by_id")
             async with conn.cursor() as cur:
                 await cur.execute(query, {"quiz_id": quiz_id})
@@ -454,12 +440,10 @@ class QuizService:
         
         return dict(quiz)
 
-    @auto_commit
     async def create_quiz(
         self,
         data: Dict[str, Any],
-        created_by: str,
-        _conn=None
+        created_by: str
     ) -> Dict[str, Any]:
         """퀴즈 생성"""
         # 유효성 검사
@@ -475,7 +459,7 @@ class QuizService:
             "created_by": created_by
         }
         
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("insert_quiz")
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
@@ -484,13 +468,11 @@ class QuizService:
         
         return dict(result) if result else {}
 
-    @auto_commit
     async def update_quiz(
         self,
         quiz_id: str,
         data: Dict[str, Any],
-        updated_by: str,
-        _conn=None
+        updated_by: str
     ) -> Dict[str, Any]:
         """퀴즈 수정"""
         params = {
@@ -503,7 +485,7 @@ class QuizService:
             "updated_by": updated_by
         }
         
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("update_quiz")
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
@@ -512,15 +494,13 @@ class QuizService:
         
         return dict(result) if result else {}
 
-    @auto_commit
     async def delete_quizzes(
         self,
         quiz_ids: List[str],
-        deleted_by: str,
-        _conn=None
+        deleted_by: str
     ) -> int:
         """퀴즈 삭제"""
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("delete_quizzes_batch")
             async with conn.cursor() as cur:
                 await cur.execute(query, {
@@ -532,14 +512,12 @@ class QuizService:
         
         return len(results)
 
-    @auto_commit
     async def get_challenge_quizzes(
         self,
-        challenge_id: str,
-        _conn=None
+        challenge_id: str
     ) -> List[Dict[str, Any]]:
         """챌린지에 연결된 퀴즈 목록 조회"""
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("get_challenge_quizzes")
             async with conn.cursor() as cur:
                 await cur.execute(query, {"challenge_id": challenge_id})
@@ -547,16 +525,14 @@ class QuizService:
         
         return [dict(q) for q in quizzes]
 
-    @auto_commit
     async def add_quiz_to_challenge(
         self,
         challenge_id: str,
         quiz_id: str,
-        display_order: Optional[int] = None,
-        _conn=None
+        display_order: Optional[int] = None
     ) -> Dict[str, Any]:
         """챌린지에 퀴즈 추가"""
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("add_quiz_to_challenge")
             async with conn.cursor() as cur:
                 await cur.execute(query, {
@@ -569,15 +545,13 @@ class QuizService:
         
         return dict(result) if result else {}
 
-    @auto_commit
     async def remove_quiz_from_challenge(
         self,
         challenge_id: str,
-        quiz_id: str,
-        _conn=None
+        quiz_id: str
     ) -> bool:
         """챌린지에서 퀴즈 제거"""
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("remove_quiz_from_challenge")
             async with conn.cursor() as cur:
                 await cur.execute(query, {
@@ -589,7 +563,6 @@ class QuizService:
         
         return result is not None
 
-    @auto_commit
     async def get_quiz_challenges(
         self,
         title: Optional[str] = None,
@@ -600,8 +573,7 @@ class QuizService:
         recruitment_from: Optional[date] = None,
         recruitment_to: Optional[date] = None,
         display_from: Optional[date] = None,
-        display_to: Optional[date] = None,
-        _conn=None
+        display_to: Optional[date] = None
     ) -> List[Dict[str, Any]]:
         """퀴즈 챌린지 목록 조회"""
         params = {
@@ -614,7 +586,7 @@ class QuizService:
             "display_to": display_to
         }
         
-        async with app_db_manager.get_async_conn() as conn:
+        async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("get_quiz_challenges_list")
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
@@ -660,4 +632,3 @@ class QuizService:
         for idx in correct_answers:
             if idx < 0 or idx >= len(options):
                 raise ValidationError("올바른 정답을 선택해주세요.")
-
