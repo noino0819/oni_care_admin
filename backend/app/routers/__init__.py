@@ -23,6 +23,10 @@ from .apis import router as apis_router
 from .dashboard import router as dashboard_router
 from .points import router as points_router
 from .challenges import router as challenges_router
+from .supplements import router as supplements_router
+from .functional_ingredients import router as functional_ingredients_router
+from .functionality_contents import router as functionality_contents_router
+from .units import router as units_router
 
 __all__ = [
     'auth_router', 
@@ -47,5 +51,9 @@ __all__ = [
     'dashboard_router',
     'points_router',
     'challenges_router',
+    'supplements_router',
+    'functional_ingredients_router',
+    'functionality_contents_router',
+    'units_router',
 ]
 

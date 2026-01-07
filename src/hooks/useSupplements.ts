@@ -1,7 +1,9 @@
 // ============================================
 // 영양제 DB 관리 Hook
 // ============================================
+// FastAPI 백엔드 연동
 
+import { useState } from 'react';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { swrFetcher, apiClient } from '@/lib/api-client';
 
@@ -28,7 +30,7 @@ export interface Supplement {
   dosage_unit: string | null;
   intake_method: string | null;
   default_intake_time: string | null;
-  default_intake_amount: number | null;
+  default_intake_amount: string | null;
   default_intake_unit: string | null;
   manufacturer: string | null;
   image_url?: string | null;
@@ -103,70 +105,6 @@ function filtersToQuery(
   return params.toString();
 }
 
-// Next.js API 라우트용 fetcher (내부 API)
-const internalFetcher = async (url: string) => {
-  try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.warn(`[useSupplements] API 에러: ${response.status}`, errorData);
-      // 에러를 throw하지 않고 빈 데이터 반환
-      return { success: false, data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
-    }
-    
-    return response.json();
-  } catch (error) {
-    console.warn('[useSupplements] 네트워크 에러:', error);
-    return { success: false, data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } };
-  }
-};
-
-// 내부 API 요청 함수
-async function internalRequest<T>(
-  url: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-  body?: unknown
-): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
-  
-  const response = await fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  
-  if (response.status === 401) {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('admin_token');
-      if (!window.location.pathname.includes('/login')) {
-        window.location.replace('/login');
-      }
-    }
-    throw new Error('인증이 필요합니다.');
-  }
-  
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.error?.message || '요청 처리 중 오류가 발생했습니다.');
-  }
-  
-  return data;
-}
-
 // 영양제 목록 조회
 export function useSupplements(
   filters: SupplementSearchFilters,
@@ -175,8 +113,8 @@ export function useSupplements(
 ) {
   const queryString = filtersToQuery(filters, page, pageSize);
   const { data, error, isLoading, mutate } = useSWR<SupplementListResponse>(
-    `/api/admin/supplements?${queryString}`,
-    internalFetcher,
+    `/admin/supplements?${queryString}`,
+    swrFetcher,
     { revalidateOnFocus: false }
   );
 
@@ -192,8 +130,8 @@ export function useSupplements(
 // 영양제 상세 조회
 export function useSupplementDetail(id: string | null) {
   const { data, error, isLoading, mutate } = useSWR<SupplementDetailResponse>(
-    id ? `/api/admin/supplements/${id}` : null,
-    internalFetcher,
+    id ? `/admin/supplements/${id}` : null,
+    swrFetcher,
     { revalidateOnFocus: false }
   );
 
@@ -208,8 +146,8 @@ export function useSupplementDetail(id: string | null) {
 // 영양제 성분 목록 조회
 export function useSupplementIngredients(productId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<SupplementIngredientResponse>(
-    productId ? `/api/admin/supplements/${productId}/ingredients` : null,
-    internalFetcher,
+    productId ? `/admin/supplements/${productId}/ingredients` : null,
+    swrFetcher,
     { revalidateOnFocus: false }
   );
 
@@ -224,8 +162,8 @@ export function useSupplementIngredients(productId: string | null) {
 // 영양제 기능성 내용 조회
 export function useSupplementFunctionalities(productId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<SupplementFunctionalityResponse>(
-    productId ? `/api/admin/supplements/${productId}/functionalities` : null,
-    internalFetcher,
+    productId ? `/admin/supplements/${productId}/functionalities` : null,
+    swrFetcher,
     { revalidateOnFocus: false }
   );
 
@@ -244,12 +182,8 @@ export function useCreateSupplement() {
   const createSupplement = async (data: Partial<Supplement>) => {
     setIsCreating(true);
     try {
-      const result = await internalRequest<{ success: boolean; data: { id: string } }>(
-        '/api/admin/supplements',
-        'POST',
-        data
-      );
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/supplements'), undefined, { revalidate: true });
+      const result = await apiClient.post<{ id: string }>('/admin/supplements', data);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/supplements'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsCreating(false);
@@ -267,13 +201,9 @@ export function useUpdateSupplement(id: string | null) {
     if (!id) return;
     setIsUpdating(true);
     try {
-      const result = await internalRequest<{ success: boolean; data: { id: string } }>(
-        `/api/admin/supplements/${id}`,
-        'PUT',
-        data
-      );
-      globalMutate(`/api/admin/supplements/${id}`);
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/supplements'), undefined, { revalidate: true });
+      const result = await apiClient.put<{ id: string }>(`/admin/supplements/${id}`, data);
+      globalMutate(`/admin/supplements/${id}`);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/supplements'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsUpdating(false);
@@ -290,12 +220,8 @@ export function useDeleteSupplements() {
   const deleteSupplements = async (data: { ids: string[] }) => {
     setIsDeleting(true);
     try {
-      const result = await internalRequest<{ success: boolean }>(
-        '/api/admin/supplements',
-        'DELETE',
-        data
-      );
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/admin/supplements'), undefined, { revalidate: true });
+      const result = await apiClient.delete('/admin/supplements', data);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/supplements'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsDeleting(false);
@@ -313,13 +239,9 @@ export function useSaveSupplementIngredients(productId: string | null) {
     if (!productId) return;
     setIsSaving(true);
     try {
-      const result = await internalRequest<{ success: boolean }>(
-        `/api/admin/supplements/${productId}/ingredients`,
-        'POST',
-        data
-      );
-      globalMutate(`/api/admin/supplements/${productId}/ingredients`);
-      globalMutate(`/api/admin/supplements/${productId}/functionalities`);
+      const result = await apiClient.post(`/admin/supplements/${productId}/ingredients`, data);
+      globalMutate(`/admin/supplements/${productId}/ingredients`);
+      globalMutate(`/admin/supplements/${productId}/functionalities`);
       return result;
     } finally {
       setIsSaving(false);
@@ -337,13 +259,9 @@ export function useDeleteSupplementIngredients(productId: string | null) {
     if (!productId) return;
     setIsDeleting(true);
     try {
-      const result = await internalRequest<{ success: boolean }>(
-        `/api/admin/supplements/${productId}/ingredients`,
-        'DELETE',
-        data
-      );
-      globalMutate(`/api/admin/supplements/${productId}/ingredients`);
-      globalMutate(`/api/admin/supplements/${productId}/functionalities`);
+      const result = await apiClient.delete(`/admin/supplements/${productId}/ingredients`, data);
+      globalMutate(`/admin/supplements/${productId}/ingredients`);
+      globalMutate(`/admin/supplements/${productId}/functionalities`);
       return result;
     } finally {
       setIsDeleting(false);
@@ -352,6 +270,3 @@ export function useDeleteSupplementIngredients(productId: string | null) {
 
   return { deleteIngredients, isDeleting };
 }
-
-// useState import 추가
-import { useState } from 'react';
