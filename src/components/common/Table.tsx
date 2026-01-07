@@ -15,11 +15,15 @@ interface DataTableProps<T> {
   sorting?: SortConfig;
   onSort?: (field: string) => void;
   onRowClick?: (row: T) => void;
+  onRowDoubleClick?: (row: T) => void;  // 더블클릭 핸들러
   isLoading?: boolean;
   emptyMessage?: string;
-  getRowKey?: (row: T) => string;
+  getRowKey?: (row: T) => string | number;
   title?: string;
   headerAction?: ReactNode;
+  selectedRowKey?: string | number;  // 선택된 행 표시용
+  maxHeight?: string;  // 테이블 최대 높이 (스크롤용)
+  showTitle?: boolean;  // 타이틀 표시 여부 (기본값: true)
 }
 
 // 정렬 아이콘 컴포넌트
@@ -59,11 +63,15 @@ function DataTable<T extends object>({
   sorting,
   onSort,
   onRowClick,
+  onRowDoubleClick,
   isLoading,
   emptyMessage = '데이터가 없습니다.',
   getRowKey,
   title = '고객 리스트',
   headerAction,
+  selectedRowKey,
+  maxHeight,
+  showTitle = true,
 }: DataTableProps<T>) {
   const handleHeaderClick = (column: TableColumn<T>) => {
     if (column.sortable && onSort) {
@@ -77,27 +85,32 @@ function DataTable<T extends object>({
   };
 
   return (
-    <div className="bg-white rounded-[5px] shadow-sm">
+    <div className={cn("bg-white rounded-[5px]", showTitle && "shadow-sm")}>
       {/* 테이블 타이틀 영역 */}
-      <div className="px-7 pt-5 pb-4 flex items-center justify-between">
-        <div>
-          <span className="text-[16px] font-bold text-black">
-            {title}
-          </span>
-          {totalCount !== undefined && (
-            <span className="ml-3 text-[14px] text-[#888]">
-              총 {totalCount}건
+      {showTitle && (
+        <div className="px-7 pt-5 pb-4 flex items-center justify-between">
+          <div>
+            <span className="text-[16px] font-bold text-black">
+              {title}
             </span>
+            {totalCount !== undefined && (
+              <span className="ml-3 text-[14px] text-[#888]">
+                총 {totalCount}건
+              </span>
+            )}
+          </div>
+          {headerAction && (
+            <div>{headerAction}</div>
           )}
         </div>
-        {headerAction && (
-          <div>{headerAction}</div>
-        )}
-      </div>
+      )}
 
       {/* 테이블 - 내부 패딩 적용 */}
-      <div className="px-7 pb-6">
-        <div className="overflow-x-auto">
+      <div className={cn(showTitle ? "px-7 pb-6" : "p-0")}>
+        <div 
+          className="overflow-x-auto overflow-y-auto"
+          style={maxHeight ? { maxHeight } : undefined}
+        >
           <table className="w-full border-collapse">
             {/* 테이블 헤더 - Figma 스타일 */}
             <thead>
@@ -148,15 +161,22 @@ function DataTable<T extends object>({
                   </td>
                 </tr>
               ) : (
-                data.map((row, rowIndex) => (
+                data.map((row, rowIndex) => {
+                  const rowKey = getRowKey ? getRowKey(row) : rowIndex;
+                  const isSelected = selectedRowKey !== undefined && rowKey === selectedRowKey;
+                  
+                  return (
                   <tr
-                    key={getRowKey ? getRowKey(row) : rowIndex}
+                    key={rowKey}
                     className={cn(
                       'border-b border-[#a5a5a5]/30 hover:bg-gray-50 transition-colors',
-                      rowIndex % 2 === 0 ? 'bg-[#f0f0f0]' : 'bg-[#fcfcfc]',
-                      onRowClick && 'cursor-pointer'
+                      isSelected 
+                        ? 'bg-[#e8f4fd] hover:bg-[#d8ecfa]'  // 선택된 행 스타일
+                        : rowIndex % 2 === 0 ? 'bg-[#f0f0f0]' : 'bg-[#fcfcfc]',
+                      (onRowClick || onRowDoubleClick) && 'cursor-pointer'
                     )}
                     onClick={() => onRowClick?.(row)}
+                    onDoubleClick={() => onRowDoubleClick?.(row)}
                   >
                     {columns.map((column) => (
                       <td
@@ -174,7 +194,8 @@ function DataTable<T extends object>({
                       </td>
                     ))}
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
