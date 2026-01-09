@@ -178,8 +178,9 @@ export function IngredientMappingModal({
         onClose={onClose}
         title="성분 및 함량 입력"
         size="xl"
+        maxBodyHeight="calc(100vh - 150px)"
       >
-        <div className="flex gap-4 py-2" style={{ minHeight: '500px' }}>
+        <div className="flex gap-4 py-2" style={{ height: '60vh', minHeight: '400px', maxHeight: '600px' }}>
           {/* 왼쪽: 기능성 성분 검색/선택 */}
           <div className="flex-1 flex flex-col border border-gray-200 rounded-lg overflow-hidden">
             {/* 검색 */}
