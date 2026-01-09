@@ -16,6 +16,7 @@ from app.config.database import create_db_pool, create_app_db_pool, close_db_poo
 from app.config.redis import create_redis_client, close_redis_client
 from app.core.exceptions import AppException
 from app.core.logger import logger
+from app.lib.app_db import app_db_manager
 
 # 라우터 임포트
 from app.routers import (
@@ -58,6 +59,9 @@ async def lifespan(app: FastAPI):
     await create_db_pool()
     await create_app_db_pool()
     
+    # App DB Manager 초기화 (별도 싱글톤)
+    await app_db_manager.init_async_pool()
+    
     # Redis 연결
     try:
         await create_redis_client()
@@ -71,6 +75,7 @@ async def lifespan(app: FastAPI):
     # 종료 시 실행
     logger.info("🛑 서버 종료 중...")
     await close_db_pool()
+    await app_db_manager.close()
     await close_redis_client()
     logger.info("👋 서버 종료 완료")
 

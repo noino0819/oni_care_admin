@@ -6,7 +6,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.config.database import db_pool
+from app.config.database import get_connection
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
 
@@ -32,7 +32,7 @@ async def get_units(
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-        async with db_pool.connection() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     f"""SELECT 
