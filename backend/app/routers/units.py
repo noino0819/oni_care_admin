@@ -23,12 +23,10 @@ async def get_units(
     try:
         conditions = []
         params = []
-        param_idx = 1
 
         if category:
-            conditions.append(f"category = ${param_idx}")
+            conditions.append("category = %s")
             params.append(category)
-            param_idx += 1
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 

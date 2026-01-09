@@ -96,58 +96,50 @@ async def get_supplements(
         offset = (page - 1) * page_size
         conditions = []
         params = []
-        param_idx = 1
 
         if product_name:
-            conditions.append(f"s.product_name ILIKE ${param_idx}")
+            conditions.append("s.product_name ILIKE %s")
             params.append(f"%{product_name}%")
-            param_idx += 1
 
         if report_number:
-            conditions.append(f"s.product_report_number ILIKE ${param_idx}")
+            conditions.append("s.product_report_number ILIKE %s")
             params.append(f"%{report_number}%")
-            param_idx += 1
 
         if ingredient_name:
-            conditions.append(f"""EXISTS (
+            conditions.append("""EXISTS (
                 SELECT 1 FROM public.product_ingredient_mapping pim
                 JOIN public.functional_ingredients fi ON pim.ingredient_id = fi.id
                 WHERE pim.product_id = s.id 
-                AND (fi.internal_name ILIKE ${param_idx} OR fi.external_name ILIKE ${param_idx})
+                AND (fi.internal_name ILIKE %s OR fi.external_name ILIKE %s)
             )""")
             params.append(f"%{ingredient_name}%")
-            param_idx += 1
+            params.append(f"%{ingredient_name}%")
 
         if functionality:
-            conditions.append(f"""EXISTS (
+            conditions.append("""EXISTS (
                 SELECT 1 FROM public.product_ingredient_mapping pim
                 JOIN public.functional_ingredients fi ON pim.ingredient_id = fi.id
                 JOIN public.ingredient_functionality_mapping ifm ON fi.id = ifm.ingredient_id
                 JOIN public.functionality_contents fc ON ifm.functionality_id = fc.id
-                WHERE pim.product_id = s.id AND fc.content ILIKE ${param_idx}
+                WHERE pim.product_id = s.id AND fc.content ILIKE %s
             )""")
             params.append(f"%{functionality}%")
-            param_idx += 1
 
         if default_intake_amount:
-            conditions.append(f"s.default_intake_amount = ${param_idx}")
+            conditions.append("s.default_intake_amount = %s")
             params.append(default_intake_amount)
-            param_idx += 1
 
         if default_intake_time:
-            conditions.append(f"s.default_intake_time = ${param_idx}")
+            conditions.append("s.default_intake_time = %s")
             params.append(default_intake_time)
-            param_idx += 1
 
         if product_form:
-            conditions.append(f"s.form_unit = ${param_idx}")
+            conditions.append("s.form_unit = %s")
             params.append(product_form)
-            param_idx += 1
 
         if manufacturer:
-            conditions.append(f"s.manufacturer ILIKE ${param_idx}")
+            conditions.append("s.manufacturer ILIKE %s")
             params.append(f"%{manufacturer}%")
-            param_idx += 1
 
         if is_active == 'Y':
             conditions.append("s.is_active = true")
@@ -178,7 +170,7 @@ async def get_supplements(
                     FROM public.supplement_products_master s
                     {where_clause}
                     ORDER BY s.updated_at DESC
-                    LIMIT ${param_idx} OFFSET ${param_idx + 1}""",
+                    LIMIT %s OFFSET %s""",
                     params + [page_size, offset]
                 )
                 rows = await cur.fetchall()
@@ -215,7 +207,7 @@ async def get_supplement(
                         intake_method, default_intake_time,
                         default_intake_amount, default_intake_unit,
                         manufacturer, image_url, is_active, created_at, updated_at
-                    FROM public.supplement_products_master WHERE id = $1""",
+                    FROM public.supplement_products_master WHERE id = %s""",
                     [supplement_id]
                 )
                 row = await cur.fetchone()
@@ -251,7 +243,7 @@ async def create_supplement(
                         product_report_number, product_name, form_unit, single_dose, dosage_unit,
                         intake_method, default_intake_time, default_intake_amount, default_intake_unit,
                         manufacturer, is_active
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id""",
                     [
                         body.product_report_number,
@@ -296,19 +288,19 @@ async def update_supplement(
             async with conn.cursor() as cur:
                 await cur.execute(
                     """UPDATE public.supplement_products_master SET
-                        product_report_number = $1,
-                        product_name = $2,
-                        form_unit = $3,
-                        single_dose = $4,
-                        dosage_unit = $5,
-                        intake_method = $6,
-                        default_intake_time = $7,
-                        default_intake_amount = $8,
-                        default_intake_unit = $9,
-                        manufacturer = $10,
-                        is_active = $11,
+                        product_report_number = %s,
+                        product_name = %s,
+                        form_unit = %s,
+                        single_dose = %s,
+                        dosage_unit = %s,
+                        intake_method = %s,
+                        default_intake_time = %s,
+                        default_intake_amount = %s,
+                        default_intake_unit = %s,
+                        manufacturer = %s,
+                        is_active = %s,
                         updated_at = NOW()
-                    WHERE id = $12
+                    WHERE id = %s
                     RETURNING id""",
                     [
                         body.product_report_number,
@@ -349,7 +341,7 @@ async def delete_supplements(
         if not body.ids:
             raise HTTPException(status_code=400, detail={"error": "VALIDATION_ERROR", "message": "삭제할 항목을 선택해주세요."})
 
-        placeholders = ", ".join([f"${i+1}" for i in range(len(body.ids))])
+        placeholders = ", ".join(["%s" for _ in body.ids])
         
         async with app_db_manager.get_async_conn() as conn:
             async with conn.cursor() as cur:
@@ -393,7 +385,7 @@ async def get_supplement_ingredients(
                         pim.display_order
                     FROM public.product_ingredient_mapping pim
                     JOIN public.functional_ingredients fi ON pim.ingredient_id = fi.id
-                    WHERE pim.product_id = $1
+                    WHERE pim.product_id = %s
                     ORDER BY pim.display_order""",
                     [supplement_id]
                 )
@@ -417,7 +409,7 @@ async def save_supplement_ingredients(
             async with conn.cursor() as cur:
                 # 기존 매핑 삭제
                 await cur.execute(
-                    "DELETE FROM public.product_ingredient_mapping WHERE product_id = $1",
+                    "DELETE FROM public.product_ingredient_mapping WHERE product_id = %s",
                     [supplement_id]
                 )
 
@@ -426,7 +418,7 @@ async def save_supplement_ingredients(
                     await cur.execute(
                         """INSERT INTO public.product_ingredient_mapping 
                             (product_id, ingredient_id, content_amount, content_unit, display_order)
-                        VALUES ($1, $2, $3, $4, $5)""",
+                        VALUES (%s, %s, %s, %s, %s)""",
                         [supplement_id, ing.ingredient_id, ing.content_amount, ing.content_unit, ing.display_order]
                     )
 
@@ -449,7 +441,7 @@ async def delete_supplement_ingredients(
         if not body.mapping_ids:
             raise HTTPException(status_code=400, detail={"error": "VALIDATION_ERROR", "message": "삭제할 항목을 선택해주세요."})
 
-        placeholders = ", ".join([f"${i+1}" for i in range(len(body.mapping_ids))])
+        placeholders = ", ".join(["%s" for _ in body.mapping_ids])
 
         async with app_db_manager.get_async_conn() as conn:
             async with conn.cursor() as cur:
@@ -490,7 +482,7 @@ async def get_supplement_functionalities(
                     JOIN public.functional_ingredients fi ON pim.ingredient_id = fi.id
                     JOIN public.ingredient_functionality_mapping ifm ON fi.id = ifm.ingredient_id
                     JOIN public.functionality_contents fc ON ifm.functionality_id = fc.id
-                    WHERE pim.product_id = $1
+                    WHERE pim.product_id = %s
                     GROUP BY fc.id, fc.functionality_code, fc.content
                     ORDER BY fc.functionality_code""",
                     [supplement_id]

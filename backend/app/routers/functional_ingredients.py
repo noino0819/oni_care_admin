@@ -81,45 +81,38 @@ async def get_functional_ingredients(
         offset = (page - 1) * page_size
         conditions = []
         params = []
-        param_idx = 1
 
         if ingredient_code:
-            conditions.append(f"fi.ingredient_code ILIKE ${param_idx}")
+            conditions.append("fi.ingredient_code ILIKE %s")
             params.append(f"%{ingredient_code}%")
-            param_idx += 1
 
         if internal_name:
-            conditions.append(f"fi.internal_name ILIKE ${param_idx}")
+            conditions.append("fi.internal_name ILIKE %s")
             params.append(f"%{internal_name}%")
-            param_idx += 1
 
         if external_name:
-            conditions.append(f"fi.external_name ILIKE ${param_idx}")
+            conditions.append("fi.external_name ILIKE %s")
             params.append(f"%{external_name}%")
-            param_idx += 1
 
         if indicator_component:
-            conditions.append(f"fi.indicator_component ILIKE ${param_idx}")
+            conditions.append("fi.indicator_component ILIKE %s")
             params.append(f"%{indicator_component}%")
-            param_idx += 1
 
         if functionality_content:
-            conditions.append(f"""EXISTS (
+            conditions.append("""EXISTS (
                 SELECT 1 FROM public.ingredient_functionality_mapping ifm
                 JOIN public.functionality_contents fc ON ifm.functionality_id = fc.id
-                WHERE ifm.ingredient_id = fi.id AND fc.content ILIKE ${param_idx}
+                WHERE ifm.ingredient_id = fi.id AND fc.content ILIKE %s
             )""")
             params.append(f"%{functionality_content}%")
-            param_idx += 1
 
         if functionality_code:
-            conditions.append(f"""EXISTS (
+            conditions.append("""EXISTS (
                 SELECT 1 FROM public.ingredient_functionality_mapping ifm
                 JOIN public.functionality_contents fc ON ifm.functionality_id = fc.id
-                WHERE ifm.ingredient_id = fi.id AND fc.functionality_code ILIKE ${param_idx}
+                WHERE ifm.ingredient_id = fi.id AND fc.functionality_code ILIKE %s
             )""")
             params.append(f"%{functionality_code}%")
-            param_idx += 1
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
@@ -143,7 +136,7 @@ async def get_functional_ingredients(
                     FROM public.functional_ingredients fi
                     {where_clause}
                     ORDER BY fi.priority_display DESC, fi.display_order ASC, fi.id ASC
-                    LIMIT ${param_idx} OFFSET ${param_idx + 1}""",
+                    LIMIT %s OFFSET %s""",
                     params + [page_size, offset]
                 )
                 rows = await cur.fetchall()
@@ -178,7 +171,7 @@ async def get_functional_ingredient(
                         indicator_component, daily_intake_min, daily_intake_max,
                         daily_intake_unit, display_functionality, is_active,
                         priority_display, created_at
-                    FROM public.functional_ingredients WHERE id = $1""",
+                    FROM public.functional_ingredients WHERE id = %s""",
                     [ingredient_id]
                 )
                 row = await cur.fetchone()
@@ -219,7 +212,7 @@ async def create_functional_ingredient(
                         ingredient_code, internal_name, external_name, indicator_component,
                         daily_intake_min, daily_intake_max, daily_intake_unit,
                         display_functionality, is_active, priority_display
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id""",
                     [
                         new_code,
@@ -263,16 +256,16 @@ async def update_functional_ingredient(
             async with conn.cursor() as cur:
                 await cur.execute(
                     """UPDATE public.functional_ingredients SET
-                        internal_name = $1,
-                        external_name = $2,
-                        indicator_component = $3,
-                        daily_intake_min = $4,
-                        daily_intake_max = $5,
-                        daily_intake_unit = $6,
-                        display_functionality = $7,
-                        is_active = $8,
-                        priority_display = $9
-                    WHERE id = $10
+                        internal_name = %s,
+                        external_name = %s,
+                        indicator_component = %s,
+                        daily_intake_min = %s,
+                        daily_intake_max = %s,
+                        daily_intake_unit = %s,
+                        display_functionality = %s,
+                        is_active = %s,
+                        priority_display = %s
+                    WHERE id = %s
                     RETURNING id""",
                     [
                         body.internal_name.strip(),
@@ -311,7 +304,7 @@ async def delete_functional_ingredients(
         if not body.ids:
             raise HTTPException(status_code=400, detail={"error": "VALIDATION_ERROR", "message": "삭제할 항목을 선택해주세요."})
 
-        placeholders = ", ".join([f"${i+1}" for i in range(len(body.ids))])
+        placeholders = ", ".join(["%s" for _ in body.ids])
         
         async with app_db_manager.get_async_conn() as conn:
             async with conn.cursor() as cur:
@@ -349,7 +342,7 @@ async def get_ingredient_functionalities(
                         fc.content
                     FROM public.ingredient_functionality_mapping ifm
                     JOIN public.functionality_contents fc ON ifm.functionality_id = fc.id
-                    WHERE ifm.ingredient_id = $1
+                    WHERE ifm.ingredient_id = %s
                     ORDER BY fc.functionality_code""",
                     [ingredient_id]
                 )
@@ -373,7 +366,7 @@ async def save_ingredient_functionalities(
             async with conn.cursor() as cur:
                 # 기존 매핑 삭제
                 await cur.execute(
-                    "DELETE FROM public.ingredient_functionality_mapping WHERE ingredient_id = $1",
+                    "DELETE FROM public.ingredient_functionality_mapping WHERE ingredient_id = %s",
                     [ingredient_id]
                 )
 
@@ -382,7 +375,7 @@ async def save_ingredient_functionalities(
                     await cur.execute(
                         """INSERT INTO public.ingredient_functionality_mapping 
                             (ingredient_id, functionality_id)
-                        VALUES ($1, $2)""",
+                        VALUES (%s, %s)""",
                         [ingredient_id, func_id]
                     )
 
@@ -405,13 +398,13 @@ async def delete_ingredient_functionalities(
         if not body.functionality_ids:
             raise HTTPException(status_code=400, detail={"error": "VALIDATION_ERROR", "message": "삭제할 항목을 선택해주세요."})
 
-        placeholders = ", ".join([f"${i+2}" for i in range(len(body.functionality_ids))])
+        placeholders = ", ".join(["%s" for _ in body.functionality_ids])
 
         async with app_db_manager.get_async_conn() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     f"""DELETE FROM public.ingredient_functionality_mapping 
-                        WHERE ingredient_id = $1 AND functionality_id IN ({placeholders})""",
+                        WHERE ingredient_id = %s AND functionality_id IN ({placeholders})""",
                     [ingredient_id] + body.functionality_ids
                 )
                 await conn.commit()
