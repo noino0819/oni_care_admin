@@ -17,6 +17,7 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
   showCloseButton?: boolean;
+  maxBodyHeight?: string; // 예: 'calc(100vh - 200px)' 또는 '500px'
 }
 
 function Modal({
@@ -26,6 +27,7 @@ function Modal({
   children,
   size = 'md',
   showCloseButton = true,
+  maxBodyHeight,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -96,7 +98,12 @@ function Modal({
             )}
           </div>
         )}
-        <div className="px-6 py-4">{children}</div>
+        <div 
+          className={cn("px-6 py-4", maxBodyHeight && "overflow-y-auto")}
+          style={maxBodyHeight ? { maxHeight: maxBodyHeight } : undefined}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

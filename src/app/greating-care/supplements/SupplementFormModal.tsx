@@ -135,6 +135,7 @@ export function SupplementFormModal({
         onClose={onClose}
         title={isEdit ? '영양제 수정' : '영양제 등록'}
         size="md"
+        maxBodyHeight="calc(100vh - 200px)"
       >
         {isLoadingDetail && isEdit ? (
           <div className="py-8 text-center text-gray-500">로딩 중...</div>
