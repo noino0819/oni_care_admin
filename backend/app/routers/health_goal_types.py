@@ -122,25 +122,23 @@ async def get_diseases(
     current_user=Depends(get_current_user)
 ):
     """
-    질병 목록 조회 (공통코드 또는 하드코딩)
+    질병 목록 조회 (content_categories 테이블에서)
     """
     try:
-        # 공통코드에서 질병 목록을 가져오거나 하드코딩된 목록 반환
-        # 먼저 공통코드 테이블에서 조회 시도
+        # content_categories 테이블에서 disease 유형 조회
         diseases = await query(
             """
-            SELECT code_value as value, code_name as label
-            FROM common_codes cc
-            JOIN common_code_master ccm ON cc.master_id = ccm.id
-            WHERE ccm.code_name = 'DISEASE'
-            AND cc.is_active = true
-            ORDER BY cc.sort_order, cc.code_name
+            SELECT id::text as value, category_name as label
+            FROM content_categories
+            WHERE category_type = 'disease'
+            AND is_active = true
+            ORDER BY display_order, category_name
             """,
             use_app_db=True
         )
         
         if not diseases:
-            # 하드코딩된 기본 질병 목록
+            # 하드코딩된 기본 질병 목록 (폴백)
             diseases = [
                 {"value": "none", "label": "해당없음"},
                 {"value": "diabetes", "label": "당뇨"},
@@ -150,6 +148,9 @@ async def get_diseases(
                 {"value": "liver", "label": "간질환"},
                 {"value": "heart", "label": "심장질환"},
             ]
+        else:
+            # 해당없음 옵션 추가
+            diseases.insert(0, {"value": "none", "label": "해당없음"})
         
         return ApiResponse(success=True, data=diseases)
     except Exception as e:
