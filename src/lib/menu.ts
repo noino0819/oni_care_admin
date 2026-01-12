@@ -38,6 +38,7 @@ export const menuItems: MenuItem[] = [
       { id: 'care-challenge-quizzes', label: '챌린지 퀴즈 관리', path: '/greating-care/challenge-quizzes' },
       { id: 'care-supplements', label: '영양제 관리', path: '/greating-care/supplements' },
       { id: 'care-banners', label: '배너 관리', path: '/greating-care/banners' },
+      { id: 'care-consents', label: '동의내용 관리', path: '/greating-care/consents' },
     ],
   },
   {

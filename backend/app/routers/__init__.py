@@ -27,6 +27,7 @@ from .supplements import router as supplements_router
 from .functional_ingredients import router as functional_ingredients_router
 from .functionality_contents import router as functionality_contents_router
 from .units import router as units_router
+from .consents import router as consents_router
 
 __all__ = [
     'auth_router', 
@@ -55,5 +56,6 @@ __all__ = [
     'functional_ingredients_router',
     'functionality_contents_router',
     'units_router',
+    'consents_router',
 ]
 

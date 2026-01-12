@@ -873,3 +873,43 @@ export interface GreatingXAdminUserSearchFilters {
   company_name?: string;
 }
 
+// ============================================
+// 동의내용 관리 타입 정의
+// ============================================
+
+// 동의서 리스트 아이템
+export interface ConsentListItem {
+  id: number;
+  consent_code: string;
+  title: string;
+  classification: 'required' | 'optional';
+  exposure_location: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 동의서 상세
+export interface ConsentDetail extends ConsentListItem {
+  content: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+}
+
+// 동의서 등록/수정 폼
+export interface ConsentForm {
+  title: string;
+  classification: 'required' | 'optional' | '';
+  exposure_location: string;
+  content: string;
+  is_active: boolean | null;
+}
+
+// 동의서 검색 필터
+export interface ConsentSearchFilters {
+  title?: string;
+  classification?: string[];
+  exposure_location?: string;
+  is_active?: string[];
+}
+
