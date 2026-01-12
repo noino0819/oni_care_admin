@@ -300,7 +300,7 @@ async def create_health_goal_type(
                 detail={"error": "VALIDATION_ERROR", "message": "유효하지 않은 BMI 범위입니다."}
             )
         
-        created_by = current_user.get("name", "") if current_user else ""
+        created_by = current_user.name if current_user else ""
         
         result = await execute_returning(
             """
@@ -391,7 +391,7 @@ async def update_health_goal_type(
             )
             return ApiResponse(success=True, data=existing)
         
-        updated_by = current_user.get("name", "") if current_user else ""
+        updated_by = current_user.name if current_user else ""
         update_fields.append("updated_by = %(updated_by)s")
         params["updated_by"] = updated_by
         update_fields.append("updated_at = NOW()")
