@@ -320,7 +320,7 @@ async def create_push_notification(
                 detail={"error": "VALIDATION_ERROR", "message": "최대 20개 지점까지 선택 가능합니다."}
             )
         
-        created_by = current_user.get("name", "") if current_user else ""
+        created_by = current_user.name if current_user else ""
         
         result = await execute_returning(
             """
@@ -450,7 +450,7 @@ async def update_push_notification(
             )
             return ApiResponse(success=True, data=existing)
         
-        updated_by = current_user.get("name", "") if current_user else ""
+        updated_by = current_user.name if current_user else ""
         update_fields.append("updated_by = %(updated_by)s")
         params["updated_by"] = updated_by
         update_fields.append("updated_at = NOW()")
