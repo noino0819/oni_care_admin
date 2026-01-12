@@ -725,3 +725,75 @@ COMMENT ON COLUMN public.coupon_master.coupon_type IS '쿠폰 유형';
 COMMENT ON COLUMN public.coupon_master.discount_value IS '할인 금액/율';
 COMMENT ON COLUMN public.coupon_master.discount_type IS '할인 타입 (정액/정률)';
 
+-- ============================================
+-- 26. PUSH 알림 관리 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.push_notifications (
+  id SERIAL PRIMARY KEY,
+  push_name VARCHAR(30) NOT NULL,
+  target_audience TEXT[] DEFAULT '{all}',
+  target_companies TEXT[] DEFAULT '{}',
+  send_to_store BOOLEAN DEFAULT false,
+  send_type VARCHAR(20) NOT NULL DEFAULT 'time_select',
+  send_type_detail VARCHAR(50),
+  send_time TIME,
+  content TEXT,
+  link_url VARCHAR(500),
+  is_active BOOLEAN DEFAULT true,
+  created_by VARCHAR(50),
+  updated_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_push_notifications_push_name ON public.push_notifications(push_name);
+CREATE INDEX idx_push_notifications_send_type ON public.push_notifications(send_type);
+CREATE INDEX idx_push_notifications_target_audience ON public.push_notifications USING GIN(target_audience);
+CREATE INDEX idx_push_notifications_is_active ON public.push_notifications(is_active);
+CREATE INDEX idx_push_notifications_created_at ON public.push_notifications(created_at);
+
+COMMENT ON TABLE public.push_notifications IS 'PUSH 알림 관리';
+COMMENT ON COLUMN public.push_notifications.push_name IS '푸시명 (30자 이내)';
+COMMENT ON COLUMN public.push_notifications.target_audience IS '전송대상 (all, normal, affiliate, fs)';
+COMMENT ON COLUMN public.push_notifications.target_companies IS '전송대상 세부 지점 코드 목록 (최대 20개)';
+COMMENT ON COLUMN public.push_notifications.send_to_store IS '스토어 전송여부';
+COMMENT ON COLUMN public.push_notifications.send_type IS '발송유형 (time_select, condition, system_time)';
+COMMENT ON COLUMN public.push_notifications.send_type_detail IS '발송유형 세부설정';
+COMMENT ON COLUMN public.push_notifications.send_time IS '발송 시간';
+COMMENT ON COLUMN public.push_notifications.content IS '푸시 내용 (50자 이내, /로 제목과 내용 구분)';
+COMMENT ON COLUMN public.push_notifications.link_url IS '푸시 클릭 시 이동 URL';
+COMMENT ON COLUMN public.push_notifications.is_active IS '사용여부';
+COMMENT ON COLUMN public.push_notifications.created_by IS '생성자';
+COMMENT ON COLUMN public.push_notifications.updated_by IS '수정자';
+
+-- ============================================
+-- 27. 건강목표 유형 관리 테이블
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.health_goal_types (
+  id SERIAL PRIMARY KEY,
+  type_name VARCHAR(10) NOT NULL,
+  disease VARCHAR(50),
+  bmi_range VARCHAR(20),
+  interest_priority VARCHAR(50),
+  is_active BOOLEAN DEFAULT true,
+  created_by VARCHAR(50),
+  updated_by VARCHAR(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_health_goal_types_type_name ON public.health_goal_types(type_name);
+CREATE INDEX idx_health_goal_types_disease ON public.health_goal_types(disease);
+CREATE INDEX idx_health_goal_types_bmi_range ON public.health_goal_types(bmi_range);
+CREATE INDEX idx_health_goal_types_interest_priority ON public.health_goal_types(interest_priority);
+CREATE INDEX idx_health_goal_types_is_active ON public.health_goal_types(is_active);
+
+COMMENT ON TABLE public.health_goal_types IS '건강목표 유형 관리';
+COMMENT ON COLUMN public.health_goal_types.type_name IS '유형명 (10자 이내)';
+COMMENT ON COLUMN public.health_goal_types.disease IS '질병';
+COMMENT ON COLUMN public.health_goal_types.bmi_range IS 'BMI 범위 (underweight, normal, overweight, obese)';
+COMMENT ON COLUMN public.health_goal_types.interest_priority IS '관심사 1순위';
+COMMENT ON COLUMN public.health_goal_types.is_active IS '사용여부';
+COMMENT ON COLUMN public.health_goal_types.created_by IS '생성자';
+COMMENT ON COLUMN public.health_goal_types.updated_by IS '수정자';
+

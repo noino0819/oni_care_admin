@@ -28,6 +28,8 @@ from .functional_ingredients import router as functional_ingredients_router
 from .functionality_contents import router as functionality_contents_router
 from .units import router as units_router
 from .consents import router as consents_router
+from .push_notifications import router as push_notifications_router
+from .health_goal_types import router as health_goal_types_router
 
 __all__ = [
     'auth_router', 
@@ -57,5 +59,7 @@ __all__ = [
     'functionality_contents_router',
     'units_router',
     'consents_router',
+    'push_notifications_router',
+    'health_goal_types_router',
 ]
 

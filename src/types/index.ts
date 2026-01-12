@@ -913,3 +913,113 @@ export interface ConsentSearchFilters {
   is_active?: string[];
 }
 
+// ============================================
+// PUSH 알림 관리 타입 정의
+// ============================================
+
+// PUSH 알림 리스트 아이템
+export interface PushNotificationListItem {
+  id: number;
+  push_name: string;
+  target_audience: string[];
+  target_companies: string[];
+  send_to_store: boolean;
+  send_type: 'time_select' | 'condition' | 'system_time';
+  send_type_detail: string | null;
+  send_time: string | null;
+  content: string | null;
+  link_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// PUSH 알림 상세
+export interface PushNotificationDetail extends PushNotificationListItem {
+  created_by: string | null;
+  updated_by: string | null;
+}
+
+// PUSH 알림 등록/수정 폼
+export interface PushNotificationForm {
+  push_name: string;
+  target_audience: string[];
+  target_companies: string[];
+  send_to_store: boolean;
+  send_type: 'time_select' | 'condition' | 'system_time' | '';
+  send_type_detail: string;
+  send_time: string;
+  content: string;
+  link_url: string;
+  is_active: boolean | null;
+}
+
+// PUSH 알림 검색 필터
+export interface PushNotificationSearchFilters {
+  push_name?: string;
+  target_audience?: string[];
+  send_to_store?: string[];
+  is_active?: string[];
+  send_type?: string[];
+  send_type_detail?: string;
+}
+
+// 발송유형 세부설정 옵션
+export interface SendTypeDetailOption {
+  value: string;
+  label: string;
+}
+
+// 기업/사업장 정보
+export interface TargetCompany {
+  id: number;
+  company_code: string;
+  company_name: string;
+}
+
+// ============================================
+// 건강목표 유형 관리 타입 정의
+// ============================================
+
+// 건강목표 유형 리스트 아이템
+export interface HealthGoalTypeListItem {
+  id: number;
+  type_name: string;
+  disease: string | null;
+  bmi_range: string | null;
+  interest_priority: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 건강목표 유형 상세
+export interface HealthGoalTypeDetail extends HealthGoalTypeListItem {
+  created_by: string | null;
+  updated_by: string | null;
+}
+
+// 건강목표 유형 등록/수정 폼
+export interface HealthGoalTypeForm {
+  type_name: string;
+  disease: string;
+  bmi_range: string;
+  interest_priority: string;
+  is_active: boolean | null;
+}
+
+// 건강목표 유형 검색 필터
+export interface HealthGoalTypeSearchFilters {
+  type_name?: string;
+  disease?: string;
+  bmi_range?: string;
+  interest_priority?: string;
+  is_active?: string[];
+}
+
+// 질병/BMI/관심사 옵션
+export interface OptionItem {
+  value: string;
+  label: string;
+}
+
