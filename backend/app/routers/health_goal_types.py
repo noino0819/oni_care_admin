@@ -122,19 +122,20 @@ async def get_diseases(
     current_user=Depends(get_current_user)
 ):
     """
-    질병 목록 조회 (content_categories 테이블에서)
+    질병 목록 조회 (어드민 DB content_categories 테이블에서)
     """
     try:
-        # content_categories 테이블에서 disease 유형 조회
+        # 어드민 DB content_categories 테이블에서 disease 유형 조회 (parent_id가 있는 것 = 중분류)
         diseases = await query(
             """
             SELECT id::text as value, category_name as label
             FROM content_categories
             WHERE category_type = 'disease'
+            AND parent_id IS NOT NULL
             AND is_active = true
             ORDER BY display_order, category_name
             """,
-            use_app_db=True
+            use_app_db=False  -- 어드민 DB 사용
         )
         
         if not diseases:
@@ -190,23 +191,23 @@ async def get_interests(
     current_user=Depends(get_current_user)
 ):
     """
-    관심사 목록 조회 (공통코드 또는 컨텐츠 카테고리에서)
+    관심사 목록 조회 (어드민 DB content_categories 테이블에서 parent_id=23인 데이터)
     """
     try:
-        # 컨텐츠 카테고리에서 관심사 유형 조회
+        # 어드민 DB content_categories 테이블에서 관심사 중분류 조회 (parent_id = 23)
         interests = await query(
             """
             SELECT id::text as value, category_name as label
             FROM content_categories
-            WHERE category_type = 'interest'
+            WHERE parent_id = 23
             AND is_active = true
             ORDER BY display_order, category_name
             """,
-            use_app_db=True
+            use_app_db=False  -- 어드민 DB 사용
         )
         
         if not interests:
-            # 하드코딩된 기본 관심사 목록
+            # 하드코딩된 기본 관심사 목록 (폴백)
             interests = [
                 {"value": "all", "label": "전체"},
                 {"value": "diet", "label": "다이어트"},
