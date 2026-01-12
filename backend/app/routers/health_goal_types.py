@@ -202,7 +202,7 @@ async def get_interests(
             AND is_active = true
             ORDER BY display_order, category_name
             """,
-            use_app_db=False  -- 어드민 DB 사용
+            use_app_db=False  # 어드민 DB 사용
         )
         
         if not interests:
