@@ -125,17 +125,16 @@ async def get_diseases(
     질병 목록 조회 (어드민 DB content_categories 테이블에서)
     """
     try:
-        # 어드민 DB content_categories 테이블에서 disease 유형 조회 (parent_id가 있는 것 = 중분류)
+        # 어드민 DB content_categories 테이블에서 질병 중분류 조회 (parent_id = 24)
         diseases = await query(
             """
             SELECT id::text as value, category_name as label
             FROM content_categories
-            WHERE category_type = 'disease'
-            AND parent_id IS NOT NULL
+            WHERE parent_id = 24
             AND is_active = true
             ORDER BY display_order, category_name
             """,
-            use_app_db=False  -- 어드민 DB 사용
+            use_app_db=False
         )
         
         if not diseases:
