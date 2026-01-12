@@ -39,6 +39,8 @@ export const menuItems: MenuItem[] = [
       { id: 'care-supplements', label: '영양제 관리', path: '/greating-care/supplements' },
       { id: 'care-banners', label: '배너 관리', path: '/greating-care/banners' },
       { id: 'care-consents', label: '동의내용 관리', path: '/greating-care/consents' },
+      { id: 'care-push-notifications', label: 'PUSH 관리', path: '/greating-care/push-notifications' },
+      { id: 'care-health-goal-types', label: '건강목표 유형 관리', path: '/greating-care/health-goal-types' },
     ],
   },
   {
