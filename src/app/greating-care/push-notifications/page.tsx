@@ -26,7 +26,7 @@ const TARGET_AUDIENCE_OPTIONS = [
 const SEND_TYPE_OPTIONS = [
   { value: "system_time", label: "시스템 시간" },
   { value: "time_select", label: "시간 선택" },
-  { value: "condition", label: "조건 달성시" },
+  { value: "condition_met", label: "조건 달성시" },
 ];
 
 export default function PushNotificationsPage() {

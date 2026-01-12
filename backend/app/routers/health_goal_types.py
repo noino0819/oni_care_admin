@@ -1,7 +1,7 @@
 # ============================================
 # 건강목표 유형 관리 API 라우터
 # ============================================
-# 건강목표 유형 CRUD (Admin DB 사용)
+# 건강목표 유형 CRUD (App DB 사용 - oni_care DB)
 
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -78,7 +78,7 @@ async def get_health_goal_types(
         
         # 전체 개수 조회
         count_sql = f"SELECT COUNT(*) as count FROM health_goal_types {where_clause}"
-        count_result = await query_one(count_sql, params)
+        count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
         # 데이터 조회
@@ -95,7 +95,8 @@ async def get_health_goal_types(
             ORDER BY {safe_field} {safe_direction}
             LIMIT %(limit)s OFFSET %(offset)s
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         return {
@@ -134,7 +135,8 @@ async def get_diseases(
             WHERE ccm.code_name = 'DISEASE'
             AND cc.is_active = true
             ORDER BY cc.sort_order, cc.code_name
-            """
+            """,
+            use_app_db=True
         )
         
         if not diseases:
@@ -198,7 +200,8 @@ async def get_interests(
             WHERE category_type = 'interest'
             AND is_active = true
             ORDER BY display_order, category_name
-            """
+            """,
+            use_app_db=True
         )
         
         if not interests:
@@ -239,7 +242,8 @@ async def get_health_goal_type(
             FROM health_goal_types
             WHERE id = %(type_id)s
             """,
-            {"type_id": type_id}
+            {"type_id": type_id},
+            use_app_db=True
         )
         
         if not goal_type:
@@ -316,7 +320,8 @@ async def create_health_goal_type(
                 "interest_priority": interest_priority if interest_priority else None,
                 "is_active": is_active,
                 "created_by": created_by
-            }
+            },
+            use_app_db=True
         )
         
         return ApiResponse(success=True, data={"id": result.get("id")})
@@ -380,7 +385,8 @@ async def update_health_goal_type(
         if not update_fields:
             existing = await query_one(
                 "SELECT * FROM health_goal_types WHERE id = %(type_id)s",
-                {"type_id": type_id}
+                {"type_id": type_id},
+                use_app_db=True
             )
             return ApiResponse(success=True, data=existing)
         
@@ -396,7 +402,8 @@ async def update_health_goal_type(
             WHERE id = %(type_id)s
             RETURNING *
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         if not result:
@@ -427,7 +434,8 @@ async def delete_health_goal_type(
     try:
         affected = await execute(
             "DELETE FROM health_goal_types WHERE id = %(type_id)s",
-            {"type_id": type_id}
+            {"type_id": type_id},
+            use_app_db=True
         )
         
         if affected == 0:
@@ -466,7 +474,8 @@ async def batch_delete_health_goal_types(
         
         affected = await execute(
             "DELETE FROM health_goal_types WHERE id = ANY(%(ids)s::int[])",
-            {"ids": ids}
+            {"ids": ids},
+            use_app_db=True
         )
         
         return ApiResponse(success=True, data={"deleted_count": affected})
@@ -478,4 +487,3 @@ async def batch_delete_health_goal_types(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
-

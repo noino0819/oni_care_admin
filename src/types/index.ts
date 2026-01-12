@@ -919,12 +919,12 @@ export interface ConsentSearchFilters {
 
 // PUSH 알림 리스트 아이템
 export interface PushNotificationListItem {
-  id: number;
+  id: string;  // UUID
   push_name: string;
   target_audience: string[];
   target_companies: string[];
   send_to_store: boolean;
-  send_type: 'time_select' | 'condition' | 'system_time';
+  send_type: 'time_select' | 'condition_met' | 'system_time';
   send_type_detail: string | null;
   send_time: string | null;
   content: string | null;
@@ -946,7 +946,7 @@ export interface PushNotificationForm {
   target_audience: string[];
   target_companies: string[];
   send_to_store: boolean;
-  send_type: 'time_select' | 'condition' | 'system_time' | '';
+  send_type: 'time_select' | 'condition_met' | 'system_time' | '';
   send_type_detail: string;
   send_time: string;
   content: string;

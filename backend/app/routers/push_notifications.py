@@ -1,7 +1,7 @@
 # ============================================
 # PUSH 알림 관리 API 라우터
 # ============================================
-# PUSH 알림 CRUD (Admin DB 사용)
+# PUSH 알림 CRUD (App DB 사용 - oni_care DB)
 
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -96,7 +96,7 @@ async def get_push_notifications(
         
         # 전체 개수 조회
         count_sql = f"SELECT COUNT(*) as count FROM push_notifications {where_clause}"
-        count_result = await query_one(count_sql, params)
+        count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
         # 데이터 조회
@@ -114,7 +114,8 @@ async def get_push_notifications(
             ORDER BY {safe_field} {safe_direction}
             LIMIT %(limit)s OFFSET %(offset)s
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         return {
@@ -209,7 +210,8 @@ async def get_target_companies(
             ORDER BY company_name
             LIMIT 100
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         return ApiResponse(success=True, data=companies)
@@ -223,7 +225,7 @@ async def get_target_companies(
 
 @router.get("/{push_id}")
 async def get_push_notification(
-    push_id: int,
+    push_id: str,
     current_user=Depends(get_current_user)
 ):
     """
@@ -238,7 +240,8 @@ async def get_push_notification(
             FROM push_notifications
             WHERE id = %(push_id)s
             """,
-            {"push_id": push_id}
+            {"push_id": push_id},
+            use_app_db=True
         )
         
         if not push:
@@ -297,7 +300,7 @@ async def create_push_notification(
                 detail={"error": "VALIDATION_ERROR", "message": "발송유형을 선택해주세요."}
             )
         
-        valid_send_types = ["time_select", "condition", "system_time"]
+        valid_send_types = ["time_select", "condition_met", "system_time"]
         if send_type not in valid_send_types:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
@@ -345,7 +348,8 @@ async def create_push_notification(
                 "link_url": link_url.strip() if link_url else None,
                 "is_active": is_active,
                 "created_by": created_by
-            }
+            },
+            use_app_db=True
         )
         
         return ApiResponse(success=True, data={"id": result.get("id")})
@@ -361,7 +365,7 @@ async def create_push_notification(
 
 @router.put("/{push_id}")
 async def update_push_notification(
-    push_id: int,
+    push_id: str,
     body: dict,
     current_user=Depends(get_current_user)
 ):
@@ -403,7 +407,7 @@ async def update_push_notification(
         
         if "send_type" in body:
             send_type = body["send_type"]
-            valid_send_types = ["time_select", "condition", "system_time"]
+            valid_send_types = ["time_select", "condition_met", "system_time"]
             if send_type and send_type not in valid_send_types:
                 raise HTTPException(
                     status_code=http_status.HTTP_400_BAD_REQUEST,
@@ -441,7 +445,8 @@ async def update_push_notification(
         if not update_fields:
             existing = await query_one(
                 "SELECT * FROM push_notifications WHERE id = %(push_id)s",
-                {"push_id": push_id}
+                {"push_id": push_id},
+                use_app_db=True
             )
             return ApiResponse(success=True, data=existing)
         
@@ -457,7 +462,8 @@ async def update_push_notification(
             WHERE id = %(push_id)s
             RETURNING *
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         if not result:
@@ -479,7 +485,7 @@ async def update_push_notification(
 
 @router.delete("/{push_id}")
 async def delete_push_notification(
-    push_id: int,
+    push_id: str,
     current_user=Depends(get_current_user)
 ):
     """
@@ -488,7 +494,8 @@ async def delete_push_notification(
     try:
         affected = await execute(
             "DELETE FROM push_notifications WHERE id = %(push_id)s",
-            {"push_id": push_id}
+            {"push_id": push_id},
+            use_app_db=True
         )
         
         if affected == 0:
@@ -526,8 +533,9 @@ async def batch_delete_push_notifications(
             )
         
         affected = await execute(
-            "DELETE FROM push_notifications WHERE id = ANY(%(ids)s::int[])",
-            {"ids": ids}
+            "DELETE FROM push_notifications WHERE id = ANY(%(ids)s::uuid[])",
+            {"ids": ids},
+            use_app_db=True
         )
         
         return ApiResponse(success=True, data={"deleted_count": affected})

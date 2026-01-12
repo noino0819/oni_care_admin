@@ -24,7 +24,7 @@ const TARGET_AUDIENCE_OPTIONS = [
 // 발송유형 옵션
 const SEND_TYPE_OPTIONS = [
   { value: "time_select", label: "시간 선택" },
-  { value: "condition", label: "조건 달성 시" },
+  { value: "condition_met", label: "조건 달성 시" },
   { value: "system_time", label: "시스템 시간" },
 ];
 
