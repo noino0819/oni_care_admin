@@ -30,6 +30,9 @@ from .units import router as units_router
 from .consents import router as consents_router
 from .push_notifications import router as push_notifications_router
 from .health_goal_types import router as health_goal_types_router
+from .supplement_corners import router as supplement_corners_router
+from .meal_records import router as meal_records_router
+from .coupons import router as coupons_router
 
 __all__ = [
     'auth_router', 
@@ -61,5 +64,8 @@ __all__ = [
     'consents_router',
     'push_notifications_router',
     'health_goal_types_router',
+    'supplement_corners_router',
+    'meal_records_router',
+    'coupons_router',
 ]
 

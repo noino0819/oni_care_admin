@@ -49,6 +49,9 @@ from app.routers import (
     consents_router,
     push_notifications_router,
     health_goal_types_router,
+    supplement_corners_router,
+    meal_records_router,
+    coupons_router,
 )
 
 
@@ -193,6 +196,9 @@ app.include_router(units_router)
 app.include_router(consents_router)
 app.include_router(push_notifications_router)
 app.include_router(health_goal_types_router)
+app.include_router(supplement_corners_router)
+app.include_router(meal_records_router)
+app.include_router(coupons_router)
 
 # 정적 파일 서빙 (업로드된 이미지)
 uploads_dir = Path(__file__).parent.parent / "uploads"
