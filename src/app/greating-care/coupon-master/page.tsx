@@ -285,106 +285,118 @@ export default function CouponMasterPage() {
         />
       ),
       width: '50px',
-      render: (item) => (
-        <input
-          type="checkbox"
-          checked={selectedIds.includes(item.id)}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedIds([...selectedIds, item.id]);
-            } else {
-              setSelectedIds(selectedIds.filter((id) => id !== item.id));
-            }
-          }}
-          className="w-4 h-4"
-        />
-      ),
+      render: (item) => {
+        if (!item) return null;
+        return (
+          <input
+            type="checkbox"
+            checked={selectedIds.includes(item.id)}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setSelectedIds([...selectedIds, item.id]);
+              } else {
+                setSelectedIds(selectedIds.filter((id) => id !== item.id));
+              }
+            }}
+            className="w-4 h-4"
+          />
+        );
+      },
     },
     {
       key: 'id',
       header: 'No',
       width: '60px',
-      render: (item) => item.id,
+      render: (item) => item?.id ?? '-',
     },
     {
       key: 'coupon_code',
       header: '쿠폰 코드',
       width: '150px',
-      render: (item) => <span className="font-mono text-sm">{item.coupon_code}</span>,
+      render: (item) => item ? <span className="font-mono text-sm">{item.coupon_code}</span> : null,
     },
     {
       key: 'coupon_name',
       header: '쿠폰명',
       width: '200px',
-      render: (item) => item.coupon_name,
+      render: (item) => item?.coupon_name ?? '-',
     },
     {
       key: 'coupon_type',
       header: '쿠폰 유형',
       width: '100px',
-      render: (item) => (
-        <span
-          className={`px-2 py-1 rounded text-xs ${
-            item.coupon_type === 'discount' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-          }`}
-        >
-          {item.coupon_type_display || item.coupon_type}
-        </span>
-      ),
+      render: (item) => {
+        if (!item) return null;
+        return (
+          <span
+            className={`px-2 py-1 rounded text-xs ${
+              item.coupon_type === 'discount' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+            }`}
+          >
+            {item.coupon_type_display || item.coupon_type}
+          </span>
+        );
+      },
     },
     {
       key: 'discount_value',
       header: '할인 금액/율',
       width: '120px',
-      render: (item) => item.discount_value_display || `${item.discount_value}`,
+      render: (item) => item?.discount_value_display || (item ? `${item.discount_value}` : '-'),
     },
     {
       key: 'valid_days',
       header: '유효기간',
       width: '100px',
-      render: (item) => `${item.valid_days}일`,
+      render: (item) => item ? `${item.valid_days}일` : '-',
     },
     {
       key: 'is_active',
       header: '사용여부',
       width: '100px',
-      render: (item) => (
-        <span
-          className={`px-2 py-1 rounded text-xs ${
-            item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {item.is_active ? '사용' : '미사용'}
-        </span>
-      ),
+      render: (item) => {
+        if (!item) return null;
+        return (
+          <span
+            className={`px-2 py-1 rounded text-xs ${
+              item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {item.is_active ? '사용' : '미사용'}
+          </span>
+        );
+      },
     },
     {
       key: 'created_at',
       header: '생성일',
       width: '150px',
       render: (item) =>
-        item.created_at ? new Date(item.created_at).toLocaleDateString('ko-KR') : '-',
+        item?.created_at ? new Date(item.created_at).toLocaleDateString('ko-KR') : '-',
     },
     {
       key: 'actions',
       header: '관리',
       width: '150px',
-      render: (item) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleEdit(item)}
-            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            수정
-          </button>
-          <button
-            onClick={() => handleDeleteClick(item.id)}
-            className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            삭제
-          </button>
-        </div>
-      ),
+      render: (item) => {
+        if (!item) return null;
+        return (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleEdit(item)}
+              className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              수정
+            </button>
+            <button
+              onClick={() => handleDeleteClick(item.id)}
+              className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              삭제
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
