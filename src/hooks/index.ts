@@ -9,4 +9,5 @@ export * from './useChallenges';
 export * from './useSupplementCorners';
 export * from './useMealRecords';
 export * from './useCoupons';
+export * from './useCouponMaster';
 

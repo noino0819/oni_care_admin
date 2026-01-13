@@ -33,6 +33,7 @@ from .health_goal_types import router as health_goal_types_router
 from .supplement_corners import router as supplement_corners_router
 from .meal_records import router as meal_records_router
 from .coupons import router as coupons_router
+from .coupon_master import router as coupon_master_router
 
 __all__ = [
     'auth_router', 
@@ -67,5 +68,6 @@ __all__ = [
     'supplement_corners_router',
     'meal_records_router',
     'coupons_router',
+    'coupon_master_router',
 ]
 

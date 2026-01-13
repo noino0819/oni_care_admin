@@ -40,6 +40,7 @@ export const menuItems: MenuItem[] = [
       { id: 'care-supplement-corners', label: '영양제 코너 관리', path: '/greating-care/supplement-corners' },
       { id: 'care-meal-records', label: '식사기록 관리', path: '/greating-care/meal-records' },
       { id: 'care-coupons', label: '쿠폰 관리', path: '/greating-care/coupons' },
+      { id: 'care-coupon-master', label: '쿠폰 마스터 관리', path: '/greating-care/coupon-master' },
       { id: 'care-banners', label: '배너 관리', path: '/greating-care/banners' },
       { id: 'care-consents', label: '동의내용 관리', path: '/greating-care/consents' },
       { id: 'care-push-notifications', label: 'PUSH 관리', path: '/greating-care/push-notifications' },
