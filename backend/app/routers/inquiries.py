@@ -118,10 +118,10 @@ async def get_inquiries(
             conditions.append("i.answered_at <= %(answered_to)s")
             params["answered_to"] = answered_to + " 23:59:59"
         
-        # 답변자 사번
-        if answered_by:
-            conditions.append("i.answered_by = %(answered_by)s")
-            params["answered_by"] = answered_by
+        # 답변자 사번 (컬럼이 DB에 추가된 후 활성화)
+        # if answered_by:
+        #     conditions.append("i.answered_by = %(answered_by)s")
+        #     params["answered_by"] = answered_by
         
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         
@@ -146,11 +146,12 @@ async def get_inquiries(
         params["offset"] = offset
         
         # 미답변 문의 상단 정렬
+        # Note: answered_by 컬럼이 DB에 없을 경우 COALESCE 사용
         inquiries = await query(
             f"""
             SELECT 
                 i.id, i.user_id, i.inquiry_type_id, i.content, i.answer,
-                i.status, i.answered_by, i.created_at, i.answered_at,
+                i.status, i.created_at, i.answered_at,
                 u.email as customer_email, u.name as customer_name,
                 it.name as inquiry_type_name,
                 CASE WHEN i.status = 'pending' THEN true ELSE false END as is_new
@@ -237,7 +238,7 @@ async def get_inquiry(
             """
             SELECT 
                 i.id, i.user_id, i.inquiry_type_id, i.content, i.answer,
-                i.status, i.answered_by, i.created_at, i.answered_at, i.updated_at,
+                i.status, i.created_at, i.answered_at, i.updated_at,
                 u.email as customer_email, u.name as customer_name,
                 it.name as inquiry_type_name
             FROM inquiries i
@@ -296,15 +297,14 @@ async def answer_inquiry(
                 detail={"error": "VALIDATION_ERROR", "message": "답변은 300자 이내로 입력해주세요."}
             )
         
-        # 현재 로그인한 관리자의 사번 사용
-        answered_by = current_user.get("login_id") or current_user.get("email", "")
+        # 현재 로그인한 관리자의 사번 사용 (answered_by 컬럼 추가 후 사용)
+        # answered_by = current_user.get("login_id") or current_user.get("email", "")
         
         result = await execute_returning(
             """
             UPDATE inquiries
             SET answer = %(answer)s,
                 status = 'answered',
-                answered_by = %(answered_by)s,
                 answered_at = NOW(),
                 updated_at = NOW()
             WHERE id = %(inquiry_id)s
@@ -312,8 +312,7 @@ async def answer_inquiry(
             """,
             {
                 "inquiry_id": inquiry_id,
-                "answer": answer,
-                "answered_by": answered_by
+                "answer": answer
             },
             use_app_db=True
         )
