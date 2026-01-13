@@ -60,13 +60,13 @@ interface SearchProductListResponse {
 // 코너 목록 조회
 export function useSupplementCorners(
   cornerName?: string,
-  isForSale?: string,
+  isActive?: boolean,
   page: number = 1,
   pageSize: number = 20
 ) {
   const params = new URLSearchParams();
   if (cornerName) params.set('corner_name', cornerName);
-  if (isForSale) params.set('is_for_sale', isForSale);
+  if (isActive !== undefined) params.set('is_active', String(isActive));
   params.set('page', String(page));
   params.set('page_size', String(pageSize));
 
@@ -81,7 +81,7 @@ export function useSupplementCorners(
     pagination: data?.pagination,
     isLoading,
     error,
-    refetch: () => mutate(),
+    mutate,
   };
 }
 
@@ -102,7 +102,7 @@ export function useCornerProducts(
     pagination: data?.pagination,
     isLoading,
     error,
-    refetch: () => mutate(),
+    mutate,
   };
 }
 
@@ -132,7 +132,7 @@ export function useSearchProducts(
     pagination: data?.pagination,
     isLoading,
     error,
-    refetch: () => mutate(),
+    mutate,
   };
 }
 
