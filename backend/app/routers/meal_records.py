@@ -180,8 +180,7 @@ async def get_all_meal_records(
                 m.serving_size as portion,
                 m.calories,
                 m.meal_date,
-                m.created_at as record_time,
-                m.updated_at
+                m.created_at as record_time
             FROM meals m
             JOIN users u ON m.user_id = u.id
             WHERE {where_clause}
