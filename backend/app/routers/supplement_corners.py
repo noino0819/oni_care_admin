@@ -4,7 +4,7 @@
 # 프론트 영양제 추천 화면 코너 및 영양제 관리
 
 from typing import Optional, List
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, Path
 from pydantic import BaseModel, Field
 from app.lib.app_db import app_db_manager
 from app.core.logger import logger
@@ -44,13 +44,110 @@ class ProductMappingBulk(BaseModel):
 
 
 # ============================================
+# 영양제 검색 API (팝업용) - 경로 순서 중요: /{corner_id} 보다 먼저 정의
+# ============================================
+
+@router.get("/search/products")
+async def search_products(
+    product_name: Optional[str] = Query(None, description="영양제명"),
+    product_id: Optional[str] = Query(None, description="영양제 ID"),
+    interest_tag: Optional[str] = Query(None, description="관심사 태그"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=50),
+):
+    """
+    영양제 검색 (코너 매핑용)
+    """
+    try:
+        conditions = ["spm.is_active = true"]
+        params = {}
+        
+        if product_name:
+            conditions.append("spm.product_name ILIKE %(product_name)s")
+            params["product_name"] = f"%{product_name}%"
+        
+        if product_id:
+            conditions.append("spm.id::text ILIKE %(product_id)s")
+            params["product_id"] = f"%{product_id}%"
+        
+        if interest_tag:
+            conditions.append("""
+                EXISTS (
+                    SELECT 1 FROM product_ingredient_mapping pim
+                    JOIN functional_ingredients fi ON pim.ingredient_id = fi.id
+                    JOIN interest_ingredients ii ON fi.external_name = ii.ingredient_name
+                    WHERE pim.product_id = spm.id AND ii.interest_name = %(interest_tag)s
+                )
+            """)
+            params["interest_tag"] = interest_tag
+        
+        where_clause = " AND ".join(conditions)
+        
+        # 총 건수 조회
+        count_query = f"""
+            SELECT COUNT(*) as total
+            FROM supplement_products_master spm
+            WHERE {where_clause}
+        """
+        count_result = await app_db_manager.fetch_one(count_query, params)
+        total = count_result["total"] if count_result else 0
+        
+        # 목록 조회
+        offset = (page - 1) * page_size
+        list_query = f"""
+            SELECT 
+                spm.id as product_id,
+                spm.product_name,
+                spm.manufacturer as brand_name,
+                spm.is_active as is_for_sale,
+                (
+                    SELECT ARRAY_AGG(DISTINCT ii.interest_name)
+                    FROM product_ingredient_mapping pim
+                    JOIN functional_ingredients fi ON pim.ingredient_id = fi.id
+                    JOIN interest_ingredients ii ON fi.external_name = ii.ingredient_name
+                    WHERE pim.product_id = spm.id
+                ) as interest_tags
+            FROM supplement_products_master spm
+            WHERE {where_clause}
+            ORDER BY spm.product_name ASC
+            LIMIT %(limit)s OFFSET %(offset)s
+        """
+        params["limit"] = page_size
+        params["offset"] = offset
+        
+        products = await app_db_manager.fetch_all(list_query, params)
+        
+        # interest_tags가 None인 경우 빈 배열로 변환
+        for product in products:
+            if product.get("interest_tags") is None:
+                product["interest_tags"] = []
+        
+        return {
+            "success": True,
+            "data": products,
+            "pagination": {
+                "page": page,
+                "limit": page_size,
+                "total": total,
+                "totalPages": (total + page_size - 1) // page_size
+            }
+        }
+    except Exception as e:
+        logger.error(f"영양제 검색 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="영양제 검색 중 오류가 발생했습니다."
+        )
+
+
+# ============================================
 # 코너 CRUD API
 # ============================================
 
 @router.get("")
 async def get_corners(
     corner_name: Optional[str] = Query(None, description="코너명 검색"),
-    is_for_sale: Optional[str] = Query(None, description="판매여부 (Y/N)"),
+    is_active: Optional[bool] = Query(None, description="노출여부"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -64,6 +161,10 @@ async def get_corners(
         if corner_name:
             conditions.append("sc.corner_name ILIKE %(corner_name)s")
             params["corner_name"] = f"%{corner_name}%"
+        
+        if is_active is not None:
+            conditions.append("sc.is_active = %(is_active)s")
+            params["is_active"] = is_active
         
         where_clause = " AND ".join(conditions)
         
@@ -88,7 +189,7 @@ async def get_corners(
                 sc.created_at,
                 sc.updated_at,
                 (SELECT COUNT(*) FROM supplement_corner_products scp 
-                 WHERE scp.corner_id = sc.id AND scp.is_active = true) as product_count
+                 WHERE scp.corner_id = sc.id) as product_count
             FROM supplement_corners sc
             WHERE {where_clause}
             ORDER BY sc.display_order ASC, sc.created_at DESC
@@ -114,38 +215,6 @@ async def get_corners(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="코너 목록 조회 중 오류가 발생했습니다."
-        )
-
-
-@router.get("/{corner_id}")
-async def get_corner(corner_id: int):
-    """
-    코너 상세 조회
-    """
-    try:
-        query = """
-            SELECT 
-                id, corner_name, description, display_order, 
-                is_active, created_at, updated_at
-            FROM supplement_corners
-            WHERE id = %(corner_id)s
-        """
-        corner = await app_db_manager.fetch_one(query, {"corner_id": corner_id})
-        
-        if not corner:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="코너를 찾을 수 없습니다."
-            )
-        
-        return {"success": True, "data": corner}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"코너 상세 조회 실패: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="코너 조회 중 오류가 발생했습니다."
         )
 
 
@@ -184,6 +253,66 @@ async def create_corner(data: CornerCreate):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="코너 등록 중 오류가 발생했습니다."
+        )
+
+
+@router.delete("")
+async def delete_corners(ids: List[int] = Query(..., description="삭제할 코너 ID 목록")):
+    """
+    코너 삭제 (복수)
+    """
+    try:
+        if not ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="삭제할 코너 ID를 지정해주세요."
+            )
+        
+        delete_query = """
+            DELETE FROM supplement_corners WHERE id = ANY(%(ids)s)
+        """
+        await app_db_manager.execute(delete_query, {"ids": ids})
+        
+        return {"success": True, "data": {"deleted_count": len(ids)}}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"코너 삭제 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="코너 삭제 중 오류가 발생했습니다."
+        )
+
+
+@router.get("/{corner_id}")
+async def get_corner(corner_id: int = Path(..., description="코너 ID")):
+    """
+    코너 상세 조회
+    """
+    try:
+        query = """
+            SELECT 
+                id, corner_name, description, display_order, 
+                is_active, created_at, updated_at
+            FROM supplement_corners
+            WHERE id = %(corner_id)s
+        """
+        corner = await app_db_manager.fetch_one(query, {"corner_id": corner_id})
+        
+        if not corner:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="코너를 찾을 수 없습니다."
+            )
+        
+        return {"success": True, "data": corner}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"코너 상세 조회 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="코너 조회 중 오류가 발생했습니다."
         )
 
 
@@ -243,24 +372,27 @@ async def update_corner(corner_id: int, data: CornerUpdate):
         )
 
 
-@router.delete("")
-async def delete_corners(ids: List[int] = Query(..., description="삭제할 코너 ID 목록")):
+@router.delete("/{corner_id}")
+async def delete_corner(corner_id: int = Path(..., description="코너 ID")):
     """
-    코너 삭제 (복수)
+    코너 삭제 (단일)
     """
     try:
-        if not ids:
+        # 코너 존재 확인
+        check_query = "SELECT id FROM supplement_corners WHERE id = %(corner_id)s"
+        existing = await app_db_manager.fetch_one(check_query, {"corner_id": corner_id})
+        
+        if not existing:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="삭제할 코너 ID를 지정해주세요."
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="코너를 찾을 수 없습니다."
             )
         
-        delete_query = """
-            DELETE FROM supplement_corners WHERE id = ANY(%(ids)s)
-        """
-        await app_db_manager.execute(delete_query, {"ids": ids})
+        # 삭제 (CASCADE로 매핑도 삭제됨)
+        delete_query = "DELETE FROM supplement_corners WHERE id = %(corner_id)s"
+        await app_db_manager.execute(delete_query, {"corner_id": corner_id})
         
-        return {"success": True, "data": {"deleted_count": len(ids)}}
+        return {"success": True, "message": "코너가 삭제되었습니다."}
     except HTTPException:
         raise
     except Exception as e:
@@ -277,7 +409,7 @@ async def delete_corners(ids: List[int] = Query(..., description="삭제할 코�
 
 @router.get("/{corner_id}/products")
 async def get_corner_products(
-    corner_id: int,
+    corner_id: int = Path(..., description="코너 ID"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -299,6 +431,7 @@ async def get_corner_products(
         offset = (page - 1) * page_size
         list_query = """
             SELECT 
+                scp.id,
                 scp.id as mapping_id,
                 spm.id as product_id,
                 spm.product_name,
@@ -403,7 +536,7 @@ async def remove_corner_products(
     product_ids: List[str] = Query(..., description="삭제할 영양제 ID 목록")
 ):
     """
-    코너에서 영양제 삭제
+    코너에서 영양제 삭제 (복수)
     """
     try:
         if not product_ids:
@@ -432,99 +565,46 @@ async def remove_corner_products(
         )
 
 
-# ============================================
-# 영양제 검색 API (팝업용)
-# ============================================
-
-@router.get("/search/products")
-async def search_products(
-    product_name: Optional[str] = Query(None, description="영양제명"),
-    product_id: Optional[str] = Query(None, description="영양제 ID"),
-    interest_tag: Optional[str] = Query(None, description="관심사 태그"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(10, ge=1, le=50),
+@router.delete("/{corner_id}/products/{mapping_id}")
+async def remove_corner_product(
+    corner_id: int = Path(..., description="코너 ID"),
+    mapping_id: str = Path(..., description="매핑 ID")
 ):
     """
-    영양제 검색 (코너 매핑용)
+    코너에서 영양제 삭제 (단일)
     """
     try:
-        conditions = ["spm.is_active = true"]
-        params = {}
-        
-        if product_name:
-            conditions.append("spm.product_name ILIKE %(product_name)s")
-            params["product_name"] = f"%{product_name}%"
-        
-        if product_id:
-            conditions.append("spm.id::text ILIKE %(product_id)s")
-            params["product_id"] = f"%{product_id}%"
-        
-        if interest_tag:
-            conditions.append("""
-                EXISTS (
-                    SELECT 1 FROM product_ingredient_mapping pim
-                    JOIN functional_ingredients fi ON pim.ingredient_id = fi.id
-                    JOIN interest_ingredients ii ON fi.external_name = ii.ingredient_name
-                    WHERE pim.product_id = spm.id AND ii.interest_name = %(interest_tag)s
-                )
-            """)
-            params["interest_tag"] = interest_tag
-        
-        where_clause = " AND ".join(conditions)
-        
-        # 총 건수 조회
-        count_query = f"""
-            SELECT COUNT(*) as total
-            FROM supplement_products_master spm
-            WHERE {where_clause}
+        # 존재 확인
+        check_query = """
+            SELECT id FROM supplement_corner_products 
+            WHERE corner_id = %(corner_id)s AND id = %(mapping_id)s
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
-        total = count_result["total"] if count_result else 0
+        existing = await app_db_manager.fetch_one(check_query, {
+            "corner_id": corner_id,
+            "mapping_id": mapping_id
+        })
         
-        # 목록 조회
-        offset = (page - 1) * page_size
-        list_query = f"""
-            SELECT 
-                spm.id as product_id,
-                spm.product_name,
-                spm.manufacturer as brand_name,
-                spm.is_active as is_for_sale,
-                (
-                    SELECT ARRAY_AGG(DISTINCT ii.interest_name)
-                    FROM product_ingredient_mapping pim
-                    JOIN functional_ingredients fi ON pim.ingredient_id = fi.id
-                    JOIN interest_ingredients ii ON fi.external_name = ii.ingredient_name
-                    WHERE pim.product_id = spm.id
-                ) as interest_tags
-            FROM supplement_products_master spm
-            WHERE {where_clause}
-            ORDER BY spm.product_name ASC
-            LIMIT %(limit)s OFFSET %(offset)s
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="해당 매핑을 찾을 수 없습니다."
+            )
+        
+        delete_query = """
+            DELETE FROM supplement_corner_products 
+            WHERE corner_id = %(corner_id)s AND id = %(mapping_id)s
         """
-        params["limit"] = page_size
-        params["offset"] = offset
+        await app_db_manager.execute(delete_query, {
+            "corner_id": corner_id,
+            "mapping_id": mapping_id
+        })
         
-        products = await app_db_manager.fetch_all(list_query, params)
-        
-        # interest_tags가 None인 경우 빈 배열로 변환
-        for product in products:
-            if product.get("interest_tags") is None:
-                product["interest_tags"] = []
-        
-        return {
-            "success": True,
-            "data": products,
-            "pagination": {
-                "page": page,
-                "limit": page_size,
-                "total": total,
-                "totalPages": (total + page_size - 1) // page_size
-            }
-        }
+        return {"success": True, "message": "영양제가 삭제되었습니다."}
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"영양제 검색 실패: {str(e)}")
+        logger.error(f"코너 영양제 삭제 실패: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="영양제 검색 중 오류가 발생했습니다."
+            detail="영양제 삭제 중 오류가 발생했습니다."
         )
-
