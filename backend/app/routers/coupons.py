@@ -45,15 +45,17 @@ async def get_coupons(
             conditions.append("(u.id::text ILIKE %(user_id)s OR u.email ILIKE %(user_id)s)")
             params["user_id"] = f"%{user_id}%"
         
-        if member_types:
-            types_list = [t.strip() for t in member_types.split(",") if t.strip()]
-            if types_list:
-                conditions.append("u.member_type = ANY(%(member_types)s)")
-                params["member_types"] = types_list
-        
-        if business_code:
-            conditions.append("u.business_code = %(business_code)s")
-            params["business_code"] = business_code
+        # member_type과 business_code는 DB 컬럼 존재 여부에 따라 조건 적용
+        # (현재 DB에 해당 컬럼이 없을 수 있음)
+        # if member_types:
+        #     types_list = [t.strip() for t in member_types.split(",") if t.strip()]
+        #     if types_list:
+        #         conditions.append("u.member_type = ANY(%(member_types)s)")
+        #         params["member_types"] = types_list
+        # 
+        # if business_code:
+        #     conditions.append("u.business_code = %(business_code)s")
+        #     params["business_code"] = business_code
         
         if issued_from:
             conditions.append("c.created_at >= %(issued_from)s")
@@ -100,9 +102,7 @@ async def get_coupons(
                 c.created_at as issued_at,
                 u.id as user_id,
                 u.email,
-                u.name,
-                u.member_type,
-                u.business_code
+                u.name
             FROM coupons c
             JOIN users u ON c.user_id = u.id
             WHERE {where_clause}
@@ -120,15 +120,12 @@ async def get_coupons(
             "cafeteria": "카페테리아"
         }
         
-        member_type_map = {
-            "normal": "일반",
-            "affiliate": "제휴사",
-            "fs": "FS"
-        }
-        
         for coupon in coupons:
             coupon["coupon_source_display"] = source_map.get(coupon["coupon_source"], coupon["coupon_source"])
-            coupon["member_type_display"] = member_type_map.get(coupon["member_type"], coupon["member_type"])
+            # member_type 필드가 있으면 표시용 변환
+            coupon["member_type"] = coupon.get("member_type", "normal")
+            coupon["member_type_display"] = "일반"  # 기본값
+            coupon["business_code"] = coupon.get("business_code")
             if coupon["coupon_value"]:
                 coupon["coupon_value_display"] = f"{coupon['coupon_value']:,}원"
             else:
