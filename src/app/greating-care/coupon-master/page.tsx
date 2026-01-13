@@ -276,127 +276,105 @@ export default function CouponMasterPage() {
   const columns: TableColumn<CouponMaster>[] = [
     {
       key: 'checkbox',
-      header: (
+      label: '',
+      width: '50px',
+      render: (_, row) => (
         <input
           type="checkbox"
-          checked={selectedIds.length > 0 && selectedIds.length === couponMasters.length}
-          onChange={(e) => handleSelectAll(e.target.checked)}
+          checked={selectedIds.includes(row.id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedIds([...selectedIds, row.id]);
+            } else {
+              setSelectedIds(selectedIds.filter((id) => id !== row.id));
+            }
+          }}
           className="w-4 h-4"
         />
       ),
-      width: '50px',
-      render: (item) => {
-        if (!item) return null;
-        return (
-          <input
-            type="checkbox"
-            checked={selectedIds.includes(item.id)}
-            onChange={(e) => {
-              if (e.target.checked) {
-                setSelectedIds([...selectedIds, item.id]);
-              } else {
-                setSelectedIds(selectedIds.filter((id) => id !== item.id));
-              }
-            }}
-            className="w-4 h-4"
-          />
-        );
-      },
     },
     {
       key: 'id',
-      header: 'No',
+      label: 'No',
       width: '60px',
-      render: (item) => item?.id ?? '-',
     },
     {
       key: 'coupon_code',
-      header: '쿠폰 코드',
+      label: '쿠폰 코드',
       width: '150px',
-      render: (item) => item ? <span className="font-mono text-sm">{item.coupon_code}</span> : null,
+      render: (_, row) => <span className="font-mono text-sm">{row.coupon_code}</span>,
     },
     {
       key: 'coupon_name',
-      header: '쿠폰명',
+      label: '쿠폰명',
       width: '200px',
-      render: (item) => item?.coupon_name ?? '-',
     },
     {
       key: 'coupon_type',
-      header: '쿠폰 유형',
+      label: '쿠폰 유형',
       width: '100px',
-      render: (item) => {
-        if (!item) return null;
-        return (
-          <span
-            className={`px-2 py-1 rounded text-xs ${
-              item.coupon_type === 'discount' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-            }`}
-          >
-            {item.coupon_type_display || item.coupon_type}
-          </span>
-        );
-      },
+      render: (_, row) => (
+        <span
+          className={`px-2 py-1 rounded text-xs ${
+            row.coupon_type === 'discount' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+          }`}
+        >
+          {row.coupon_type_display || row.coupon_type}
+        </span>
+      ),
     },
     {
-      key: 'discount_value',
-      header: '할인 금액/율',
+      key: 'discount_value_display',
+      label: '할인 금액/율',
       width: '120px',
-      render: (item) => item?.discount_value_display || (item ? `${item.discount_value}` : '-'),
     },
     {
       key: 'valid_days',
-      header: '유효기간',
+      label: '유효기간',
       width: '100px',
-      render: (item) => item ? `${item.valid_days}일` : '-',
+      render: (value) => `${value}일`,
     },
     {
       key: 'is_active',
-      header: '사용여부',
+      label: '사용여부',
       width: '100px',
-      render: (item) => {
-        if (!item) return null;
-        return (
-          <span
-            className={`px-2 py-1 rounded text-xs ${
-              item.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            {item.is_active ? '사용' : '미사용'}
-          </span>
-        );
-      },
+      render: (value) => (
+        <span
+          className={`px-2 py-1 rounded text-xs ${
+            value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          {value ? '사용' : '미사용'}
+        </span>
+      ),
     },
     {
       key: 'created_at',
-      header: '생성일',
+      label: '생성일',
       width: '150px',
-      render: (item) =>
-        item?.created_at ? new Date(item.created_at).toLocaleDateString('ko-KR') : '-',
+      render: (value) =>
+        value ? new Date(value as string).toLocaleDateString('ko-KR') : '-',
     },
     {
       key: 'actions',
-      header: '관리',
+      label: '관리',
       width: '150px',
-      render: (item) => {
-        if (!item) return null;
-        return (
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleEdit(item)}
-              className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              수정
-            </button>
-            <button
-              onClick={() => handleDeleteClick(item.id)}
-              className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              삭제
-            </button>
-          </div>
-        );
-      },
+      render: (_, row) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleEdit(row)}
+            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            수정
+          </button>
+          <button
+            onClick={() => handleDeleteClick(row.id)}
+            className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            삭제
+          </button>
+        </div>
+      ),
     },
   ];
 
