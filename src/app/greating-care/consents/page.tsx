@@ -16,7 +16,7 @@ import type { SortConfig, TableColumn } from "@/types";
 
 // 동의서 타입 정의
 interface ConsentListItem {
-  id: number;
+  id: string;  // terms 테이블은 UUID
   consent_code: string;
   title: string;
   classification: "required" | "optional";
@@ -63,7 +63,7 @@ export default function ConsentsPage() {
 
   const [sort, setSort] = useState<SortConfig>({ field: "consent_code", direction: "asc" });
   const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingConsent, setEditingConsent] = useState<ConsentListItem | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -133,7 +133,7 @@ export default function ConsentsPage() {
     setSelectedIds(checked ? consents.map((c) => c.id) : []);
   };
 
-  const handleSelect = (id: number, checked: boolean) => {
+  const handleSelect = (id: string, checked: boolean) => {
     setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((v) => v !== id)));
   };
 
@@ -367,7 +367,7 @@ export default function ConsentsPage() {
             <div className="flex gap-2">
               <Button
                 size="sm"
-                variant="secondary"
+                variant="danger"
                 onClick={() => {
                   if (selectedIds.length === 0) {
                     setAlertMessage("삭제할 항목을 선택해주세요.");
@@ -375,10 +375,13 @@ export default function ConsentsPage() {
                   }
                   setConfirmDelete(true);
                 }}
+                className="flex items-center gap-1"
               >
+                <Trash2 className="w-3 h-3" />
                 삭제
               </Button>
-              <Button size="sm" onClick={handleAdd}>
+              <Button size="sm" onClick={handleAdd} className="flex items-center gap-1">
+                <Plus className="w-3 h-3" />
                 추가
               </Button>
             </div>

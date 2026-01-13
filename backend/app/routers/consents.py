@@ -1,7 +1,7 @@
 # ============================================
 # 동의내용 관리 API 라우터
 # ============================================
-# 동의서 CRUD (App DB 사용)
+# terms 테이블 사용 (App DB)
 
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -23,8 +23,12 @@ def generate_consent_code(last_code: Optional[str]) -> str:
     if not last_code:
         return "0001"
     try:
-        next_num = int(last_code) + 1
-        return str(next_num).zfill(4)
+        # 숫자만 추출하여 증가
+        digits = ''.join(filter(str.isdigit, last_code))
+        if digits:
+            next_num = int(digits) + 1
+            return str(next_num).zfill(4)
+        return "0001"
     except ValueError:
         return "0001"
 
@@ -35,14 +39,14 @@ async def get_consents(
     classification: Optional[str] = Query(None, description="분류 (required,optional 쉼표구분)"),
     exposure_location: Optional[str] = Query(None, description="노출위치"),
     is_active: Optional[str] = Query(None, description="사용여부 (Y,N 쉼표구분)"),
-    sort_field: str = Query("consent_code", description="정렬 필드"),
+    sort_field: str = Query("code", description="정렬 필드"),
     sort_direction: str = Query("asc", description="정렬 방향"),
     page: int = Query(1, ge=1, description="페이지"),
     limit: int = Query(20, ge=1, le=100, description="페이지 크기"),
     current_user=Depends(get_current_user)
 ):
     """
-    동의내용 목록 조회 (App DB)
+    동의내용 목록 조회 (App DB - terms 테이블)
     """
     try:
         conditions = []
@@ -53,12 +57,19 @@ async def get_consents(
             conditions.append("title ILIKE %(title)s")
             params["title"] = f"%{title}%"
         
-        # 분류 필터 (다중 선택)
+        # 분류 필터 (다중 선택) - is_required를 classification으로 변환
         if classification:
             classifications = [c.strip() for c in classification.split(",") if c.strip()]
             if classifications:
-                conditions.append("classification = ANY(%(classifications)s)")
-                params["classifications"] = classifications
+                bool_values = []
+                for c in classifications:
+                    if c == "required":
+                        bool_values.append(True)
+                    elif c == "optional":
+                        bool_values.append(False)
+                if bool_values:
+                    conditions.append("is_required = ANY(%(is_required_values)s)")
+                    params["is_required_values"] = bool_values
         
         # 노출위치 필터
         if exposure_location:
@@ -80,13 +91,25 @@ async def get_consents(
         
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         
-        # 정렬 검증
-        allowed_sort_fields = ["consent_code", "title", "classification", "exposure_location", "is_active", "created_at", "updated_at"]
-        safe_field = sort_field if sort_field in allowed_sort_fields else "consent_code"
+        # 정렬 필드 매핑 (프론트엔드 필드명 → DB 필드명)
+        field_mapping = {
+            "consent_code": "code",
+            "code": "code",
+            "title": "title",
+            "classification": "is_required",
+            "exposure_location": "exposure_location",
+            "is_active": "is_active",
+            "created_at": "created_at",
+            "updated_at": "updated_at"
+        }
+        
+        allowed_sort_fields = list(field_mapping.values())
+        mapped_field = field_mapping.get(sort_field, "code")
+        safe_field = mapped_field if mapped_field in allowed_sort_fields else "code"
         safe_direction = "ASC" if sort_direction.upper() == "ASC" else "DESC"
         
         # 전체 개수 조회 (App DB)
-        count_sql = f"SELECT COUNT(*) as count FROM consent_agreements {where_clause}"
+        count_sql = f"SELECT COUNT(*) as count FROM terms {where_clause}"
         count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
@@ -95,11 +118,11 @@ async def get_consents(
         params["limit"] = limit
         params["offset"] = offset
         
-        consents = await query(
+        rows = await query(
             f"""
-            SELECT id, consent_code, title, classification, exposure_location,
+            SELECT id, code, title, is_required, exposure_location,
                    is_active, created_at, updated_at
-            FROM consent_agreements
+            FROM terms
             {where_clause}
             ORDER BY {safe_field} {safe_direction}
             LIMIT %(limit)s OFFSET %(offset)s
@@ -107,6 +130,20 @@ async def get_consents(
             params,
             use_app_db=True
         )
+        
+        # 응답 형식 변환 (is_required → classification, code → consent_code)
+        consents = []
+        for row in rows:
+            consents.append({
+                "id": row.get("id"),
+                "consent_code": row.get("code"),
+                "title": row.get("title"),
+                "classification": "required" if row.get("is_required") else "optional",
+                "exposure_location": row.get("exposure_location"),
+                "is_active": row.get("is_active", True),
+                "created_at": row.get("created_at"),
+                "updated_at": row.get("updated_at"),
+            })
         
         return {
             "success": True,
@@ -128,29 +165,44 @@ async def get_consents(
 
 @router.get("/{consent_id}")
 async def get_consent(
-    consent_id: int,
+    consent_id: str,
     current_user=Depends(get_current_user)
 ):
     """
-    동의내용 상세 조회 (App DB)
+    동의내용 상세 조회 (App DB - terms 테이블)
     """
     try:
-        consent = await query_one(
+        row = await query_one(
             """
-            SELECT id, consent_code, title, classification, exposure_location,
+            SELECT id, code, title, is_required, exposure_location,
                    content, is_active, created_by, updated_by, created_at, updated_at
-            FROM consent_agreements 
+            FROM terms 
             WHERE id = %(consent_id)s
             """,
             {"consent_id": consent_id},
             use_app_db=True
         )
         
-        if not consent:
+        if not row:
             raise HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
                 detail={"error": "NOT_FOUND", "message": "동의서를 찾을 수 없습니다."}
             )
+        
+        # 응답 형식 변환
+        consent = {
+            "id": row.get("id"),
+            "consent_code": row.get("code"),
+            "title": row.get("title"),
+            "classification": "required" if row.get("is_required") else "optional",
+            "exposure_location": row.get("exposure_location"),
+            "content": row.get("content"),
+            "is_active": row.get("is_active", True),
+            "created_by": row.get("created_by"),
+            "updated_by": row.get("updated_by"),
+            "created_at": row.get("created_at"),
+            "updated_at": row.get("updated_at"),
+        }
         
         return ApiResponse(success=True, data=consent)
     except HTTPException:
@@ -169,7 +221,7 @@ async def create_consent(
     current_user=Depends(get_current_user)
 ):
     """
-    동의내용 등록 (App DB)
+    동의내용 등록 (App DB - terms 테이블)
     """
     try:
         title = body.get("title")
@@ -203,6 +255,9 @@ async def create_consent(
                 detail={"error": "VALIDATION_ERROR", "message": "분류는 필수 또는 선택이어야 합니다."}
             )
         
+        # classification → is_required 변환
+        is_required = classification == "required"
+        
         if not exposure_location:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
@@ -217,34 +272,34 @@ async def create_consent(
             )
         
         # 마지막 코드 조회 후 새 코드 생성
-        last_consent = await query_one(
-            "SELECT consent_code FROM consent_agreements ORDER BY consent_code DESC LIMIT 1",
+        last_term = await query_one(
+            "SELECT code FROM terms ORDER BY code DESC LIMIT 1",
             {},
             use_app_db=True
         )
-        new_code = generate_consent_code(last_consent.get("consent_code") if last_consent else None)
+        new_code = generate_consent_code(last_term.get("code") if last_term else None)
         
         created_by = current_user.get("name", "") if current_user else ""
         
         result = await execute_returning(
             """
-            INSERT INTO consent_agreements (consent_code, title, classification, exposure_location, content, is_active, created_by, updated_by)
-            VALUES (%(consent_code)s, %(title)s, %(classification)s, %(exposure_location)s, %(content)s, %(is_active)s, %(created_by)s, %(created_by)s)
-            RETURNING id, consent_code
+            INSERT INTO terms (code, title, is_required, exposure_location, content, is_active, created_by, updated_by)
+            VALUES (%(code)s, %(title)s, %(is_required)s, %(exposure_location)s, %(content)s, %(is_active)s, %(created_by)s, %(created_by)s)
+            RETURNING id, code
             """,
             {
-                "consent_code": new_code,
+                "code": new_code,
                 "title": title.strip(),
-                "classification": classification,
+                "is_required": is_required,
                 "exposure_location": exposure_location,
-                "content": content.strip() if content else None,
+                "content": content.strip() if content else "",
                 "is_active": is_active,
                 "created_by": created_by
             },
             use_app_db=True
         )
         
-        return ApiResponse(success=True, data={"id": result.get("id"), "consent_code": result.get("consent_code")})
+        return ApiResponse(success=True, data={"id": result.get("id"), "consent_code": result.get("code")})
     except HTTPException:
         raise
     except Exception as e:
@@ -257,12 +312,12 @@ async def create_consent(
 
 @router.put("/{consent_id}")
 async def update_consent(
-    consent_id: int,
+    consent_id: str,
     body: dict,
     current_user=Depends(get_current_user)
 ):
     """
-    동의내용 수정 (App DB)
+    동의내용 수정 (App DB - terms 테이블)
     """
     try:
         update_fields = []
@@ -286,8 +341,8 @@ async def update_consent(
                     status_code=http_status.HTTP_400_BAD_REQUEST,
                     detail={"error": "VALIDATION_ERROR", "message": "분류는 필수 또는 선택이어야 합니다."}
                 )
-            update_fields.append("classification = %(classification)s")
-            params["classification"] = classification
+            update_fields.append("is_required = %(is_required)s")
+            params["is_required"] = classification == "required" if classification else False
         
         if "exposure_location" in body:
             exposure_location = body["exposure_location"]
@@ -302,7 +357,7 @@ async def update_consent(
         
         if "content" in body:
             update_fields.append("content = %(content)s")
-            params["content"] = body["content"].strip() if body["content"] else None
+            params["content"] = body["content"].strip() if body["content"] else ""
         
         if "is_active" in body:
             update_fields.append("is_active = %(is_active)s")
@@ -310,7 +365,7 @@ async def update_consent(
         
         if not update_fields:
             existing = await query_one(
-                "SELECT * FROM consent_agreements WHERE id = %(consent_id)s",
+                "SELECT * FROM terms WHERE id = %(consent_id)s",
                 {"consent_id": consent_id},
                 use_app_db=True
             )
@@ -321,9 +376,9 @@ async def update_consent(
         params["updated_by"] = updated_by
         update_fields.append("updated_at = NOW()")
         
-        result = await execute_returning(
+        row = await execute_returning(
             f"""
-            UPDATE consent_agreements
+            UPDATE terms
             SET {', '.join(update_fields)}
             WHERE id = %(consent_id)s
             RETURNING *
@@ -332,11 +387,24 @@ async def update_consent(
             use_app_db=True
         )
         
-        if not result:
+        if not row:
             raise HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
                 detail={"error": "NOT_FOUND", "message": "동의서를 찾을 수 없습니다."}
             )
+        
+        # 응답 형식 변환
+        result = {
+            "id": row.get("id"),
+            "consent_code": row.get("code"),
+            "title": row.get("title"),
+            "classification": "required" if row.get("is_required") else "optional",
+            "exposure_location": row.get("exposure_location"),
+            "content": row.get("content"),
+            "is_active": row.get("is_active", True),
+            "created_at": row.get("created_at"),
+            "updated_at": row.get("updated_at"),
+        }
         
         return ApiResponse(success=True, data=result)
     except HTTPException:
@@ -351,15 +419,15 @@ async def update_consent(
 
 @router.delete("/{consent_id}")
 async def delete_consent(
-    consent_id: int,
+    consent_id: str,
     current_user=Depends(get_current_user)
 ):
     """
-    동의내용 삭제 (App DB)
+    동의내용 삭제 (App DB - terms 테이블)
     """
     try:
         affected = await execute(
-            "DELETE FROM consent_agreements WHERE id = %(consent_id)s",
+            "DELETE FROM terms WHERE id = %(consent_id)s",
             {"consent_id": consent_id},
             use_app_db=True
         )
@@ -387,7 +455,7 @@ async def batch_delete_consents(
     current_user=Depends(get_current_user)
 ):
     """
-    동의내용 일괄 삭제 (App DB)
+    동의내용 일괄 삭제 (App DB - terms 테이블)
     """
     try:
         ids = body.get("ids", [])
@@ -398,9 +466,9 @@ async def batch_delete_consents(
                 detail={"error": "VALIDATION_ERROR", "message": "삭제할 항목을 선택해주세요."}
             )
         
-        # INT 배열로 삭제
+        # UUID 배열로 삭제
         affected = await execute(
-            "DELETE FROM consent_agreements WHERE id = ANY(%(ids)s::int[])",
+            "DELETE FROM terms WHERE id = ANY(%(ids)s::uuid[])",
             {"ids": ids},
             use_app_db=True
         )
@@ -414,4 +482,3 @@ async def batch_delete_consents(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
         )
-

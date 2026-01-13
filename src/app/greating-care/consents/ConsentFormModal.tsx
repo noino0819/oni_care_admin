@@ -12,7 +12,7 @@ import { apiClient } from "@/lib/api-client";
 
 // 동의서 타입
 interface ConsentListItem {
-  id: number;
+  id: string; // terms 테이블은 UUID
   consent_code: string;
   title: string;
   classification: "required" | "optional";
@@ -54,7 +54,12 @@ const initialFormData: ConsentForm = {
   is_active: null,
 };
 
-export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: ConsentFormModalProps) {
+export function ConsentFormModal({
+  isOpen,
+  consent,
+  onClose,
+  onSuccess,
+}: ConsentFormModalProps) {
   const [formData, setFormData] = useState<ConsentForm>(initialFormData);
   const [isSaving, setIsSaving] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -68,9 +73,11 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
     }
   }, [consent, isOpen]);
 
-  const fetchConsentDetail = async (id: number) => {
+  const fetchConsentDetail = async (id: string) => {
     try {
-      const response = await apiClient.get<ConsentListItem>(`/admin/consents/${id}`);
+      const response = await apiClient.get<ConsentListItem>(
+        `/admin/consents/${id}`
+      );
       if (response.success && response.data) {
         setFormData({
           title: response.data.title,
@@ -146,7 +153,8 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
     "w-[100px] min-h-[38px] flex items-center justify-center bg-[#f5f5f5] border border-gray-200 px-3 py-2 text-[13px] font-medium text-gray-700 text-center";
   const inputClass =
     "flex-1 h-[38px] px-3 border border-gray-200 text-[13px] bg-white focus:outline-none focus:border-[#737373]";
-  const checkboxClass = "w-4 h-4 border border-gray-300 rounded cursor-pointer accent-[#737373]";
+  const checkboxClass =
+    "w-4 h-4 border border-gray-300 rounded cursor-pointer accent-[#737373]";
 
   return (
     <>
@@ -157,7 +165,10 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
             <h2 className="text-lg font-bold text-gray-900">
               {consent ? "동의서 수정" : "동의서 등록"}
             </h2>
-            <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <button
+              onClick={onClose}
+              className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            >
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
@@ -165,7 +176,9 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
           <div className="px-6 py-4 space-y-4">
             {/* 동의서 설정 */}
             <section>
-              <h3 className="text-[15px] font-semibold text-gray-900 mb-3">동의서 설정</h3>
+              <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
+                동의서 설정
+              </h3>
               <div className="space-y-0">
                 {/* 첫 번째 행: 동의서명 + 노출위치 */}
                 <div className="flex">
@@ -186,7 +199,9 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
                     <div className={labelClass}>노출위치</div>
                     <select
                       value={formData.exposure_location}
-                      onChange={(e) => handleChange("exposure_location", e.target.value)}
+                      onChange={(e) =>
+                        handleChange("exposure_location", e.target.value)
+                      }
                       className={cn(inputClass, "appearance-none select-arrow")}
                     >
                       <option value="">선택</option>
@@ -209,7 +224,12 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
                         <input
                           type="checkbox"
                           checked={formData.classification === "required"}
-                          onChange={(e) => handleChange("classification", e.target.checked ? "required" : "")}
+                          onChange={(e) =>
+                            handleChange(
+                              "classification",
+                              e.target.checked ? "required" : ""
+                            )
+                          }
                           className={checkboxClass}
                         />
                         <span className="text-[13px] text-gray-700">필수</span>
@@ -218,7 +238,12 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
                         <input
                           type="checkbox"
                           checked={formData.classification === "optional"}
-                          onChange={(e) => handleChange("classification", e.target.checked ? "optional" : "")}
+                          onChange={(e) =>
+                            handleChange(
+                              "classification",
+                              e.target.checked ? "optional" : ""
+                            )
+                          }
                           className={checkboxClass}
                         />
                         <span className="text-[13px] text-gray-700">선택</span>
@@ -233,7 +258,12 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
                         <input
                           type="checkbox"
                           checked={formData.is_active === true}
-                          onChange={(e) => handleChange("is_active", e.target.checked ? true : null)}
+                          onChange={(e) =>
+                            handleChange(
+                              "is_active",
+                              e.target.checked ? true : null
+                            )
+                          }
                           className={checkboxClass}
                         />
                         <span className="text-[13px] text-gray-700">Y</span>
@@ -242,7 +272,12 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
                         <input
                           type="checkbox"
                           checked={formData.is_active === false}
-                          onChange={(e) => handleChange("is_active", e.target.checked ? false : null)}
+                          onChange={(e) =>
+                            handleChange(
+                              "is_active",
+                              e.target.checked ? false : null
+                            )
+                          }
                           className={checkboxClass}
                         />
                         <span className="text-[13px] text-gray-700">N</span>
@@ -255,7 +290,9 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
 
             {/* 동의서 내용 */}
             <section>
-              <h3 className="text-[15px] font-semibold text-gray-900 mb-3">동의서 내용</h3>
+              <h3 className="text-[15px] font-semibold text-gray-900 mb-3">
+                동의서 내용
+              </h3>
               <textarea
                 value={formData.content}
                 onChange={(e) => handleChange("content", e.target.value)}
@@ -274,15 +311,23 @@ export function ConsentFormModal({ isOpen, consent, onClose, onSuccess }: Consen
             >
               취소하기
             </Button>
-            <Button variant="primary" onClick={handleSave} isLoading={isSaving} className="min-w-[100px]">
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              isLoading={isSaving}
+              className="min-w-[100px]"
+            >
               저장
             </Button>
           </div>
         </div>
       </div>
 
-      <AlertModal isOpen={!!alertMessage} onClose={() => setAlertMessage(null)} message={alertMessage || ""} />
+      <AlertModal
+        isOpen={!!alertMessage}
+        onClose={() => setAlertMessage(null)}
+        message={alertMessage || ""}
+      />
     </>
   );
 }
-
