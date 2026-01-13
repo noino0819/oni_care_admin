@@ -194,8 +194,8 @@ export function PushFormModal({ isOpen, push, onClose, onSuccess }: PushFormModa
 
   // FS 또는 제휴사가 선택되었는지 확인
   const showCompanySelector = form.target_audience.includes("fs") || form.target_audience.includes("affiliate");
-  // 시간 선택이 선택되었는지 확인 (시간 설정 활성화)
-  const showTimeInput = form.send_type === "time_select";
+  // 시간 선택 또는 시스템 시간이 선택되었는지 확인 (시간 설정 활성화)
+  const showTimeInput = form.send_type === "time_select" || form.send_type === "system_time";
 
   const modal = (
     <div
