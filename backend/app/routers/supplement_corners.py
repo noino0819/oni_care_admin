@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from app.lib.app_db import app_db_manager
 from app.core.logger import logger
 
-router = APIRouter(prefix="/admin/supplement-corners", tags=["영양제 코너 관리"])
+router = APIRouter(prefix="/api/v1/admin/supplement-corners", tags=["영양제 코너 관리"])
 
 
 # ============================================

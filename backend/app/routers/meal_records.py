@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query, HTTPException, status, Path
 from app.lib.app_db import app_db_manager
 from app.core.logger import logger
 
-router = APIRouter(prefix="/admin/meal-records", tags=["식사기록 관리"])
+router = APIRouter(prefix="/api/v1/admin/meal-records", tags=["식사기록 관리"])
 
 
 # ============================================
