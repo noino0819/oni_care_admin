@@ -7,7 +7,7 @@
 from typing import Optional, List
 from pydantic import BaseModel
 from fastapi import APIRouter, Query, HTTPException, status, Path
-from app.config.database import db_manager
+from app.config.database import get_connection
 from app.core.logger import logger
 
 router = APIRouter(prefix="/api/v1/admin/coupon-master", tags=["쿠폰 마스터 관리"])
@@ -87,7 +87,7 @@ async def get_coupon_masters(
             WHERE {where_clause}
         """
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(count_query, params)
                 count_result = await cur.fetchone()
@@ -119,7 +119,7 @@ async def get_coupon_masters(
         params["limit"] = page_size
         params["offset"] = offset
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(list_query, params)
                 rows = await cur.fetchall()
@@ -193,7 +193,7 @@ async def get_coupon_master(
             WHERE id = %(master_id)s
         """
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, {"master_id": master_id})
                 row = await cur.fetchone()
@@ -233,7 +233,7 @@ async def create_coupon_master(
         # 쿠폰 코드 중복 확인
         check_query = "SELECT id FROM coupon_master WHERE coupon_code = %(coupon_code)s"
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(check_query, {"coupon_code": data.coupon_code})
                 existing = await cur.fetchone()
@@ -258,7 +258,7 @@ async def create_coupon_master(
             RETURNING id
         """
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(insert_query, data.model_dump())
                 result = await cur.fetchone()
@@ -295,7 +295,7 @@ async def update_coupon_master(
         # 존재 확인
         check_query = "SELECT id FROM coupon_master WHERE id = %(master_id)s"
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(check_query, {"master_id": master_id})
                 existing = await cur.fetchone()
@@ -328,7 +328,7 @@ async def update_coupon_master(
             RETURNING id
         """
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(update_query, update_params)
                 result = await cur.fetchone()
@@ -364,7 +364,7 @@ async def delete_coupon_master(
         # 존재 확인
         check_query = "SELECT id FROM coupon_master WHERE id = %(master_id)s"
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(check_query, {"master_id": master_id})
                 existing = await cur.fetchone()
@@ -378,7 +378,7 @@ async def delete_coupon_master(
         # 삭제
         delete_query = "DELETE FROM coupon_master WHERE id = %(master_id)s"
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(delete_query, {"master_id": master_id})
                 await conn.commit()
@@ -420,7 +420,7 @@ async def delete_coupon_masters(
         # 삭제
         delete_query = "DELETE FROM coupon_master WHERE id = ANY(%(ids)s)"
         
-        async with db_manager.get_async_conn() as conn:
+        async with get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(delete_query, {"ids": id_list})
                 deleted_count = cur.rowcount

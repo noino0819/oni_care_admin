@@ -99,7 +99,7 @@ export function useCouponMasters(filters: CouponMasterFilters) {
   params.set('page_size', String(filters.limit || 20));
 
   const { data, error, isLoading, mutate } = useSWR<CouponMasterListResponse>(
-    `/api/v1/admin/coupon-master?${params.toString()}`,
+    `/admin/coupon-master?${params.toString()}`,
     swrFetcher,
     { revalidateOnFocus: false }
   );
@@ -119,7 +119,7 @@ export function useCouponMasters(filters: CouponMasterFilters) {
 
 export function useCouponMasterDetail(masterId: number | null) {
   const { data, error, isLoading, mutate } = useSWR<CouponMasterDetailResponse>(
-    masterId ? `/api/v1/admin/coupon-master/${masterId}` : null,
+    masterId ? `/admin/coupon-master/${masterId}` : null,
     swrFetcher,
     { revalidateOnFocus: false }
   );
@@ -142,8 +142,8 @@ export function useCreateCouponMaster() {
   const createCouponMaster = async (data: CouponMasterCreate) => {
     setIsCreating(true);
     try {
-      const result = await apiClient.post('/api/v1/admin/coupon-master', data);
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/v1/admin/coupon-master'), undefined, { revalidate: true });
+      const result = await apiClient.post('/admin/coupon-master', data);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/coupon-master'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsCreating(false);
@@ -163,8 +163,8 @@ export function useUpdateCouponMaster() {
   const updateCouponMaster = async (masterId: number, data: CouponMasterUpdate) => {
     setIsUpdating(true);
     try {
-      const result = await apiClient.put(`/api/v1/admin/coupon-master/${masterId}`, data);
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/v1/admin/coupon-master'), undefined, { revalidate: true });
+      const result = await apiClient.put(`/admin/coupon-master/${masterId}`, data);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/coupon-master'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsUpdating(false);
@@ -184,8 +184,8 @@ export function useDeleteCouponMaster() {
   const deleteCouponMaster = async (masterId: number) => {
     setIsDeleting(true);
     try {
-      const result = await apiClient.delete(`/api/v1/admin/coupon-master/${masterId}`);
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/v1/admin/coupon-master'), undefined, { revalidate: true });
+      const result = await apiClient.delete(`/admin/coupon-master/${masterId}`);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/coupon-master'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsDeleting(false);
@@ -205,8 +205,8 @@ export function useDeleteCouponMasters() {
   const deleteCouponMasters = async (ids: number[]) => {
     setIsDeleting(true);
     try {
-      const result = await apiClient.delete(`/api/v1/admin/coupon-master?ids=${ids.join(',')}`);
-      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/api/v1/admin/coupon-master'), undefined, { revalidate: true });
+      const result = await apiClient.delete(`/admin/coupon-master?ids=${ids.join(',')}`);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/coupon-master'), undefined, { revalidate: true });
       return result;
     } finally {
       setIsDeleting(false);
