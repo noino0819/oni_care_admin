@@ -5,7 +5,7 @@
 
 from typing import Optional, List
 from datetime import date
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, Path
 from app.lib.app_db import app_db_manager
 from app.core.logger import logger
 
@@ -113,6 +113,119 @@ async def get_meal_records(
         )
 
 
+# ============================================
+# 전체 식사기록 조회 (개별 기록 단위)
+# ============================================
+
+@router.get("/all")
+async def get_all_meal_records(
+    name: Optional[str] = Query(None, description="고객명"),
+    user_id: Optional[str] = Query(None, description="고객 ID"),
+    record_from: Optional[date] = Query(None, description="기록 시작일"),
+    record_to: Optional[date] = Query(None, description="기록 종료일"),
+    meal_type: Optional[str] = Query(None, description="끼니구분 (breakfast,lunch,dinner,snack)"),
+    record_source: Optional[str] = Query(None, description="기록구분"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    """
+    전체 식사기록 조회 (개별 기록 단위)
+    """
+    try:
+        conditions = ["1=1"]
+        params = {}
+        
+        if name:
+            conditions.append("u.name ILIKE %(name)s")
+            params["name"] = f"%{name}%"
+        
+        if user_id:
+            conditions.append("(u.id::text ILIKE %(user_id)s OR u.email ILIKE %(user_id)s)")
+            params["user_id"] = f"%{user_id}%"
+        
+        if record_from:
+            conditions.append("m.meal_date >= %(record_from)s")
+            params["record_from"] = record_from
+        
+        if record_to:
+            conditions.append("m.meal_date <= %(record_to)s")
+            params["record_to"] = record_to
+        
+        if meal_type:
+            conditions.append("m.meal_type = %(meal_type)s")
+            params["meal_type"] = meal_type
+        
+        where_clause = " AND ".join(conditions)
+        
+        # 총 건수 조회
+        count_query = f"""
+            SELECT COUNT(*) as total
+            FROM meals m
+            JOIN users u ON m.user_id = u.id
+            WHERE {where_clause}
+        """
+        count_result = await app_db_manager.fetch_one(count_query, params)
+        total = count_result["total"] if count_result else 0
+        
+        # 전체 기록 조회
+        offset = (page - 1) * page_size
+        list_query = f"""
+            SELECT 
+                m.id,
+                m.user_id,
+                u.email,
+                u.name,
+                m.meal_type,
+                m.food_name as menu_name,
+                m.serving_size as portion,
+                m.calories,
+                m.meal_date,
+                m.created_at as record_time,
+                m.updated_at
+            FROM meals m
+            JOIN users u ON m.user_id = u.id
+            WHERE {where_clause}
+            ORDER BY m.meal_date DESC, m.created_at DESC
+            LIMIT %(limit)s OFFSET %(offset)s
+        """
+        params["limit"] = page_size
+        params["offset"] = offset
+        
+        records = await app_db_manager.fetch_all(list_query, params)
+        
+        # meal_type 한글 변환
+        meal_type_map = {
+            "breakfast": "아침",
+            "lunch": "점심",
+            "dinner": "저녁",
+            "snack": "간식"
+        }
+        
+        for record in records:
+            record["meal_type_display"] = meal_type_map.get(record["meal_type"], record["meal_type"])
+            if record["calories"]:
+                record["calories_display"] = f"{record['calories']}kcal"
+            else:
+                record["calories_display"] = "-"
+        
+        return {
+            "success": True,
+            "data": records,
+            "pagination": {
+                "page": page,
+                "limit": page_size,
+                "total": total,
+                "totalPages": (total + page_size - 1) // page_size
+            }
+        }
+    except Exception as e:
+        logger.error(f"전체 식사기록 조회 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="식사기록 조회 중 오류가 발생했습니다."
+        )
+
+
 @router.get("/{user_id}/details")
 async def get_meal_record_details(
     user_id: str,
@@ -199,5 +312,45 @@ async def get_meal_record_details(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="식사기록 세부현황 조회 중 오류가 발생했습니다."
+        )
+
+
+# ============================================
+# 식사기록 삭제 API
+# ============================================
+
+@router.delete("/{record_id}")
+async def delete_meal_record(
+    record_id: str = Path(..., description="식사기록 ID"),
+):
+    """
+    식사기록 삭제
+    """
+    try:
+        # 기록 존재 확인
+        check_query = "SELECT id FROM meals WHERE id = %(record_id)s"
+        existing = await app_db_manager.fetch_one(check_query, {"record_id": record_id})
+        
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="해당 식사기록을 찾을 수 없습니다."
+            )
+        
+        # 삭제
+        delete_query = "DELETE FROM meals WHERE id = %(record_id)s"
+        await app_db_manager.execute(delete_query, {"record_id": record_id})
+        
+        return {
+            "success": True,
+            "message": "식사기록이 삭제되었습니다."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"식사기록 삭제 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="식사기록 삭제 중 오류가 발생했습니다."
         )
 

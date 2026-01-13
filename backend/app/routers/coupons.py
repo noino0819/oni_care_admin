@@ -6,7 +6,7 @@
 
 from typing import Optional, List
 from datetime import date
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, Path
 from app.lib.app_db import app_db_manager
 from app.core.logger import logger
 
@@ -206,5 +206,45 @@ async def get_coupon_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="쿠폰 요약 조회 중 오류가 발생했습니다."
+        )
+
+
+# ============================================
+# 쿠폰 삭제 API
+# ============================================
+
+@router.delete("/{coupon_id}")
+async def delete_coupon(
+    coupon_id: str = Path(..., description="쿠폰 ID"),
+):
+    """
+    쿠폰 삭제
+    """
+    try:
+        # 쿠폰 존재 확인
+        check_query = "SELECT id FROM coupons WHERE id = %(coupon_id)s"
+        existing = await app_db_manager.fetch_one(check_query, {"coupon_id": coupon_id})
+        
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="해당 쿠폰을 찾을 수 없습니다."
+            )
+        
+        # 삭제
+        delete_query = "DELETE FROM coupons WHERE id = %(coupon_id)s"
+        await app_db_manager.execute(delete_query, {"coupon_id": coupon_id})
+        
+        return {
+            "success": True,
+            "message": "쿠폰이 삭제되었습니다."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"쿠폰 삭제 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="쿠폰 삭제 중 오류가 발생했습니다."
         )
 

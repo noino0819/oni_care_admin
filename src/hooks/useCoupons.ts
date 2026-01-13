@@ -3,24 +3,29 @@
 // ============================================
 
 import useSWR from 'swr';
-import { swrFetcher } from '@/lib/api-client';
+import useSWRMutation from 'swr/mutation';
+import { swrFetcher, apiClient } from '@/lib/api-client';
 
-// 쿠폰 타입
+// 쿠폰 타입 (페이지에서 사용하는 형식)
 export interface Coupon {
+  id: string;
   coupon_id: string;
+  user_id: string;
+  user_name: string;
+  email: string;
+  name: string;
   coupon_name: string;
   coupon_value: number;
   coupon_value_display: string;
   coupon_source: string;
   coupon_source_display: string;
+  issue_source: string;
   source_type: string;
   source_detail: string | null;
   status: string;
   expires_at: string | null;
   issued_at: string;
-  user_id: string;
-  email: string;
-  name: string;
+  created_at: string;
   member_type: string;
   member_type_display: string;
   business_code: string | null;
@@ -49,52 +54,48 @@ interface CouponSummaryResponse {
 }
 
 export interface CouponFilters {
-  name?: string;
   user_id?: string;
-  member_types?: string[];
-  business_code?: string;
-  issued_from?: string;
-  issued_to?: string;
-  coupon_source?: string[];
-  coupon_value?: number;
+  user_name?: string;
+  coupon_name?: string;
+  issue_source?: string;
+  issued_at_from?: string;
+  issued_at_to?: string;
+  page?: number;
+  limit?: number;
 }
 
-// 쿠폰 현황 조회
-export function useCoupons(
-  filters: CouponFilters,
-  page: number = 1,
-  pageSize: number = 20,
-  enabled: boolean = true
-) {
+// 쿠폰 목록 조회
+export function useCoupons(filters: CouponFilters) {
   const params = new URLSearchParams();
   
-  if (filters.name) params.set('name', filters.name);
   if (filters.user_id) params.set('user_id', filters.user_id);
-  if (filters.member_types && filters.member_types.length > 0) {
-    params.set('member_types', filters.member_types.join(','));
-  }
-  if (filters.business_code) params.set('business_code', filters.business_code);
-  if (filters.issued_from) params.set('issued_from', filters.issued_from);
-  if (filters.issued_to) params.set('issued_to', filters.issued_to);
-  if (filters.coupon_source && filters.coupon_source.length > 0) {
-    params.set('coupon_source', filters.coupon_source.join(','));
-  }
-  if (filters.coupon_value) params.set('coupon_value', String(filters.coupon_value));
-  params.set('page', String(page));
-  params.set('page_size', String(pageSize));
+  if (filters.user_name) params.set('name', filters.user_name); // API에서는 name 파라미터 사용
+  if (filters.issue_source) params.set('coupon_source', filters.issue_source);
+  if (filters.issued_at_from) params.set('issued_from', filters.issued_at_from);
+  if (filters.issued_at_to) params.set('issued_to', filters.issued_at_to);
+  params.set('page', String(filters.page || 1));
+  params.set('page_size', String(filters.limit || 10));
 
   const { data, error, isLoading, mutate } = useSWR<CouponListResponse>(
-    enabled ? `/admin/coupons?${params.toString()}` : null,
+    `/admin/coupons?${params.toString()}`,
     swrFetcher,
     { revalidateOnFocus: false }
   );
 
+  // 데이터 변환: API 응답을 페이지에서 사용하는 형식으로
+  const coupons = (data?.data || []).map(c => ({
+    ...c,
+    id: c.coupon_id,
+    user_name: c.name,
+    issue_source: c.coupon_source,
+  }));
+
   return {
-    coupons: data?.data || [],
+    coupons,
     pagination: data?.pagination,
     isLoading,
     error,
-    refetch: () => mutate(),
+    mutate,
   };
 }
 
@@ -121,3 +122,17 @@ export function useCouponSummary(
   };
 }
 
+// 쿠폰 삭제
+export function useDeleteCoupon() {
+  const { trigger, isMutating } = useSWRMutation(
+    '/admin/coupons',
+    async (url: string, { arg }: { arg: string }) => {
+      return await apiClient.delete(`${url}/${arg}`);
+    }
+  );
+
+  return {
+    deleteCoupon: trigger,
+    isDeleting: isMutating,
+  };
+}
