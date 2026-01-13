@@ -5,7 +5,7 @@
 from psycopg_pool import AsyncConnectionPool
 from psycopg.rows import dict_row
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, Any, List, Dict
 from app.config.settings import settings
 
 
@@ -47,6 +47,57 @@ class AppDatabaseManager:
             raise RuntimeError("App async pool not initialized")
         async with self._async_pool.connection() as conn:
             yield conn
+
+    async def fetch_one(self, query: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """
+        단일 행 조회
+        
+        Args:
+            query: SQL 쿼리 (Named parameter 사용)
+            params: 쿼리 파라미터
+            
+        Returns:
+            조회 결과 딕셔너리 또는 None
+        """
+        async with self.get_async_conn() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params or {})
+                row = await cur.fetchone()
+                return dict(row) if row else None
+
+    async def fetch_all(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """
+        복수 행 조회
+        
+        Args:
+            query: SQL 쿼리 (Named parameter 사용)
+            params: 쿼리 파라미터
+            
+        Returns:
+            조회 결과 딕셔너리 리스트
+        """
+        async with self.get_async_conn() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params or {})
+                rows = await cur.fetchall()
+                return [dict(row) for row in rows]
+
+    async def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> int:
+        """
+        INSERT/UPDATE/DELETE 실행
+        
+        Args:
+            query: SQL 쿼리 (Named parameter 사용)
+            params: 쿼리 파라미터
+            
+        Returns:
+            영향받은 행 수
+        """
+        async with self.get_async_conn() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params or {})
+                await conn.commit()
+                return cur.rowcount
 
     async def close(self) -> None:
         """커넥션 풀 종료"""
