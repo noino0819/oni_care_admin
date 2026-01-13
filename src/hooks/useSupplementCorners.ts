@@ -20,6 +20,7 @@ export interface SupplementCorner {
 
 // 코너별 영양제 타입
 export interface CornerProduct {
+  id: string;
   mapping_id: number;
   product_id: string;
   product_name: string;
@@ -181,7 +182,7 @@ export function useUpdateCorner() {
   return { updateCorner, isUpdating };
 }
 
-// 코너 삭제
+// 코너 삭제 (복수)
 export function useDeleteCorners() {
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -199,6 +200,24 @@ export function useDeleteCorners() {
   };
 
   return { deleteCorners, isDeleting };
+}
+
+// 코너 삭제 (단일)
+export function useDeleteCorner() {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const deleteCorner = async (id: number) => {
+    setIsDeleting(true);
+    try {
+      const result = await apiClient.delete(`/admin/supplement-corners/${id}`);
+      globalMutate((key: string) => typeof key === 'string' && key.startsWith('/admin/supplement-corners'), undefined, { revalidate: true });
+      return result;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return { deleteCorner, isDeleting };
 }
 
 // 코너에 영양제 추가
@@ -225,7 +244,7 @@ export function useAddCornerProducts(cornerId: number | null) {
   return { addProducts, isAdding };
 }
 
-// 코너에서 영양제 삭제
+// 코너에서 영양제 삭제 (복수)
 export function useRemoveCornerProducts(cornerId: number | null) {
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -244,5 +263,24 @@ export function useRemoveCornerProducts(cornerId: number | null) {
   };
 
   return { removeProducts, isRemoving };
+}
+
+// 코너에서 영양제 삭제 (단일)
+export function useDeleteCornerProduct(cornerId: number | null) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const deleteProduct = async (mappingId: string) => {
+    if (!cornerId) return;
+    setIsDeleting(true);
+    try {
+      const result = await apiClient.delete(`/admin/supplement-corners/${cornerId}/products/${mappingId}`);
+      globalMutate((key: string) => typeof key === 'string' && key.includes(`/admin/supplement-corners/${cornerId}/products`), undefined, { revalidate: true });
+      return result;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return { deleteProduct, isDeleting };
 }
 
