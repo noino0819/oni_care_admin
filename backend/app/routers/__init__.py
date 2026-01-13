@@ -34,6 +34,8 @@ from .supplement_corners import router as supplement_corners_router
 from .meal_records import router as meal_records_router
 from .coupons import router as coupons_router
 from .coupon_master import router as coupon_master_router
+from .cafe_menus import router as cafe_menus_router
+from .inquiries import router as inquiries_router
 
 __all__ = [
     'auth_router', 
@@ -69,5 +71,7 @@ __all__ = [
     'meal_records_router',
     'coupons_router',
     'coupon_master_router',
+    'cafe_menus_router',
+    'inquiries_router',
 ]
 

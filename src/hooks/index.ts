@@ -10,4 +10,6 @@ export * from './useSupplementCorners';
 export * from './useMealRecords';
 export * from './useCoupons';
 export * from './useCouponMaster';
+export * from './useCafeMenus';
+export * from './useInquiries';
 

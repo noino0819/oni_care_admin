@@ -35,6 +35,7 @@ export const menuItems: MenuItem[] = [
       { id: 'care-points', label: '포인트 관리', path: '/greating-care/points' },
       { id: 'care-notices', label: '공지사항 관리', path: '/greating-care/notices' },
       { id: 'care-challenges', label: '챌린지 관리', path: '/greating-care/challenges' },
+      { id: 'care-cafe-menus', label: '카페 메뉴 관리', path: '/greating-care/cafe-menus' },
       { id: 'care-challenge-quizzes', label: '챌린지 퀴즈 관리', path: '/greating-care/challenge-quizzes' },
       { id: 'care-supplements', label: '영양제 DB 관리', path: '/greating-care/supplements' },
       { id: 'care-supplement-corners', label: '영양제 코너 관리', path: '/greating-care/supplement-corners' },
@@ -45,6 +46,7 @@ export const menuItems: MenuItem[] = [
       { id: 'care-consents', label: '동의내용 관리', path: '/greating-care/consents' },
       { id: 'care-push-notifications', label: 'PUSH 관리', path: '/greating-care/push-notifications' },
       { id: 'care-health-goal-types', label: '건강목표 유형 관리', path: '/greating-care/health-goal-types' },
+      { id: 'care-inquiries', label: '1:1 문의 관리', path: '/greating-care/inquiries' },
     ],
   },
   {

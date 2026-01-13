@@ -53,6 +53,8 @@ from app.routers import (
     meal_records_router,
     coupons_router,
     coupon_master_router,
+    cafe_menus_router,
+    inquiries_router,
 )
 
 
@@ -201,6 +203,8 @@ app.include_router(supplement_corners_router)
 app.include_router(meal_records_router)
 app.include_router(coupons_router)
 app.include_router(coupon_master_router)
+app.include_router(cafe_menus_router)
+app.include_router(inquiries_router)
 
 # 정적 파일 서빙 (업로드된 이미지)
 uploads_dir = Path(__file__).parent.parent / "uploads"
