@@ -4,13 +4,7 @@
 
 import useSWR, { mutate as globalMutate } from 'swr';
 import { useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-
-// Fetcher
-const swrFetcher = async (url: string) => {
-  const response = await apiClient.get(url);
-  return response;
-};
+import { swrFetcher, apiClient } from '@/lib/api-client';
 
 // ============================================
 // 타입 정의
