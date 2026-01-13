@@ -46,7 +46,7 @@ export default function PushNotificationsPage() {
   const [editingPush, setEditingPush] = useState<PushNotificationListItem | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true);
 
   // 세부유형 옵션 (발송유형에 따라 변경)
   const { data: sendTypeDetails } = useSWR<{ success: boolean; data: { value: string; label: string }[] }>(

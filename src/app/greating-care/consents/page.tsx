@@ -68,7 +68,7 @@ export default function ConsentsPage() {
   const [editingConsent, setEditingConsent] = useState<ConsentListItem | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true);
 
   const buildQueryString = () => {
     const params = new URLSearchParams();

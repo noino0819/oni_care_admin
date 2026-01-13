@@ -94,7 +94,7 @@ export default function MembersPage() {
   const [page, setPage] = useState(1);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true);
 
   const { members, pagination, isLoading, refetch } = useMembers(
     filters,

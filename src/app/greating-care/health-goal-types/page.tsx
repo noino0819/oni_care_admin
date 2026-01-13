@@ -38,7 +38,7 @@ export default function HealthGoalTypesPage() {
   const [editingType, setEditingType] = useState<HealthGoalTypeListItem | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true);
 
   // 질병 목록 조회
   const { data: diseases } = useSWR<{ success: boolean; data: OptionItem[] }>(

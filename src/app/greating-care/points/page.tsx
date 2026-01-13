@@ -83,7 +83,7 @@ export default function PointsPage() {
     userName: string;
     points: number;
   } | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(true);
 
   // 포인트 현황 조회
   const buildQueryString = () => {
