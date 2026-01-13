@@ -5,8 +5,8 @@
 // ============================================
 
 import { useState } from 'react';
-import { PageHeader, DataTable, Pagination, AlertModal, ConfirmModal } from '@/components/common';
-import { Button } from '@/components/common';
+import { AdminLayout } from '@/components/layout';
+import { DataTable, Pagination, AlertModal, ConfirmModal, Button } from '@/components/common';
 import { 
   useSupplementCorners, 
   useCornerProducts,
@@ -316,160 +316,163 @@ export default function SupplementCornersPage() {
   const labelClass = 'text-[13px] font-semibold text-[#333] whitespace-nowrap';
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader
-        title="영양제 코너 관리"
-        description="앱 내 영양제 코너를 관리합니다."
-      />
+    <AdminLayout>
+      <div className="p-6 space-y-6">
+        {/* 페이지 헤더 */}
+        <div>
+          <h1 className="text-[22px] font-bold text-[#333]">영양제 코너 관리</h1>
+          <p className="text-[13px] text-gray-500 mt-1">앱 내 영양제 코너를 관리합니다.</p>
+        </div>
 
-      {/* 검색 필터 */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center gap-6 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className={labelClass}>코너명</span>
-            <input
-              type="text"
-              value={filters.corner_name}
-              onChange={(e) => setFilters(prev => ({ ...prev, corner_name: e.target.value }))}
-              className={`${inputClass} w-[180px]`}
-              placeholder="코너명"
-            />
+        {/* 검색 필터 */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className={labelClass}>코너명</span>
+              <input
+                type="text"
+                value={filters.corner_name}
+                onChange={(e) => setFilters(prev => ({ ...prev, corner_name: e.target.value }))}
+                className={`${inputClass} w-[180px]`}
+                placeholder="코너명"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={labelClass}>노출여부</span>
+              <select
+                value={filters.is_active}
+                onChange={(e) => setFilters(prev => ({ ...prev, is_active: e.target.value as '' | 'true' | 'false' }))}
+                className={`${selectClass} w-[100px]`}
+              >
+                <option value="">전체</option>
+                <option value="true">Y</option>
+                <option value="false">N</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <Button variant="secondary" onClick={handleReset}>
+                초기화
+              </Button>
+              <Button onClick={handleSearch}>
+                검색
+              </Button>
+            </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <span className={labelClass}>노출여부</span>
-            <select
-              value={filters.is_active}
-              onChange={(e) => setFilters(prev => ({ ...prev, is_active: e.target.value as '' | 'true' | 'false' }))}
-              className={`${selectClass} w-[100px]`}
+        {/* 코너 목록 */}
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="text-[15px] font-semibold text-[#333]">코너 목록</h3>
+            <Button size="sm" onClick={() => handleOpenCornerForm()}>
+              코너 등록
+            </Button>
+          </div>
+          
+          <DataTable
+            columns={cornerColumns}
+            data={corners || []}
+            totalCount={pagination?.total}
+            isLoading={isLoading}
+            emptyMessage="등록된 코너가 없습니다."
+            getRowKey={(row) => String(row.id)}
+            onRowClick={handleSelectCorner}
+            selectedRowId={selectedCornerId ? String(selectedCornerId) : undefined}
+          />
+
+          {pagination && pagination.totalPages > 1 && (
+            <div className="p-4 border-t border-gray-200">
+              <Pagination
+                currentPage={page}
+                totalPages={pagination.totalPages}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 영양제 목록 */}
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="text-[15px] font-semibold text-[#333]">
+              영양제 목록
+              {selectedCorner && (
+                <span className="ml-2 text-[13px] font-normal text-gray-500">
+                  ({selectedCorner.corner_name})
+                </span>
+              )}
+            </h3>
+            <Button 
+              size="sm" 
+              onClick={handleOpenProductSearch}
+              disabled={!selectedCornerId}
             >
-              <option value="">전체</option>
-              <option value="true">Y</option>
-              <option value="false">N</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            <Button variant="secondary" onClick={handleReset}>
-              초기화
-            </Button>
-            <Button onClick={handleSearch}>
-              검색
+              영양제 등록
             </Button>
           </div>
-        </div>
-      </div>
+          
+          {!selectedCornerId ? (
+            <div className="p-8 text-center text-gray-500 text-[14px]">
+              위 목록에서 코너를 선택하면 해당 코너의 영양제 목록이 표시됩니다.
+            </div>
+          ) : (
+            <>
+              <DataTable
+                columns={productColumns}
+                data={products || []}
+                totalCount={productPagination?.total}
+                isLoading={isProductLoading}
+                emptyMessage="등록된 영양제가 없습니다."
+                getRowKey={(row) => row.id}
+              />
 
-      {/* 코너 목록 */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#333]">코너 목록</h3>
-          <Button size="sm" onClick={() => handleOpenCornerForm()}>
-            코너 등록
-          </Button>
+              {productPagination && productPagination.totalPages > 1 && (
+                <div className="p-4 border-t border-gray-200">
+                  <Pagination
+                    currentPage={productPage}
+                    totalPages={productPagination.totalPages}
+                    onPageChange={setProductPage}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
-        
-        <DataTable
-          columns={cornerColumns}
-          data={corners || []}
-          totalCount={pagination?.total}
-          isLoading={isLoading}
-          emptyMessage="등록된 코너가 없습니다."
-          getRowKey={(row) => String(row.id)}
-          onRowClick={handleSelectCorner}
-          selectedRowId={selectedCornerId ? String(selectedCornerId) : undefined}
+
+        {/* 모달 */}
+        <CornerFormModal
+          corner={editingCorner}
+          isOpen={isCornerFormOpen}
+          onClose={() => {
+            setIsCornerFormOpen(false);
+            setEditingCorner(null);
+          }}
+          onSaved={handleCornerSaved}
         />
 
-        {pagination && pagination.totalPages > 1 && (
-          <div className="p-4 border-t border-gray-200">
-            <Pagination
-              currentPage={page}
-              totalPages={pagination.totalPages}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
+        <ProductSearchModal
+          cornerId={selectedCornerId}
+          isOpen={isProductSearchOpen}
+          onClose={() => setIsProductSearchOpen(false)}
+          onSaved={handleProductSaved}
+          existingProductIds={existingProductIds}
+        />
+
+        <AlertModal
+          isOpen={!!alertMessage}
+          onClose={() => setAlertMessage(null)}
+          message={alertMessage || ''}
+        />
+
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+          onConfirm={confirmModal.onConfirm}
+          message={confirmModal.message}
+        />
       </div>
-
-      {/* 영양제 목록 */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-[#333]">
-            영양제 목록
-            {selectedCorner && (
-              <span className="ml-2 text-[13px] font-normal text-gray-500">
-                ({selectedCorner.corner_name})
-              </span>
-            )}
-          </h3>
-          <Button 
-            size="sm" 
-            onClick={handleOpenProductSearch}
-            disabled={!selectedCornerId}
-          >
-            영양제 등록
-          </Button>
-        </div>
-        
-        {!selectedCornerId ? (
-          <div className="p-8 text-center text-gray-500 text-[14px]">
-            위 목록에서 코너를 선택하면 해당 코너의 영양제 목록이 표시됩니다.
-          </div>
-        ) : (
-          <>
-            <DataTable
-              columns={productColumns}
-              data={products || []}
-              totalCount={productPagination?.total}
-              isLoading={isProductLoading}
-              emptyMessage="등록된 영양제가 없습니다."
-              getRowKey={(row) => row.id}
-            />
-
-            {productPagination && productPagination.totalPages > 1 && (
-              <div className="p-4 border-t border-gray-200">
-                <Pagination
-                  currentPage={productPage}
-                  totalPages={productPagination.totalPages}
-                  onPageChange={setProductPage}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* 모달 */}
-      <CornerFormModal
-        corner={editingCorner}
-        isOpen={isCornerFormOpen}
-        onClose={() => {
-          setIsCornerFormOpen(false);
-          setEditingCorner(null);
-        }}
-        onSaved={handleCornerSaved}
-      />
-
-      <ProductSearchModal
-        cornerId={selectedCornerId}
-        isOpen={isProductSearchOpen}
-        onClose={() => setIsProductSearchOpen(false)}
-        onSaved={handleProductSaved}
-        existingProductIds={existingProductIds}
-      />
-
-      <AlertModal
-        isOpen={!!alertMessage}
-        onClose={() => setAlertMessage(null)}
-        message={alertMessage || ''}
-      />
-
-      <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
-        onConfirm={confirmModal.onConfirm}
-        message={confirmModal.message}
-      />
-    </div>
+    </AdminLayout>
   );
 }
