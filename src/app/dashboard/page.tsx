@@ -688,25 +688,25 @@ export default function DashboardPage() {
                               {row.target}
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.attendance)}개
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.steps)}개
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.meal)}개
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.supplement)}개
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.nutrition_diagnosis)}개
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.health_habit)}개
                             </td>
                             <td className="px-2 py-2 text-center text-black border-l border-[#e5e5e5]">
-                              N개
+                              {formatNumber(row.quiz)}개
                             </td>
                           </tr>
                         ))}
