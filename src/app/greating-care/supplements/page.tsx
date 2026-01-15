@@ -412,7 +412,7 @@ export default function SupplementsPage() {
               >
                 <option value="">전체</option>
                 {formUnits.map(unit => (
-                  <option key={unit.id} value={unit.unit_value}>{unit.unit_name}</option>
+                  <option key={unit.id} value={unit.unit_name}>{unit.unit_name}</option>
                 ))}
               </select>
             </div>

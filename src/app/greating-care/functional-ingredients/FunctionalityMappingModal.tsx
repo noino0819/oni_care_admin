@@ -49,7 +49,7 @@ export function FunctionalityMappingModal({
           id: func.functionality_id,
           functionality_code: func.functionality_code,
           content: func.content,
-          description: func.description,
+          description: null,
           is_active: true,
           created_at: '',
           updated_at: '',

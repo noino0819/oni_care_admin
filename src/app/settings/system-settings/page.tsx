@@ -63,7 +63,7 @@ export default function SystemSettingsPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const result = await apiClient.get<{ success: boolean; data: SystemSetting[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/settings/system?${params}`);
+      const result = await apiClient.get<SystemSetting[]>(`/admin/settings/system?${params}`);
 
       if (result.success) {
         setData(result.data || []);

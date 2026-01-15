@@ -185,20 +185,20 @@ function AdminUserModal({ isOpen, onClose, onSave, initialData, companies, isLoa
 }
 
 // ID 마스킹 함수
-function maskId(id: string): string {
+function maskId(id: string | null | undefined): string {
   if (!id) return '-';
   const visible = id.substring(0, 4);
   return `${visible}***`;
 }
 
 // 이름 마스킹 함수
-function maskName(name: string): string {
+function maskName(name: string | null | undefined): string {
   if (!name || name.length < 2) return name || '-';
   return `${name[0]}*${name.slice(2)}`;
 }
 
 // 전화번호 마스킹 함수
-function maskPhone(phone: string): string {
+function maskPhone(phone: string | null | undefined): string {
   if (!phone) return '-';
   const parts = phone.split('-');
   if (parts.length === 3) {
@@ -252,12 +252,12 @@ export default function AdminUsersPage() {
   // 회사 목록 조회
   const fetchCompanies = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: Company[] }>('/admin/companies?limit=100');
+      const result = await apiClient.get<Company[]>('/admin/companies?limit=100');
       if (result.success) {
         setCompanies(result.data || []);
       }
     } catch {
-      console.error('회사 조회 실패');
+      // 회사 조회 실패 시 무시
     }
   }, []);
 
@@ -271,7 +271,7 @@ export default function AdminUsersPage() {
       if (filters.department_name) params.set('department_name', filters.department_name);
       params.set('limit', '100');
 
-      const result = await apiClient.get<{ success: boolean; data: AdminUserAccount[] }>(`/admin/admin-users?${params}`);
+      const result = await apiClient.get<AdminUserAccount[]>(`/admin/admin-users?${params}`);
 
       if (result.success) {
         setUsers(result.data || []);
@@ -317,8 +317,8 @@ export default function AdminUsersPage() {
       const isEdit = !!userModal.data;
       
       const result = isEdit
-        ? await apiClient.put<{ success: boolean; error?: { message: string } }>(`/admin/admin-users/${userModal.data!.id}`, data)
-        : await apiClient.post<{ success: boolean; error?: { message: string } }>('/admin/admin-users', data);
+        ? await apiClient.put<AdminUserAccount>(`/admin/admin-users/${userModal.data!.id}`, data)
+        : await apiClient.post<AdminUserAccount>('/admin/admin-users', data);
 
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
@@ -342,7 +342,7 @@ export default function AdminUsersPage() {
       onConfirm: async () => {
         setConfirmModal(null);
         try {
-          const result = await apiClient.post<{ success: boolean; error?: { message: string } }>(`/admin/admin-users/${user.id}/reset-password`, {});
+          const result = await apiClient.post<{ message: string }>(`/admin/admin-users/${user.id}/reset-password`, {});
           if (result.success) {
             setAlertMessage('비밀번호가 초기화되었습니다.');
           } else {

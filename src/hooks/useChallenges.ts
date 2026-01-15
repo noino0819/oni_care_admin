@@ -2,7 +2,7 @@
  * 챌린지 관리 데이터 훅
  */
 import useSWR from 'swr';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, swrFetcher } from '@/lib/api-client';
 
 // ============================================
 // 타입 정의
@@ -154,7 +154,7 @@ export function useChallenges(
 
   const { data, error, isLoading, mutate } = useSWR<ChallengeListResponse>(
     `/challenges?${queryParams.toString()}`,
-    (url: string) => apiClient.get(url)
+    swrFetcher
   );
 
   return {
@@ -173,7 +173,7 @@ export function useChallenges(
 export function useChallenge(challengeId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<Challenge>(
     challengeId ? `/challenges/${challengeId}` : null,
-    (url: string) => apiClient.get(url)
+    swrFetcher
   );
 
   return {
@@ -188,17 +188,20 @@ export function useChallenge(challengeId: string | null) {
 // 챌린지 CRUD 함수
 // ============================================
 
-export async function createChallenge(data: Partial<Challenge>): Promise<Challenge> {
-  return apiClient.post('/challenges', data);
+export async function createChallenge(data: Partial<Challenge>): Promise<Challenge | undefined> {
+  const response = await apiClient.post<Challenge>('/challenges', data);
+  return response.data;
 }
 
-export async function updateChallenge(challengeId: string, data: Partial<Challenge>): Promise<Challenge> {
-  return apiClient.put(`/challenges/${challengeId}`, data);
+export async function updateChallenge(challengeId: string, data: Partial<Challenge>): Promise<Challenge | undefined> {
+  const response = await apiClient.put<Challenge>(`/challenges/${challengeId}`, data);
+  return response.data;
 }
 
-export async function deleteChallenges(challengeIds: string[]): Promise<{ message: string; count: number }> {
+export async function deleteChallenges(challengeIds: string[]): Promise<{ message: string; count: number } | undefined> {
   const queryParams = challengeIds.map(id => `challenge_ids=${id}`).join('&');
-  return apiClient.delete(`/challenges?${queryParams}`);
+  const response = await apiClient.delete<{ message: string; count: number }>(`/challenges?${queryParams}`);
+  return response.data;
 }
 
 // ============================================
@@ -219,7 +222,7 @@ export function useQuizzes(
 
   const { data, error, isLoading, mutate } = useSWR<QuizListResponse>(
     `/challenges/quizzes/list?${queryParams.toString()}`,
-    (url: string) => apiClient.get(url)
+    swrFetcher
   );
 
   return {
@@ -234,7 +237,7 @@ export function useQuizzes(
 export function useQuiz(quizId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<ChallengeQuiz>(
     quizId ? `/challenges/quizzes/${quizId}` : null,
-    (url: string) => apiClient.get(url)
+    swrFetcher
   );
 
   return {
@@ -249,17 +252,20 @@ export function useQuiz(quizId: string | null) {
 // 퀴즈 CRUD 함수
 // ============================================
 
-export async function createQuiz(data: Partial<ChallengeQuiz>): Promise<ChallengeQuiz> {
-  return apiClient.post('/challenges/quizzes', data);
+export async function createQuiz(data: Partial<ChallengeQuiz>): Promise<ChallengeQuiz | undefined> {
+  const response = await apiClient.post<ChallengeQuiz>('/challenges/quizzes', data);
+  return response.data;
 }
 
-export async function updateQuiz(quizId: string, data: Partial<ChallengeQuiz>): Promise<ChallengeQuiz> {
-  return apiClient.put(`/challenges/quizzes/${quizId}`, data);
+export async function updateQuiz(quizId: string, data: Partial<ChallengeQuiz>): Promise<ChallengeQuiz | undefined> {
+  const response = await apiClient.put<ChallengeQuiz>(`/challenges/quizzes/${quizId}`, data);
+  return response.data;
 }
 
-export async function deleteQuizzes(quizIds: string[]): Promise<{ message: string; count: number }> {
+export async function deleteQuizzes(quizIds: string[]): Promise<{ message: string; count: number } | undefined> {
   const queryParams = quizIds.map(id => `quiz_ids=${id}`).join('&');
-  return apiClient.delete(`/challenges/quizzes?${queryParams}`);
+  const response = await apiClient.delete<{ message: string; count: number }>(`/challenges/quizzes?${queryParams}`);
+  return response.data;
 }
 
 // ============================================
@@ -269,7 +275,7 @@ export async function deleteQuizzes(quizIds: string[]): Promise<{ message: strin
 export function useChallengeQuizzes(challengeId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<ChallengeQuiz[]>(
     challengeId ? `/challenges/${challengeId}/quizzes` : null,
-    (url: string) => apiClient.get(url)
+    swrFetcher
   );
 
   return {
@@ -286,14 +292,16 @@ export async function addQuizToChallenge(
   displayOrder?: number
 ): Promise<unknown> {
   const queryParams = displayOrder !== undefined ? `?display_order=${displayOrder}` : '';
-  return apiClient.post(`/challenges/${challengeId}/quizzes/${quizId}${queryParams}`, {});
+  const response = await apiClient.post(`/challenges/${challengeId}/quizzes/${quizId}${queryParams}`, {});
+  return response.data;
 }
 
 export async function removeQuizFromChallenge(
   challengeId: string,
   quizId: string
-): Promise<{ message: string; success: boolean }> {
-  return apiClient.delete(`/challenges/${challengeId}/quizzes/${quizId}`);
+): Promise<{ message: string; success: boolean } | undefined> {
+  const response = await apiClient.delete<{ message: string; success: boolean }>(`/challenges/${challengeId}/quizzes/${quizId}`);
+  return response.data;
 }
 
 // ============================================
@@ -317,7 +325,7 @@ export function useQuizManagementChallenges(
 
   const { data, error, isLoading, mutate } = useSWR<Challenge[]>(
     `/challenges/quiz-management/challenges?${queryParams.toString()}`,
-    (url: string) => apiClient.get(url)
+    swrFetcher
   );
 
   return {

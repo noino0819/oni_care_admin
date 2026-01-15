@@ -41,7 +41,7 @@ export default function PushNotificationsPage() {
 
   const [sort, setSort] = useState<SortConfig>({ field: "created_at", direction: "desc" });
   const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingPush, setEditingPush] = useState<PushNotificationListItem | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export default function PushNotificationsPage() {
     setSelectedIds(checked ? pushList.map((p) => p.id) : []);
   };
 
-  const handleSelect = (id: number, checked: boolean) => {
+  const handleSelect = (id: string, checked: boolean) => {
     setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((v) => v !== id)));
   };
 
@@ -181,7 +181,7 @@ export default function PushNotificationsPage() {
         label: () => (
           <Checkbox
             checked={selectedIds.length === pushList.length && pushList.length > 0}
-            onChange={(e) => handleSelectAll(e.target.checked)}
+            onChange={(checked) => handleSelectAll(checked)}
           />
         ),
         sortable: false,
@@ -189,7 +189,7 @@ export default function PushNotificationsPage() {
         render: (_, row) => (
           <Checkbox
             checked={selectedIds.includes(row.id)}
-            onChange={(e) => handleSelect(row.id, e.target.checked)}
+            onChange={(checked) => handleSelect(row.id, checked)}
             onClick={(e) => e.stopPropagation()}
           />
         ),

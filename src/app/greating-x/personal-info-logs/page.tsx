@@ -66,7 +66,7 @@ export default function PersonalInfoLogsPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const result = await apiClient.get<{ success: boolean; data: PersonalInfoAccessLog[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/logs/personal-info?${params}`);
+      const result = await apiClient.get<PersonalInfoAccessLog[]>(`/admin/logs/personal-info?${params}`);
 
       if (result.success) {
         setData(result.data || []);

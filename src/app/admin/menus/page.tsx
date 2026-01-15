@@ -169,36 +169,36 @@ export default function AdminMenusPage() {
   // 1Depth 메뉴 조회
   const fetchDepth1Menus = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>('/admin/menus?depth=1&flat=true');
+      const result = await apiClient.get<AdminMenu[]>('/admin/menus?depth=1&flat=true');
       if (result.success) {
         setDepth1Menus(result.data || []);
       }
     } catch {
-      console.error('1Depth 메뉴 조회 실패');
+      // 1Depth 메뉴 조회 실패
     }
   }, []);
 
   // 2Depth 메뉴 조회
   const fetchDepth2Menus = useCallback(async (parentId: number) => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>(`/admin/menus?parent_id=${parentId}&flat=true`);
+      const result = await apiClient.get<AdminMenu[]>(`/admin/menus?parent_id=${parentId}&flat=true`);
       if (result.success) {
         setDepth2Menus(result.data || []);
       }
     } catch {
-      console.error('2Depth 메뉴 조회 실패');
+      // 2Depth 메뉴 조회 실패
     }
   }, []);
 
   // 3Depth 메뉴 조회
   const fetchDepth3Menus = useCallback(async (parentId: number) => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>(`/admin/menus?parent_id=${parentId}&flat=true`);
+      const result = await apiClient.get<AdminMenu[]>(`/admin/menus?parent_id=${parentId}&flat=true`);
       if (result.success) {
         setDepth3Menus(result.data || []);
       }
     } catch {
-      console.error('3Depth 메뉴 조회 실패');
+      // 3Depth 메뉴 조회 실패
     }
   }, []);
 

@@ -382,10 +382,7 @@ export default function CouponMasterPage() {
   // Render
   // ============================================
   return (
-    <AdminLayout
-      title="쿠폰 마스터 관리"
-      description="챌린지 보상용 쿠폰 템플릿을 관리합니다."
-    >
+    <AdminLayout>
       {/* 검색 필터 */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -754,7 +751,7 @@ export default function CouponMasterPage() {
         confirmText="삭제"
         cancelText="취소"
         onConfirm={handleDeleteConfirm}
-        onCancel={() => {
+        onClose={() => {
           setShowDeleteConfirm(false);
           setDeleteTarget(null);
         }}
@@ -763,8 +760,7 @@ export default function CouponMasterPage() {
       {/* 알림 모달 */}
       <AlertModal
         isOpen={alertModal.show}
-        title={alertModal.title}
-        message={alertModal.message}
+        message={alertModal.message || alertModal.title}
         onClose={() => setAlertModal({ show: false, title: '', message: '' })}
       />
     </AdminLayout>

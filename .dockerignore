@@ -1,0 +1,8 @@
+# .dockerignore
+# 로컬 빌드 방식에서는 node_modules와 .next가 필요하므로 주석 처리
+# node_modules
+# .next
+backend
+.git
+.cursor
+*.md

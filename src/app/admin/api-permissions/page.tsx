@@ -219,24 +219,24 @@ export default function ApiPermissionsPage() {
   // 역할 조회
   const fetchRoles = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: Role[] }>('/admin/roles?limit=100');
+      const result = await apiClient.get<Role[]>('/admin/roles?limit=100');
       if (result.success) {
         setRoles(result.data || []);
       }
     } catch {
-      console.error('역할 조회 실패');
+      // 역할 조회 실패
     }
   }, []);
 
   // API 조회
   const fetchApis = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: AdminApi[] }>('/admin/apis?limit=100');
+      const result = await apiClient.get<AdminApi[]>('/admin/apis?limit=100');
       if (result.success) {
         setApis(result.data || []);
       }
     } catch {
-      console.error('API 조회 실패');
+      // API 조회 실패
     }
   }, []);
 
@@ -244,7 +244,7 @@ export default function ApiPermissionsPage() {
   const fetchPermissions = useCallback(async (roleId: number) => {
     setIsLoading(true);
     try {
-      const result = await apiClient.get<{ success: boolean; data: RoleApiPermission[] }>(`/admin/roles/${roleId}/api-permissions`);
+      const result = await apiClient.get<RoleApiPermission[]>(`/admin/roles/${roleId}/api-permissions`);
       if (result.success) {
         setPermissions(result.data || []);
       }

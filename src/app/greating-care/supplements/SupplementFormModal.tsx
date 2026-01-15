@@ -107,7 +107,7 @@ export function SupplementFormModal({
         dosage_unit: formData.dosage_unit || 'mg',
         intake_method: formData.intake_method || null,
         default_intake_time: formData.default_intake_time || '09:00',
-        default_intake_amount: formData.default_intake_amount ? parseFloat(formData.default_intake_amount) : 1,
+        default_intake_amount: formData.default_intake_amount || '1',
         default_intake_unit: formData.default_intake_unit || '정',
         manufacturer: formData.manufacturer || null,
         is_active: formData.is_active,
@@ -178,7 +178,7 @@ export function SupplementFormModal({
               >
                 <option value="">선택</option>
                 {formUnits.map(unit => (
-                  <option key={unit.id} value={unit.unit_value}>{unit.unit_name}</option>
+                  <option key={unit.id} value={unit.unit_name}>{unit.unit_name}</option>
                 ))}
               </select>
               <span className="text-[13px] text-[#333] ml-4">용량</span>
@@ -195,7 +195,7 @@ export function SupplementFormModal({
                 className={`${selectClass} w-[80px]`}
               >
                 {dosageUnits.map(unit => (
-                  <option key={unit.id} value={unit.unit_value}>{unit.unit_name}</option>
+                  <option key={unit.id} value={unit.unit_name}>{unit.unit_name}</option>
                 ))}
               </select>
             </div>
@@ -235,7 +235,7 @@ export function SupplementFormModal({
                 className={`${selectClass} w-[80px]`}
               >
                 {dosageUnits.map(unit => (
-                  <option key={unit.id} value={unit.unit_value}>{unit.unit_name}</option>
+                  <option key={unit.id} value={unit.unit_name}>{unit.unit_name}</option>
                 ))}
               </select>
             </div>

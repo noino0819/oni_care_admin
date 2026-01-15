@@ -358,7 +358,7 @@ export function IngredientMappingModal({
                             className={`${selectClass} w-full`}
                           >
                             {dosageUnits.map(unit => (
-                              <option key={unit.id} value={unit.unit_value}>{unit.unit_value}</option>
+                              <option key={unit.id} value={unit.unit_name}>{unit.unit_name}</option>
                             ))}
                           </select>
                         </td>

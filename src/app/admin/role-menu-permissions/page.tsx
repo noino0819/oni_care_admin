@@ -85,24 +85,24 @@ export default function RoleMenuPermissionsPage() {
   // 역할 조회
   const fetchRoles = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: Role[] }>('/admin/roles?limit=100');
+      const result = await apiClient.get<Role[]>('/admin/roles?limit=100');
       if (result.success) {
         setRoles(result.data || []);
       }
     } catch {
-      console.error('역할 조회 실패');
+      // 역할 조회 실패
     }
   }, []);
 
   // 메뉴 조회
   const fetchMenus = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: AdminMenu[] }>('/admin/menus?flat=true');
+      const result = await apiClient.get<AdminMenu[]>('/admin/menus?flat=true');
       if (result.success) {
         setMenus(result.data || []);
       }
     } catch {
-      console.error('메뉴 조회 실패');
+      // 메뉴 조회 실패
     }
   }, []);
 
@@ -110,7 +110,7 @@ export default function RoleMenuPermissionsPage() {
   const fetchPermissions = useCallback(async (roleId: number) => {
     setIsLoading(true);
     try {
-      const result = await apiClient.get<{ success: boolean; data: RoleMenuPermission[] }>(`/admin/roles/${roleId}/menu-permissions`);
+      const result = await apiClient.get<RoleMenuPermission[]>(`/admin/roles/${roleId}/menu-permissions`);
       if (result.success) {
         const perms = result.data || [];
         setPermissions(perms);

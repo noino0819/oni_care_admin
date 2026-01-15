@@ -4,7 +4,7 @@
 // 공통 데이터 테이블 컴포넌트 - Figma 디자인 반영
 // ============================================
 
-import { ReactNode } from 'react';
+import { ReactNode, Fragment } from 'react';
 import { cn } from '@/lib/utils';
 import type { TableColumn, SortConfig } from '@/types';
 
@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   selectedRowKey?: string | number;  // 선택된 행 표시용
   maxHeight?: string;  // 테이블 최대 높이 (스크롤용)
   showTitle?: boolean;  // 타이틀 표시 여부 (기본값: true)
+  renderRowExpansion?: (row: T) => ReactNode;  // 행 확장 렌더링 함수
 }
 
 // 정렬 아이콘 컴포넌트
@@ -72,6 +73,7 @@ function DataTable<T extends object>({
   selectedRowKey,
   maxHeight,
   showTitle = true,
+  renderRowExpansion,
 }: DataTableProps<T>) {
   const handleHeaderClick = (column: TableColumn<T>) => {
     if (column.sortable && onSort) {
@@ -133,7 +135,7 @@ function DataTable<T extends object>({
                       column.align === 'center' && 'justify-center',
                       column.align === 'right' && 'justify-end'
                     )}>
-                      {column.label}
+                      {typeof column.label === 'function' ? column.label() : column.label}
                       {column.sortable && <SortIcon direction={getSortDirection(column.key)} />}
                     </div>
                   </th>
@@ -166,34 +168,36 @@ function DataTable<T extends object>({
                   const isSelected = selectedRowKey !== undefined && rowKey === selectedRowKey;
                   
                   return (
-                  <tr
-                    key={rowKey}
-                    className={cn(
-                      'border-b border-[#a5a5a5]/30 hover:bg-gray-50 transition-colors',
-                      isSelected 
-                        ? 'bg-[#e8f4fd] hover:bg-[#d8ecfa]'  // 선택된 행 스타일
-                        : rowIndex % 2 === 0 ? 'bg-[#f0f0f0]' : 'bg-[#fcfcfc]',
-                      (onRowClick || onRowDoubleClick) && 'cursor-pointer'
-                    )}
-                    onClick={() => onRowClick?.(row)}
-                    onDoubleClick={() => onRowDoubleClick?.(row)}
-                  >
-                    {columns.map((column) => (
-                      <td
-                        key={column.key}
-                        className={cn(
-                          'px-4 py-3 text-[13px] text-[#333] whitespace-nowrap',
-                          'border-r border-black/5 last:border-r-0',
-                          column.align === 'center' && 'text-center',
-                          column.align === 'right' && 'text-right'
-                        )}
-                      >
-                        {column.render
-                          ? column.render((row as Record<string, unknown>)[column.key], row)
-                          : ((row as Record<string, unknown>)[column.key] as ReactNode) ?? '-'}
-                      </td>
-                    ))}
-                  </tr>
+                  <Fragment key={rowKey}>
+                    <tr
+                      className={cn(
+                        'border-b border-[#a5a5a5]/30 hover:bg-gray-50 transition-colors',
+                        isSelected 
+                          ? 'bg-[#e8f4fd] hover:bg-[#d8ecfa]'  // 선택된 행 스타일
+                          : rowIndex % 2 === 0 ? 'bg-[#f0f0f0]' : 'bg-[#fcfcfc]',
+                        (onRowClick || onRowDoubleClick) && 'cursor-pointer'
+                      )}
+                      onClick={() => onRowClick?.(row)}
+                      onDoubleClick={() => onRowDoubleClick?.(row)}
+                    >
+                      {columns.map((column) => (
+                        <td
+                          key={column.key}
+                          className={cn(
+                            'px-4 py-3 text-[13px] text-[#333] whitespace-nowrap',
+                            'border-r border-black/5 last:border-r-0',
+                            column.align === 'center' && 'text-center',
+                            column.align === 'right' && 'text-right'
+                          )}
+                        >
+                          {column.render
+                            ? column.render((row as Record<string, unknown>)[column.key], row, rowIndex)
+                            : ((row as Record<string, unknown>)[column.key] as ReactNode) ?? '-'}
+                        </td>
+                      ))}
+                    </tr>
+                    {renderRowExpansion && renderRowExpansion(row)}
+                  </Fragment>
                   );
                 })
               )}

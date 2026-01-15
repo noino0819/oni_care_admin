@@ -252,12 +252,12 @@ export default function GreatingXAdminUsersPage() {
   // 회사 목록 조회
   const fetchCompanies = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: Company[] }>('/admin/companies?limit=100');
+      const result = await apiClient.get<Company[]>('/admin/companies?limit=100');
       if (result.success) {
         setCompanies(result.data || []);
       }
     } catch {
-      console.error('회사 조회 실패');
+      // 회사 조회 실패
     }
   }, []);
 
@@ -273,7 +273,7 @@ export default function GreatingXAdminUsersPage() {
       params.set('limit', '100');
 
       // 그리팅-X 전용 API 호출
-      const result = await apiClient.get<{ success: boolean; data: GreatingXAdminUser[] }>(`/greating-x/admin-users?${params}`);
+      const result = await apiClient.get<GreatingXAdminUser[]>(`/greating-x/admin-users?${params}`);
 
       if (result.success) {
         setUsers(result.data || []);

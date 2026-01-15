@@ -49,17 +49,31 @@ export function maskId(id: string): string {
 }
 
 // 날짜 포맷팅
-export function formatDate(dateString: string, format: 'YYYY.MM.DD' | 'YYYY-MM-DD' = 'YYYY.MM.DD'): string {
+export function formatDate(
+  dateString: string,
+  format: 'YYYY.MM.DD' | 'YYYY-MM-DD' | 'YYYY.MM.DD HH:mm:ss' | 'YYYY-MM-DD HH:mm:ss' = 'YYYY.MM.DD'
+): string {
   if (!dateString) return '';
   const date = new Date(dateString);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
   
-  if (format === 'YYYY.MM.DD') {
-    return `${year}.${month}.${day}`;
+  switch (format) {
+    case 'YYYY.MM.DD':
+      return `${year}.${month}.${day}`;
+    case 'YYYY-MM-DD':
+      return `${year}-${month}-${day}`;
+    case 'YYYY.MM.DD HH:mm:ss':
+      return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
+    case 'YYYY-MM-DD HH:mm:ss':
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    default:
+      return `${year}.${month}.${day}`;
   }
-  return `${year}-${month}-${day}`;
 }
 
 // 시간 포맷팅 (세션 타이머용)

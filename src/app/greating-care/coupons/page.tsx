@@ -150,8 +150,9 @@ export default function CouponsPage() {
       label: '발급처',
       width: 100,
       render: (value) => {
-        const label = issueSourceLabel[value as string] || value || '-';
-        const isGreating = value === 'greating';
+        const strValue = value as string;
+        const label = issueSourceLabel[strValue] || strValue || '-';
+        const isGreating = strValue === 'greating';
         return (
           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
             isGreating ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'

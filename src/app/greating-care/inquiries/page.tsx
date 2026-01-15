@@ -139,7 +139,7 @@ export default function InquiriesPage() {
       <tr key={idx} className="animate-pulse">
         {columns.map((col, colIdx) => (
           <td key={colIdx} className="px-3 py-2">
-            <div className="h-4 bg-gray-200 rounded" style={{ width: col.width ? col.width - 20 : '100%' }}></div>
+            <div className="h-4 bg-gray-200 rounded" style={{ width: typeof col.width === 'number' ? col.width - 20 : '100%' }}></div>
           </td>
         ))}
       </tr>
@@ -319,7 +319,7 @@ export default function InquiriesPage() {
                   <tr>
                     {columns.map((col, idx) => (
                       <th key={idx} className="px-3 py-2 text-left font-semibold text-[#333]" style={{ width: col.width }}>
-                        {col.label}
+                        {typeof col.label === 'function' ? col.label() : col.label}
                       </th>
                     ))}
                   </tr>
@@ -337,15 +337,14 @@ export default function InquiriesPage() {
               emptyMessage="조회 결과가 없습니다."
               getRowKey={(row) => row.id}
               title="1:1 문의 관리"
-              getRowClassName={(row) => row.is_new ? 'bg-amber-50 cursor-pointer' : 'cursor-pointer'}
             />
           )}
         </div>
 
-        {pagination && pagination.total_pages > 1 && (
+        {pagination && pagination.totalPages > 1 && (
           <Pagination
             currentPage={page}
-            totalPages={pagination.total_pages}
+            totalPages={pagination.totalPages}
             onPageChange={setPage}
           />
         )}

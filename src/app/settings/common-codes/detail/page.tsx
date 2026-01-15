@@ -70,7 +70,7 @@ function CommonCodeDetailContent() {
       if (isActiveFilter) params.set('is_active', isActiveFilter);
       params.set('limit', '100');
 
-      const result = await apiClient.get<{ success: boolean; data: CommonCodeMaster[] }>(`/admin/codes/masters?${params}`);
+      const result = await apiClient.get<CommonCodeMaster[]>(`/admin/codes/masters?${params}`);
 
       if (result.success) {
         setMasters(result.data || []);
@@ -91,7 +91,7 @@ function CommonCodeDetailContent() {
 
     setIsCodesLoading(true);
     try {
-      const result = await apiClient.get<{ success: boolean; data: CommonCode[] }>(`/admin/codes/${selectedMasterId}`);
+      const result = await apiClient.get<CommonCode[]>(`/admin/codes/${selectedMasterId}`);
 
       if (result.success) {
         setCodes(result.data || []);

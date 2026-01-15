@@ -59,7 +59,7 @@ export default function CompaniesPage() {
       if (filters.company_name) params.set('company_name', filters.company_name);
       params.set('limit', '100');
 
-      const result = await apiClient.get<{ success: boolean; data: Company[] }>(`/admin/companies?${params}`);
+      const result = await apiClient.get<Company[]>(`/admin/companies?${params}`);
 
       if (result.success) {
         setCompanies(result.data || []);
@@ -86,7 +86,7 @@ export default function CompaniesPage() {
       if (filters.department_code) params.set('department_code', filters.department_code);
       if (filters.department_name) params.set('department_name', filters.department_name);
 
-      const result = await apiClient.get<{ success: boolean; data: Department[] }>(`/admin/companies/${selectedCompanyId}/departments?${params}`);
+      const result = await apiClient.get<Department[]>(`/admin/companies/${selectedCompanyId}/departments?${params}`);
 
       if (result.success) {
         setDepartments(result.data || []);

@@ -147,9 +147,7 @@ export function QuizSearchModal({
             isLoading={isLoading}
             emptyMessage="검색 결과가 없습니다."
             getRowKey={(row) => row.id}
-            rowClassName={(row) =>
-              row.id === selectedQuizId ? 'bg-blue-50' : ''
-            }
+            selectedRowKey={selectedQuizId || undefined}
           />
 
           {pagination && pagination.totalPages > 1 && (

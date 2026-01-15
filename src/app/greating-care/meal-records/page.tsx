@@ -147,7 +147,10 @@ export default function MealRecordsPage() {
       key: 'meal_type',
       label: '끼니구분',
       width: 80,
-      render: (value) => mealTypeLabel[value as string] || value || '-',
+      render: (value) => {
+        const strValue = value as string;
+        return mealTypeLabel[strValue] || strValue || '-';
+      },
     },
     {
       key: 'food_name',
@@ -171,8 +174,9 @@ export default function MealRecordsPage() {
       label: '기록구분',
       width: 100,
       render: (value) => {
-        const label = recordSourceLabel[value as string] || value || '-';
-        const isGreating = value === 'greating_care';
+        const strValue = value as string;
+        const label = recordSourceLabel[strValue] || strValue || '-';
+        const isGreating = strValue === 'greating_care';
         return (
           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
             isGreating ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'

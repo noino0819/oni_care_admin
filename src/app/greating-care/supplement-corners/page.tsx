@@ -379,7 +379,7 @@ export default function SupplementCornersPage() {
             emptyMessage="등록된 코너가 없습니다."
             getRowKey={(row) => String(row.id)}
             onRowClick={handleSelectCorner}
-            selectedRowId={selectedCornerId ? String(selectedCornerId) : undefined}
+            selectedRowKey={selectedCornerId ? String(selectedCornerId) : undefined}
           />
 
           {pagination && pagination.totalPages > 1 && (

@@ -185,7 +185,7 @@ export default function ConsentsPage() {
         label: () => (
           <Checkbox
             checked={selectedIds.length === consents.length && consents.length > 0}
-            onChange={(e) => handleSelectAll(e.target.checked)}
+            onChange={(checked) => handleSelectAll(checked)}
           />
         ),
         sortable: false,
@@ -193,7 +193,7 @@ export default function ConsentsPage() {
         render: (_, row) => (
           <Checkbox
             checked={selectedIds.includes(row.id)}
-            onChange={(e) => handleSelect(row.id, e.target.checked)}
+            onChange={(checked) => handleSelect(row.id, checked)}
             onClick={(e) => e.stopPropagation()}
           />
         ),

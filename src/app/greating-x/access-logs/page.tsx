@@ -62,7 +62,7 @@ export default function AccessLogsPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const result = await apiClient.get<{ success: boolean; data: AccessLog[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/logs/access?${params}`);
+      const result = await apiClient.get<AccessLog[]>(`/admin/logs/access?${params}`);
 
       if (result.success) {
         setData(result.data || []);

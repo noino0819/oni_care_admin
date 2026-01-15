@@ -183,7 +183,7 @@ export default function RolesPage() {
       
       params.set('limit', '100');
 
-      const result = await apiClient.get<{ success: boolean; data: Role[] }>(`/admin/roles?${params}`);
+      const result = await apiClient.get<Role[]>(`/admin/roles?${params}`);
 
       if (result.success) {
         setRoles(result.data || []);

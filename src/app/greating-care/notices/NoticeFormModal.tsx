@@ -9,7 +9,7 @@ import { Button, AlertModal, DatePicker } from "@/components/common";
 import { cn } from "@/lib/utils";
 import { X, Upload } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import type { NoticeListItem, NoticeForm } from "@/types";
+import type { NoticeListItem, NoticeDetail, NoticeForm } from "@/types";
 
 interface NoticeFormModalProps {
   isOpen: boolean;
@@ -65,7 +65,7 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
 
   const fetchNoticeDetail = async (id: string) => {
     try {
-      const response = await apiClient.get<NoticeListItem>(`/admin/notices/${id}`);
+      const response = await apiClient.get<NoticeDetail>(`/admin/notices/${id}`);
       if (response.success && response.data) {
         setFormData({
           title: response.data.title,

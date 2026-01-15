@@ -62,7 +62,7 @@ export default function CommonCodeMasterPage() {
       params.set('page', page.toString());
       params.set('limit', '20');
 
-      const result = await apiClient.get<{ success: boolean; data: CommonCodeMaster[]; pagination: PaginationInfo; error?: { message: string } }>(`/admin/codes/masters?${params}`);
+      const result = await apiClient.get<CommonCodeMaster[]>(`/admin/codes/masters?${params}`);
 
       if (result.success) {
         setData(result.data || []);

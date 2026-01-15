@@ -2,6 +2,8 @@
 // 공통 타입 정의
 // ============================================
 
+import { ReactNode } from 'react';
+
 // API 응답 형식
 export interface ApiResponse<T> {
   success: boolean;
@@ -30,11 +32,11 @@ export interface SortConfig {
 // 테이블 컬럼 정의
 export interface TableColumn<T = object> {
   key: string;
-  label: string;
+  label: string | ReactNode | (() => ReactNode);
   sortable?: boolean;
   width?: string | number;
   align?: 'left' | 'center' | 'right';
-  render?: (value: unknown, row: T) => React.ReactNode;
+  render?: (value: unknown, row: T, index?: number) => ReactNode;
 }
 
 // 조회조건 타입
@@ -136,6 +138,7 @@ export interface MemberDetail extends MemberListItem {
   interests: string[];
   marketing_push_agreed: boolean;
   marketing_sms_agreed: boolean;
+  marketing_email_agreed?: boolean;
   last_login: string | null;
   total_points: number;
   linked_accounts?: {

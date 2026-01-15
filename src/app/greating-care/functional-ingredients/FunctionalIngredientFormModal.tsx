@@ -211,7 +211,7 @@ export function FunctionalIngredientFormModal({
                 className={`${selectClass} w-[80px]`}
               >
                 {dosageUnits.map(unit => (
-                  <option key={unit.id} value={unit.unit_value}>{unit.unit_value}</option>
+                  <option key={unit.id} value={unit.unit_name}>{unit.unit_name}</option>
                 ))}
               </select>
             </div>

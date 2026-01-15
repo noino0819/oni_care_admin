@@ -141,7 +141,7 @@ export function QuizFormModal({
         const newQuiz = await createQuiz(formData);
         
         // 챌린지에 연결
-        if (challengeId && newQuiz.id) {
+        if (challengeId && newQuiz?.id) {
           await addQuizToChallenge(challengeId, newQuiz.id);
         }
       }

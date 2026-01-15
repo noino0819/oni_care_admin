@@ -28,7 +28,7 @@ export default function FunctionalIngredientsPage() {
     internal_name: '',
     external_name: '',
     indicator_component: '',
-    functionality: '',
+    functionality_content: '',
     functionality_code: '',
   });
 
@@ -71,7 +71,7 @@ export default function FunctionalIngredientsPage() {
       internal_name: '',
       external_name: '',
       indicator_component: '',
-      functionality: '',
+      functionality_content: '',
       functionality_code: '',
     });
     setPage(1);
@@ -317,8 +317,8 @@ export default function FunctionalIngredientsPage() {
               <span className={labelClass}>기능성 내용</span>
               <input
                 type="text"
-                value={filters.functionality}
-                onChange={(e) => handleFilterChange('functionality', e.target.value)}
+                value={filters.functionality_content}
+                onChange={(e) => handleFilterChange('functionality_content', e.target.value)}
                 onKeyDown={handleKeyDown}
                 className={`${inputClass} w-[200px]`}
               />

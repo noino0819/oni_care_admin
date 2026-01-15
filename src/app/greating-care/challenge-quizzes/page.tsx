@@ -404,9 +404,7 @@ export default function ChallengeQuizzesPage() {
               isLoading={challengesLoading}
               emptyMessage="조회 결과가 없습니다."
               getRowKey={(row) => row.id}
-              rowClassName={(row) =>
-                row.id === selectedChallengeId ? 'bg-blue-50' : ''
-              }
+              selectedRowKey={selectedChallengeId || undefined}
             />
           </div>
 

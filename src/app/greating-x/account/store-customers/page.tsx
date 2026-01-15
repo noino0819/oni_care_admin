@@ -323,12 +323,12 @@ export default function StoreCustomersPage() {
   // 지점 목록 조회
   const fetchStores = useCallback(async () => {
     try {
-      const result = await apiClient.get<{ success: boolean; data: SecurityGroup[] }>('/admin/security-groups?limit=100');
+      const result = await apiClient.get<SecurityGroup[]>('/admin/security-groups?limit=100');
       if (result.success) {
         setStores(result.data || []);
       }
     } catch {
-      console.error('지점 조회 실패');
+      // 지점 조회 실패
     }
   }, []);
 
@@ -347,7 +347,7 @@ export default function StoreCustomersPage() {
       if (filters.registered_to) params.set('registered_to', filters.registered_to);
       params.set('limit', '100');
 
-      const result = await apiClient.get<{ success: boolean; data: StoreCustomer[] }>(`/admin/store-customers?${params}`);
+      const result = await apiClient.get<StoreCustomer[]>(`/admin/store-customers?${params}`);
 
       if (result.success) {
         setCustomers(result.data || []);

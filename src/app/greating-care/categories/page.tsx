@@ -204,7 +204,7 @@ export default function CategoriesPage() {
         label: () => (
           <Checkbox
             checked={selectedMainIds.length === categories.length && categories.length > 0}
-            onChange={(e) => handleSelectAllMain(e.target.checked)}
+            onChange={(checked) => handleSelectAllMain(checked)}
           />
         ),
         sortable: false,
@@ -212,7 +212,7 @@ export default function CategoriesPage() {
         render: (_, row) => (
           <Checkbox
             checked={selectedMainIds.includes(row.id)}
-            onChange={(e) => handleSelectMain(row.id, e.target.checked)}
+            onChange={(checked) => handleSelectMain(row.id, checked)}
             onClick={(e) => e.stopPropagation()}
           />
         ),
@@ -277,7 +277,7 @@ export default function CategoriesPage() {
         label: () => (
           <Checkbox
             checked={selectedSubIds.length === subcategories.length && subcategories.length > 0}
-            onChange={(e) => handleSelectAllSub(e.target.checked)}
+            onChange={(checked) => handleSelectAllSub(checked)}
           />
         ),
         sortable: false,
@@ -285,7 +285,7 @@ export default function CategoriesPage() {
         render: (_, row) => (
           <Checkbox
             checked={selectedSubIds.includes(row.id)}
-            onChange={(e) => handleSelectSub(row.id, e.target.checked)}
+            onChange={(checked) => handleSelectSub(row.id, checked)}
             onClick={(e) => e.stopPropagation()}
           />
         ),

@@ -62,9 +62,11 @@ interface DashboardData {
 }
 
 // 숫자 포맷팅
-function formatNumber(num: number | undefined | null): string {
+function formatNumber(num: number | string | undefined | null): string {
   if (num === undefined || num === null) return "0";
-  return num.toLocaleString("ko-KR");
+  const parsed = typeof num === "string" ? parseFloat(num) : num;
+  if (isNaN(parsed)) return "0";
+  return parsed.toLocaleString("ko-KR");
 }
 
 // 섹션 타이틀 컴포넌트
