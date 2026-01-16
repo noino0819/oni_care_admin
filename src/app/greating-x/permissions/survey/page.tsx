@@ -15,6 +15,7 @@ import {
 } from '@/components/common';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { SecurityGroup, SecurityGroupItem } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 // 모달 컴포넌트
 interface SecurityGroupModalProps {
@@ -263,13 +264,11 @@ export default function SurveyPermissionPage() {
   const fetchGroups = useCallback(async () => {
     setIsGroupLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filters.group_name) params.set('group_name', filters.group_name);
-      if (filters.group_id) params.set('group_id', filters.group_id);
-      params.set('limit', '100');
+      const params: Record<string, string | number> = { limit: 100 };
+      if (filters.group_name) params.group_name = filters.group_name;
+      if (filters.group_id) params.group_id = filters.group_id;
 
-      const response = await fetch(`/api/admin/security-groups?${params}`);
-      const result = await response.json();
+      const result = await apiClient.get<SecurityGroup[]>('/admin/security-groups', params);
 
       if (result.success) {
         setGroups(result.data || []);
@@ -290,8 +289,7 @@ export default function SurveyPermissionPage() {
 
     setIsItemLoading(true);
     try {
-      const response = await fetch(`/api/admin/security-groups/${selectedGroupId}/items`);
-      const result = await response.json();
+      const result = await apiClient.get<SecurityGroupItem[]>(`/admin/security-groups/${selectedGroupId}/items`);
 
       if (result.success) {
         setItems(result.data || []);
@@ -337,23 +335,16 @@ export default function SurveyPermissionPage() {
     setIsSaving(true);
     try {
       const isEdit = !!groupModal.data;
-      const url = isEdit 
-        ? `/api/admin/security-groups/${groupModal.data!.id}`
-        : '/api/admin/security-groups';
-      
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = isEdit
+        ? await apiClient.put(`/admin/security-groups/${groupModal.data!.id}`, data)
+        : await apiClient.post('/admin/security-groups', data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage(isEdit ? '수정되었습니다.' : '추가되었습니다.');
         setGroupModal({ isOpen: false, data: null });
         fetchGroups();
       } else {
-        setAlertMessage(result.error?.message || '저장 중 오류가 발생했습니다.');
+        setAlertMessage('저장 중 오류가 발생했습니다.');
       }
     } catch {
       setAlertMessage('저장 중 오류가 발생했습니다.');
@@ -371,19 +362,14 @@ export default function SurveyPermissionPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/security-groups/${selectedGroupId}/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = await apiClient.post(`/admin/security-groups/${selectedGroupId}/items`, data);
 
-      const result = await response.json();
       if (result.success) {
         setAlertMessage('추가되었습니다.');
         setItemModal(false);
         fetchItems();
       } else {
-        setAlertMessage(result.error?.message || '저장 중 오류가 발생했습니다.');
+        setAlertMessage('저장 중 오류가 발생했습니다.');
       }
     } catch {
       setAlertMessage('저장 중 오류가 발생했습니다.');
