@@ -163,6 +163,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # 헬스체크
+@app.get("/", tags=["Health"])
+async def root():
+    """루트 경로 - ALB 헬스체크용"""
+    return {"status": "ok"}
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     """서버 상태 확인"""
