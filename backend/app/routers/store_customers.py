@@ -142,14 +142,22 @@ async def create_store_customer(
                 detail={"error": "VALIDATION_ERROR", "message": "고객명은 필수입니다."}
             )
         
+        import uuid
+        from datetime import datetime, date
+        
         # 회원코드 자동 생성 (없으면)
         if not member_code:
-            import uuid
-            from datetime import datetime
             # 형식: SC + YYMMDD + 6자리 랜덤
             date_str = datetime.now().strftime("%y%m%d")
             random_str = uuid.uuid4().hex[:6].upper()
             member_code = f"SC{date_str}{random_str}"
+        
+        # 최초등록일/가입일 자동 설정 (없으면 오늘 날짜)
+        today = date.today()
+        if not registered_at:
+            registered_at = today
+        if not joined_at:
+            joined_at = today
         
         result = await execute_returning(
             """
