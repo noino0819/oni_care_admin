@@ -139,6 +139,154 @@ async def get_company_departments(
         )
 
 
+@router.post("/{company_id}/departments")
+async def create_department(
+    company_id: int,
+    body: dict,
+    current_user=Depends(get_current_user)
+):
+    """
+    부서 등록
+    """
+    try:
+        department_code = body.get("department_code")
+        department_name = body.get("department_name")
+        note = body.get("note")
+        is_active = body.get("is_active", True)
+        
+        if not department_code or not department_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error": "VALIDATION_ERROR", "message": "부서코드와 부서명은 필수입니다."}
+            )
+        
+        result = await execute_returning(
+            """
+            INSERT INTO public.departments (company_id, department_code, department_name, note, is_active, created_by)
+            VALUES (%(company_id)s, %(department_code)s, %(department_name)s, %(note)s, %(is_active)s, %(created_by)s)
+            RETURNING *
+            """,
+            {
+                "company_id": company_id,
+                "department_code": department_code,
+                "department_name": department_name,
+                "note": note,
+                "is_active": is_active,
+                "created_by": current_user.name
+            }
+        )
+        
+        return ApiResponse(success=True, data=result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"부서 등록 오류: {str(e)}", exc_info=True)
+        if "unique constraint" in str(e).lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error": "DUPLICATE_KEY", "message": "이미 존재하는 부서코드입니다."}
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "CREATE_ERROR", "message": "부서 등록 중 오류가 발생했습니다."}
+        )
+
+
+@router.put("/{company_id}/departments/{department_id}")
+async def update_department(
+    company_id: int,
+    department_id: int,
+    body: dict,
+    current_user=Depends(get_current_user)
+):
+    """
+    부서 수정
+    """
+    try:
+        update_fields = []
+        params = {"company_id": company_id, "department_id": department_id, "updated_by": current_user.name}
+        
+        if "department_name" in body:
+            update_fields.append("department_name = %(department_name)s")
+            params["department_name"] = body["department_name"]
+        
+        if "note" in body:
+            update_fields.append("note = %(note)s")
+            params["note"] = body["note"]
+        
+        if "is_active" in body:
+            update_fields.append("is_active = %(is_active)s")
+            params["is_active"] = body["is_active"]
+        
+        if not update_fields:
+            existing = await query_one(
+                "SELECT * FROM public.departments WHERE id = %(department_id)s AND company_id = %(company_id)s",
+                {"department_id": department_id, "company_id": company_id}
+            )
+            return ApiResponse(success=True, data=existing)
+        
+        update_fields.append("updated_by = %(updated_by)s")
+        update_fields.append("updated_at = NOW()")
+        
+        result = await execute_returning(
+            f"""
+            UPDATE public.departments
+            SET {', '.join(update_fields)}
+            WHERE id = %(department_id)s AND company_id = %(company_id)s
+            RETURNING *
+            """,
+            params
+        )
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "NOT_FOUND", "message": "부서를 찾을 수 없습니다."}
+            )
+        
+        return ApiResponse(success=True, data=result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"부서 수정 오류: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "UPDATE_ERROR", "message": "부서 수정 중 오류가 발생했습니다."}
+        )
+
+
+@router.delete("/{company_id}/departments/{department_id}")
+async def delete_department(
+    company_id: int,
+    department_id: int,
+    current_user=Depends(get_current_user)
+):
+    """
+    부서 삭제
+    """
+    try:
+        affected = await execute(
+            "DELETE FROM public.departments WHERE id = %(department_id)s AND company_id = %(company_id)s",
+            {"department_id": department_id, "company_id": company_id}
+        )
+        
+        if affected == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "NOT_FOUND", "message": "부서를 찾을 수 없습니다."}
+            )
+        
+        return ApiResponse(success=True, data={"message": "삭제되었습니다."})
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"부서 삭제 오류: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "DELETE_ERROR", "message": "부서 삭제 중 오류가 발생했습니다."}
+        )
+
+
 @router.post("")
 async def create_company(
     body: dict,
