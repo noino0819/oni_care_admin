@@ -16,7 +16,6 @@ export const menuItems: MenuItem[] = [
     label: '그리팅-X 관리',
     icon: 'chart',
     children: [
-      { id: 'greating-x-1', label: '그리팅-X 관리', path: '/greating-x/manage' },
       { id: 'greating-x-survey-permission', label: '설문 권한 관리', path: '/greating-x/permissions/survey' },
       { id: 'greating-x-admin-users', label: '관리자 회원 조회', path: '/greating-x/account/admin-users' },
       { id: 'greating-x-store-customers', label: '지점별 고객 조회', path: '/greating-x/account/store-customers' },
