@@ -136,11 +136,20 @@ async def create_store_customer(
         registered_at = body.get("registered_at")
         joined_at = body.get("joined_at")
         
-        if not member_code or not customer_name:
+        if not customer_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error": "VALIDATION_ERROR", "message": "회원코드와 고객명은 필수입니다."}
+                detail={"error": "VALIDATION_ERROR", "message": "고객명은 필수입니다."}
             )
+        
+        # 회원코드 자동 생성 (없으면)
+        if not member_code:
+            import uuid
+            from datetime import datetime
+            # 형식: SC + YYMMDD + 6자리 랜덤
+            date_str = datetime.now().strftime("%y%m%d")
+            random_str = uuid.uuid4().hex[:6].upper()
+            member_code = f"SC{date_str}{random_str}"
         
         result = await execute_returning(
             """
