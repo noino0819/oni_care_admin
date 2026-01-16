@@ -35,7 +35,6 @@ from app.routers import (
     notices_router,
     store_customers_router,
     members_router,
-    greating_x_router,
     upload_router,
     departments_router,
     apis_router,
@@ -191,7 +190,6 @@ app.include_router(system_settings_router)
 app.include_router(notices_router)
 app.include_router(store_customers_router)
 app.include_router(members_router)
-app.include_router(greating_x_router)
 app.include_router(upload_router)
 app.include_router(departments_router)
 app.include_router(apis_router)

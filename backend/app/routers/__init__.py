@@ -16,7 +16,6 @@ from .system_settings import router as system_settings_router
 from .notices import router as notices_router
 from .store_customers import router as store_customers_router
 from .members import router as members_router
-from .greating_x import router as greating_x_router
 from .upload import router as upload_router
 from .departments import router as departments_router
 from .apis import router as apis_router
@@ -53,7 +52,6 @@ __all__ = [
     'notices_router',
     'store_customers_router',
     'members_router',
-    'greating_x_router',
     'upload_router',
     'departments_router',
     'apis_router',
