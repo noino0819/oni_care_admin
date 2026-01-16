@@ -312,38 +312,6 @@ async def update_notice(
         )
 
 
-@router.delete("/{notice_id}")
-async def delete_notice(
-    notice_id: str,
-    current_user=Depends(get_current_user)
-):
-    """
-    공지사항 삭제 (App DB)
-    """
-    try:
-        affected = await execute(
-            "DELETE FROM notices WHERE id = %(notice_id)s",
-            {"notice_id": notice_id},
-            use_app_db=True
-        )
-        
-        if affected == 0:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail={"error": "NOT_FOUND", "message": "공지사항을 찾을 수 없습니다."}
-            )
-        
-        return ApiResponse(success=True, data={"message": "삭제되었습니다."})
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"공지사항 삭제 오류: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
-        )
-
-
 @router.delete("/batch-delete")
 async def batch_delete_notices(
     body: dict,
@@ -373,6 +341,38 @@ async def batch_delete_notices(
         raise
     except Exception as e:
         logger.error(f"공지사항 일괄 삭제 오류: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
+        )
+
+
+@router.delete("/{notice_id}")
+async def delete_notice(
+    notice_id: str,
+    current_user=Depends(get_current_user)
+):
+    """
+    공지사항 삭제 (App DB)
+    """
+    try:
+        affected = await execute(
+            "DELETE FROM notices WHERE id = %(notice_id)s",
+            {"notice_id": notice_id},
+            use_app_db=True
+        )
+        
+        if affected == 0:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail={"error": "NOT_FOUND", "message": "공지사항을 찾을 수 없습니다."}
+            )
+        
+        return ApiResponse(success=True, data={"message": "삭제되었습니다."})
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"공지사항 삭제 오류: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"error": "INTERNAL_ERROR", "message": "서버 오류가 발생했습니다."}
