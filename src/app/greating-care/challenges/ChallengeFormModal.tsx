@@ -186,17 +186,25 @@ export function ChallengeFormModal({
 
     setIsSubmitting(true);
 
+    // datetime 문자열을 date 형식(YYYY-MM-DD)으로 변환하는 헬퍼 함수
+    const toDateOnly = (dateTimeStr: string | null): string | null => {
+      if (!dateTimeStr) return null;
+      // ISO datetime 문자열에서 날짜 부분만 추출
+      const dateMatch = dateTimeStr.match(/^\d{4}-\d{2}-\d{2}/);
+      return dateMatch ? dateMatch[0] : null;
+    };
+
     try {
       const submitData: Partial<Challenge> = {
         ...formData,
         max_participants: formData.max_participants || null,
         total_achievement_days: formData.total_achievement_days || null,
-        recruitment_start_date: formData.recruitment_start_date || null,
-        recruitment_end_date: formData.recruitment_end_date || null,
-        operation_start_date: formData.operation_start_date || null,
-        operation_end_date: formData.operation_end_date || null,
-        display_start_date: formData.display_start_date || null,
-        display_end_date: formData.display_end_date || null,
+        recruitment_start_date: toDateOnly(formData.recruitment_start_date),
+        recruitment_end_date: toDateOnly(formData.recruitment_end_date),
+        operation_start_date: toDateOnly(formData.operation_start_date),
+        operation_end_date: toDateOnly(formData.operation_end_date),
+        display_start_date: toDateOnly(formData.display_start_date),
+        display_end_date: toDateOnly(formData.display_end_date),
       };
 
       if (challengeId) {
