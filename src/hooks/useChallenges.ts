@@ -70,11 +70,12 @@ export interface RewardSettings {
 
 export interface ChallengeImages {
   thumbnail: string | null;
-  detail: string | null;
-  info: string | null;
-  complete_card: string | null;
-  stamp_incomplete: string | null;
-  stamp_complete: string | null;
+  total_achievement_success: string | null;
+  total_achievement_bg: string | null;
+  verification_header: string | null;
+  today_achievement_bg: string | null;
+  today_achievement_success: string | null;
+  detail_pages: string[];
 }
 
 export interface ChallengeSearchFilters {

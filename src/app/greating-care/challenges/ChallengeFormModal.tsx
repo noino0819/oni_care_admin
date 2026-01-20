@@ -88,11 +88,12 @@ const initialFormData = {
   type_settings: {} as Record<string, unknown>,
   images: {
     thumbnail: null,
-    detail: null,
-    info: null,
-    complete_card: null,
-    stamp_incomplete: null,
-    stamp_complete: null,
+    total_achievement_success: null,
+    total_achievement_bg: null,
+    verification_header: null,
+    today_achievement_bg: null,
+    today_achievement_success: null,
+    detail_pages: [],
   } as ChallengeImages,
 };
 
@@ -570,7 +571,7 @@ export function ChallengeFormModal({
                       <div className="grid grid-cols-3 gap-4">
                         {/* 썸네일 */}
                         <div className="border rounded p-3">
-                          <div className="text-[13px] font-medium mb-2">썸네일</div>
+                          <div className="text-[13px] font-medium mb-2">썸네일 아이콘</div>
                           <div 
                             className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
                             onClick={() => handleImageUpload('thumbnail')}
@@ -582,29 +583,73 @@ export function ChallengeFormModal({
                             )}
                           </div>
                         </div>
-                        {/* 상세 이미지 */}
+                        {/* 인증화면 상단 이미지 */}
                         <div className="border rounded p-3">
-                          <div className="text-[13px] font-medium mb-2">상세 이미지</div>
+                          <div className="text-[13px] font-medium mb-2">인증화면 상단</div>
                           <div 
                             className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleImageUpload('detail')}
+                            onClick={() => handleImageUpload('verification_header')}
                           >
-                            {formData.images.detail ? (
-                              <img src={getImageUrl(formData.images.detail)} alt="상세" className="max-w-full max-h-full object-contain" />
+                            {formData.images.verification_header ? (
+                              <img src={getImageUrl(formData.images.verification_header)} alt="인증화면 상단" className="max-w-full max-h-full object-contain" />
                             ) : (
                               <Upload className="w-6 h-6 text-gray-400" />
                             )}
                           </div>
                         </div>
-                        {/* 안내 이미지 */}
+                        {/* 전체 달성현황 성공 이미지 */}
                         <div className="border rounded p-3">
-                          <div className="text-[13px] font-medium mb-2">안내 이미지</div>
+                          <div className="text-[13px] font-medium mb-2">전체달성 성공</div>
                           <div 
                             className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                            onClick={() => handleImageUpload('info')}
+                            onClick={() => handleImageUpload('total_achievement_success')}
                           >
-                            {formData.images.info ? (
-                              <img src={getImageUrl(formData.images.info)} alt="안내" className="max-w-full max-h-full object-contain" />
+                            {formData.images.total_achievement_success ? (
+                              <img src={getImageUrl(formData.images.total_achievement_success)} alt="전체달성 성공" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                              <Upload className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        {/* 전체 달성현황 배경 */}
+                        <div className="border rounded p-3">
+                          <div className="text-[13px] font-medium mb-2">전체달성 배경</div>
+                          <div 
+                            className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
+                            onClick={() => handleImageUpload('total_achievement_bg')}
+                          >
+                            {formData.images.total_achievement_bg ? (
+                              <img src={getImageUrl(formData.images.total_achievement_bg)} alt="전체달성 배경" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                              <Upload className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        {/* 오늘의 달성현황 성공 */}
+                        <div className="border rounded p-3">
+                          <div className="text-[13px] font-medium mb-2">오늘달성 성공</div>
+                          <div 
+                            className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
+                            onClick={() => handleImageUpload('today_achievement_success')}
+                          >
+                            {formData.images.today_achievement_success ? (
+                              <img src={getImageUrl(formData.images.today_achievement_success)} alt="오늘달성 성공" className="max-w-full max-h-full object-contain" />
+                            ) : (
+                              <Upload className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        {/* 오늘의 달성현황 배경 */}
+                        <div className="border rounded p-3">
+                          <div className="text-[13px] font-medium mb-2">오늘달성 배경</div>
+                          <div 
+                            className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
+                            onClick={() => handleImageUpload('today_achievement_bg')}
+                          >
+                            {formData.images.today_achievement_bg ? (
+                              <img src={getImageUrl(formData.images.today_achievement_bg)} alt="오늘달성 배경" className="max-w-full max-h-full object-contain" />
                             ) : (
                               <Upload className="w-6 h-6 text-gray-400" />
                             )}
@@ -779,39 +824,6 @@ export function ChallengeFormModal({
                           />
                           <span className="text-[13px] text-[#333]">개</span>
                         </div>
-
-                        {/* 스탬프 이미지 */}
-                        <div className="border-t pt-4 mt-4">
-                          <h3 className="text-[14px] font-semibold mb-4">스탬프 이미지</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="border rounded p-3">
-                              <div className="text-[13px] font-medium mb-2">미완료 스탬프</div>
-                              <div 
-                                className="w-full h-[80px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                                onClick={() => handleImageUpload('stamp_incomplete')}
-                              >
-                                {formData.images.stamp_incomplete ? (
-                                  <img src={getImageUrl(formData.images.stamp_incomplete)} alt="미완료" className="max-w-full max-h-full object-contain" />
-                                ) : (
-                                  <Upload className="w-6 h-6 text-gray-400" />
-                                )}
-                              </div>
-                            </div>
-                            <div className="border rounded p-3">
-                              <div className="text-[13px] font-medium mb-2">완료 스탬프</div>
-                              <div 
-                                className="w-full h-[80px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                                onClick={() => handleImageUpload('stamp_complete')}
-                              >
-                                {formData.images.stamp_complete ? (
-                                  <img src={getImageUrl(formData.images.stamp_complete)} alt="완료" className="max-w-full max-h-full object-contain" />
-                                ) : (
-                                  <Upload className="w-6 h-6 text-gray-400" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                       </>
                     )}
 
@@ -825,23 +837,6 @@ export function ChallengeFormModal({
                       </div>
                     )}
 
-                    {/* 완료 보상 카드 */}
-                    <div className="border-t pt-4 mt-4">
-                      <h3 className="text-[14px] font-semibold mb-4">완료 보상 카드</h3>
-                      <div className="border rounded p-3 w-[200px]">
-                        <div className="text-[13px] font-medium mb-2">완료 카드 이미지</div>
-                        <div 
-                          className="w-full h-[100px] bg-gray-100 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200"
-                          onClick={() => handleImageUpload('complete_card')}
-                        >
-                          {formData.images.complete_card ? (
-                            <img src={getImageUrl(formData.images.complete_card)} alt="완료카드" className="max-w-full max-h-full object-contain" />
-                          ) : (
-                            <Upload className="w-6 h-6 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </>
