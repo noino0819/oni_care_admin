@@ -257,7 +257,7 @@ export function ChallengeFormModal({
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
         },
         body: formDataToUpload,
       });
