@@ -247,16 +247,40 @@ export function ChallengeFormModal({
     const file = e.target.files?.[0];
     if (!file || !uploadingField) return;
 
-    // 실제로는 API를 통해 업로드하고 URL을 받아옴
-    // 여기서는 임시로 로컬 URL 사용
-    const url = URL.createObjectURL(file);
-    handleChange('images', {
-      ...formData.images,
-      [uploadingField]: url,
-    });
+    try {
+      // 실제 API를 통해 파일 업로드
+      const formDataToUpload = new FormData();
+      formDataToUpload.append('file', file);
+      formDataToUpload.append('folder', 'challenges');
 
-    e.target.value = '';
-    setUploadingField(null);
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: formDataToUpload,
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 업로드에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      
+      // 서버에서 반환된 URL 사용 (전체 URL로 변환)
+      const imageUrl = `${API_BASE_URL}${result.data.url}`;
+      
+      handleChange('images', {
+        ...formData.images,
+        [uploadingField]: imageUrl,
+      });
+    } catch (error) {
+      setAlertMessage('이미지 업로드에 실패했습니다.');
+    } finally {
+      e.target.value = '';
+      setUploadingField(null);
+    }
   };
 
   if (!isOpen) return null;
