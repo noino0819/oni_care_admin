@@ -14,13 +14,13 @@ from enum import Enum
 
 class ChallengeType(str, Enum):
     """챌린지 유형"""
-    ATTENDANCE = "attendance"       # 출석체크
-    STEPS = "steps"                 # 걸음수
-    MEAL = "meal"                   # 식사기록
-    SUPPLEMENT = "supplement"       # 영양제 기록
-    NUTRITION_SURVEY = "nutrition_survey"  # 영양설문
-    HEALTH_HABIT = "health_habit"   # 건강습관
-    QUIZ = "quiz"                   # 퀴즈
+    ATTENDANCE = "attendance"           # 출석체크
+    STEPS = "steps"                     # 걸음수
+    MEAL = "meal"                       # 식사기록
+    SUPPLEMENT = "supplement"           # 영양제 기록
+    NUTRITION_DIAGNOSIS = "nutrition_diagnosis"  # 영양진단
+    HEALTH_HABIT = "health_habit"       # 건강습관
+    QUIZ = "quiz"                       # 퀴즈
 
 
 class VerificationMethod(str, Enum):
@@ -44,7 +44,7 @@ class ChallengeStatus(str, Enum):
 class RankDisplayType(str, Enum):
     """등수 공개 방식"""
     LIVE = "live"       # 선공개 (진행중 공개)
-    AFTER = "after"     # 후공개 (종료 후 공개)
+    POST = "post"       # 후공개 (종료 후 공개)
     HIDDEN = "hidden"   # 미공개
 
 
@@ -89,9 +89,10 @@ class RewardSetting(BaseModel):
 
 class RewardSettings(BaseModel):
     """전체 보상 설정"""
-    single_achievement: Optional[RewardSetting] = Field(None, description="인증 1회 달성 시")
-    daily_achievement: Optional[RewardSetting] = Field(None, description="하루 인증 달성 시")
-    total_achievement: Optional[RewardSetting] = Field(None, description="전체 인증 달성 시")
+    stamp_enabled: bool = Field(default=False, description="스탬프 사용 여부")
+    stamp_count: int = Field(default=7, ge=1, le=30, description="스탬프 개수")
+    stamp_reward: Optional[RewardSetting] = Field(None, description="스탬프 완료 보상")
+    completion_reward: Optional[RewardSetting] = Field(None, description="챌린지 완료 보상")
 
 
 # ============================================
