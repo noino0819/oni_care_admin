@@ -155,6 +155,14 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
     }
   };
 
+  // 이미지 URL을 전체 URL로 변환하는 헬퍼 함수
+  const getImageUrl = (url: string | undefined | null) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+    return `${API_BASE_URL}${url}`;
+  };
+
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -274,7 +282,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                   {form.thumbnail_url ? (
                     <>
                       <img 
-                        src={form.thumbnail_url} 
+                        src={getImageUrl(form.thumbnail_url)} 
                         alt="썸네일" 
                         className="w-full h-full object-cover"
                       />
@@ -534,7 +542,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                       <div className="flex items-start gap-1">
                         <span className="text-[11px] text-gray-400 pt-1">{index + 1}</span>
                         <div className="w-[100px] h-[100px] bg-gray-100 rounded overflow-hidden">
-                          <img src={img} alt={`상세${index + 1}`} className="w-full h-full object-cover" />
+                          <img src={getImageUrl(img)} alt={`상세${index + 1}`} className="w-full h-full object-cover" />
                         </div>
                       </div>
                       <button
@@ -575,7 +583,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
                   {form.detail_images && form.detail_images.length > 0 ? (
                     <div className="w-full h-[400px] bg-[#f5f5f5] rounded overflow-hidden border border-gray-200 flex items-center justify-center">
                       <img 
-                        src={form.detail_images[selectedDetailImage]} 
+                        src={getImageUrl(form.detail_images[selectedDetailImage])} 
                         alt="상세 이미지" 
                         className="max-w-full max-h-full object-contain"
                       />

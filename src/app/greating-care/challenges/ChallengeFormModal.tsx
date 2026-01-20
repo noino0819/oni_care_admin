@@ -268,12 +268,10 @@ export function ChallengeFormModal({
 
       const result = await response.json();
       
-      // 서버에서 반환된 URL 사용 (전체 URL로 변환)
-      const imageUrl = `${API_BASE_URL}${result.data.url}`;
-      
+      // 서버에서 반환된 상대 경로 URL 저장 (예: /uploads/challenges/xxx.jpg)
       handleChange('images', {
         ...formData.images,
-        [uploadingField]: imageUrl,
+        [uploadingField]: result.data.url,
       });
     } catch (error) {
       setAlertMessage('이미지 업로드에 실패했습니다.');
@@ -281,6 +279,14 @@ export function ChallengeFormModal({
       e.target.value = '';
       setUploadingField(null);
     }
+  };
+
+  // 이미지 URL을 전체 URL로 변환하는 헬퍼 함수
+  const getImageUrl = (url: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+    return `${API_BASE_URL}${url}`;
   };
 
   if (!isOpen) return null;
@@ -570,7 +576,7 @@ export function ChallengeFormModal({
                             onClick={() => handleImageUpload('thumbnail')}
                           >
                             {formData.images.thumbnail ? (
-                              <img src={formData.images.thumbnail} alt="썸네일" className="max-w-full max-h-full object-contain" />
+                              <img src={getImageUrl(formData.images.thumbnail)} alt="썸네일" className="max-w-full max-h-full object-contain" />
                             ) : (
                               <Upload className="w-6 h-6 text-gray-400" />
                             )}
@@ -584,7 +590,7 @@ export function ChallengeFormModal({
                             onClick={() => handleImageUpload('detail')}
                           >
                             {formData.images.detail ? (
-                              <img src={formData.images.detail} alt="상세" className="max-w-full max-h-full object-contain" />
+                              <img src={getImageUrl(formData.images.detail)} alt="상세" className="max-w-full max-h-full object-contain" />
                             ) : (
                               <Upload className="w-6 h-6 text-gray-400" />
                             )}
@@ -598,7 +604,7 @@ export function ChallengeFormModal({
                             onClick={() => handleImageUpload('info')}
                           >
                             {formData.images.info ? (
-                              <img src={formData.images.info} alt="안내" className="max-w-full max-h-full object-contain" />
+                              <img src={getImageUrl(formData.images.info)} alt="안내" className="max-w-full max-h-full object-contain" />
                             ) : (
                               <Upload className="w-6 h-6 text-gray-400" />
                             )}
@@ -785,7 +791,7 @@ export function ChallengeFormModal({
                                 onClick={() => handleImageUpload('stamp_incomplete')}
                               >
                                 {formData.images.stamp_incomplete ? (
-                                  <img src={formData.images.stamp_incomplete} alt="미완료" className="max-w-full max-h-full object-contain" />
+                                  <img src={getImageUrl(formData.images.stamp_incomplete)} alt="미완료" className="max-w-full max-h-full object-contain" />
                                 ) : (
                                   <Upload className="w-6 h-6 text-gray-400" />
                                 )}
@@ -798,7 +804,7 @@ export function ChallengeFormModal({
                                 onClick={() => handleImageUpload('stamp_complete')}
                               >
                                 {formData.images.stamp_complete ? (
-                                  <img src={formData.images.stamp_complete} alt="완료" className="max-w-full max-h-full object-contain" />
+                                  <img src={getImageUrl(formData.images.stamp_complete)} alt="완료" className="max-w-full max-h-full object-contain" />
                                 ) : (
                                   <Upload className="w-6 h-6 text-gray-400" />
                                 )}
@@ -829,7 +835,7 @@ export function ChallengeFormModal({
                           onClick={() => handleImageUpload('complete_card')}
                         >
                           {formData.images.complete_card ? (
-                            <img src={formData.images.complete_card} alt="완료카드" className="max-w-full max-h-full object-contain" />
+                            <img src={getImageUrl(formData.images.complete_card)} alt="완료카드" className="max-w-full max-h-full object-contain" />
                           ) : (
                             <Upload className="w-6 h-6 text-gray-400" />
                           )}
