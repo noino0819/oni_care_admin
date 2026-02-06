@@ -795,9 +795,7 @@ export interface PointSearchFilters {
   transaction_type?: string;
   created_from?: string;
   created_to?: string;
-}
-
-// 공지사항 리스트 아이템
+}// 공지사항 리스트 아이템
 export interface NoticeListItem {
   id: string;
   title: string;

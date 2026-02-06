@@ -101,9 +101,7 @@ export function useMemberDetail(id: string | null) {
 
 // 회원 정보 수정 훅
 export function useMemberUpdate() {
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const updateMember = async (id: string, data: Record<string, unknown>) => {
+  const [isUpdating, setIsUpdating] = useState(false);  const updateMember = async (id: string, data: Record<string, unknown>) => {
     setIsUpdating(true);
     try {
       const result = await apiClient.put(`/members/${id}`, data);
@@ -111,7 +109,5 @@ export function useMemberUpdate() {
     } finally {
       setIsUpdating(false);
     }
-  };
-
-  return { updateMember, isUpdating };
+  };  return { updateMember, isUpdating };
 }

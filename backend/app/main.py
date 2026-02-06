@@ -132,6 +132,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "message": error["msg"],
         })
     
+    # 디버그용 로그 추가
+    logger.warning(f"Validation error: {detail}")
+    
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
