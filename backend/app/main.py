@@ -90,15 +90,29 @@ async def lifespan(app: FastAPI):
 
 
 # FastAPI 앱 생성
+# 프로덕션: openapi.json 비활성화 (정보 노출 취약점 대응)
 app = FastAPI(
     title=settings.APP_NAME,
     description="OniCare Admin Backend API",
     version="1.0.0",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
     lifespan=lifespan,
 )
 
+
+# Security Headers 미들웨어 (Server 정보 노출 제거)
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if "server" in response.headers:
+            del response.headers["server"]
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS 미들웨어
 app.add_middleware(

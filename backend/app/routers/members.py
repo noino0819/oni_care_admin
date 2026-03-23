@@ -24,6 +24,53 @@ def get_member_type(is_fs_member: bool, business_code: Optional[str]) -> str:
     return "일반"
 
 
+def mask_email(email: Optional[str]) -> Optional[str]:
+    """이메일 마스킹 (정보 누출 취약점 대응)"""
+    if not email or "@" not in email:
+        return email
+    local, domain = email.split("@", 1)
+    masked_local = local[:3] + "***" if len(local) > 3 else local[:1] + "***"
+    return f"{masked_local}@{domain}"
+
+
+def mask_name(name: Optional[str]) -> Optional[str]:
+    """이름 마스킹"""
+    if not name:
+        return name
+    if len(name) <= 1:
+        return name
+    if len(name) == 2:
+        return name[0] + "*"
+    return name[0] + "*" * (len(name) - 2) + name[-1]
+
+
+def mask_phone(phone: Optional[str]) -> Optional[str]:
+    """전화번호 마스킹"""
+    if not phone:
+        return phone
+    import re
+    digits = re.sub(r'\D', '', phone)
+    if len(digits) == 11:
+        return f"{digits[:3]}-****-{digits[7:]}"
+    elif len(digits) == 10:
+        return f"{digits[:3]}-***-{digits[6:]}"
+    return phone[:3] + "****" + phone[-4:] if len(phone) >= 7 else phone
+
+
+def mask_member(member: dict) -> dict:
+    """회원 정보 마스킹 적용"""
+    result = {**member}
+    if "email" in result:
+        result["email"] = mask_email(result["email"])
+    if "name" in result:
+        result["name"] = mask_name(result["name"])
+    if "phone" in result:
+        result["phone"] = mask_phone(result["phone"])
+    # password_hash 등 민감 필드 제거
+    result.pop("password_hash", None)
+    return result
+
+
 @router.get("")
 async def get_members(
     name: Optional[str] = Query(None, description="이름"),
@@ -137,13 +184,12 @@ async def get_members(
             use_app_db=True
         )
         
-        # 회원 유형 라벨 추가
+        # 회원 유형 라벨 추가 + 개인정보 마스킹 (정보 누출 취약점 대응)
         formatted_members = []
         for m in members:
-            formatted_members.append({
-                **m,
-                "member_type": get_member_type(m.get("is_fs_member", False), m.get("business_code"))
-            })
+            masked = mask_member(m)
+            masked["member_type"] = get_member_type(m.get("is_fs_member", False), m.get("business_code"))
+            formatted_members.append(masked)
         
         return {
             "success": True,
@@ -184,12 +230,14 @@ async def get_member(
                 detail={"error": "NOT_FOUND", "message": "회원을 찾을 수 없습니다."}
             )
         
-        member["member_type"] = get_member_type(
+        # 개인정보 마스킹 적용 (정보 누출 취약점 대응)
+        masked = mask_member(member)
+        masked["member_type"] = get_member_type(
             member.get("is_fs_member", False), 
             member.get("business_code")
         )
         
-        return ApiResponse(success=True, data=member)
+        return ApiResponse(success=True, data=masked)
     except HTTPException:
         raise
     except Exception as e:

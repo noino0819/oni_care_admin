@@ -16,6 +16,27 @@ from app.core.logger import logger
 router = APIRouter(prefix="/api/v1/admin/notices", tags=["Notices"])
 
 
+def validate_image_url(url: Optional[str]) -> Optional[str]:
+    """
+    이미지 URL 서버측 검증 (프로세스 검증 누락 취약점 대응)
+    내부 업로드 경로만 허용, 외부 URL 차단
+    """
+    if not url or not url.strip():
+        return None
+    url = url.strip()
+    if url.startswith("/uploads/"):
+        if ".." in url or "\\" in url:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail={"error": "VALIDATION_ERROR", "message": "유효하지 않은 이미지 경로입니다."}
+            )
+        return url
+    raise HTTPException(
+        status_code=http_status.HTTP_400_BAD_REQUEST,
+        detail={"error": "VALIDATION_ERROR", "message": "외부 URL은 허용되지 않습니다. 내부 업로드 경로만 사용 가능합니다."}
+    )
+
+
 def calculate_status(notice: dict) -> str:
     """공지 상태 계산"""
     from datetime import date
@@ -199,7 +220,7 @@ async def create_notice(
     try:
         title = body.get("title")
         content = body.get("content")
-        image_url = body.get("image_url")
+        image_url = validate_image_url(body.get("image_url"))
         visibility_scope = body.get("visibility_scope", ["all"])
         company_codes = body.get("company_codes", [])
         store_visible = body.get("store_visible", False)
@@ -271,6 +292,9 @@ async def update_notice(
                 # 빈 문자열을 None으로 변환 (날짜 필드)
                 if field in ["start_date", "end_date"] and value == "":
                     value = None
+                # 이미지 URL은 내부 경로만 허용 (프로세스 검증 누락 취약점 대응)
+                if field == "image_url":
+                    value = validate_image_url(value)
                 update_fields.append(f"{field} = %({field})s")
                 params[field] = value
         
