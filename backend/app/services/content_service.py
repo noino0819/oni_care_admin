@@ -9,6 +9,7 @@ from app.config.database import query, query_one, execute_returning, execute
 from app.core.exceptions import ValidationError, NotFoundError
 from app.core.logger import logger
 from app.models.content import ContentCreate, ContentUpdate
+from app.utils.validators import validate_image_url, validate_image_urls
 
 
 class ContentService:
@@ -192,6 +193,10 @@ class ContentService:
         if not data.title.strip():
             raise ValidationError("제목을 입력해주세요.")
         
+        # 이미지 URL 서버측 검증 (프로세스 검증 누락 취약점 대응)
+        validated_thumbnail = validate_image_url(data.thumbnail_url)
+        validated_detail_images = validate_image_urls(data.detail_images)
+        
         # 첫 번째 카테고리 ID 사용
         category_id = data.category_ids[0] if data.category_ids else None
         
@@ -212,7 +217,7 @@ class ContentService:
             {
                 "title": data.title.strip(),
                 "content": data.content,
-                "thumbnail_url": data.thumbnail_url,
+                "thumbnail_url": validated_thumbnail,
                 "category_id": category_id,
                 "tags": data.tags,
                 "visibility_scope": data.visibility_scope,
@@ -229,9 +234,9 @@ class ContentService:
         
         content_id = result.get("id")
         
-        # 상세 이미지 저장
-        if content_id and data.detail_images:
-            for i, image_url in enumerate(data.detail_images):
+        # 상세 이미지 저장 (검증 완료된 URL 사용)
+        if content_id and validated_detail_images:
+            for i, image_url in enumerate(validated_detail_images):
                 await execute(
                     """
                     INSERT INTO public.content_media (content_id, media_type, media_url, display_order)
@@ -278,8 +283,9 @@ class ContentService:
             params["content"] = data.content
         
         if data.thumbnail_url is not None:
+            # 이미지 URL 서버측 검증 (프로세스 검증 누락 취약점 대응)
             update_fields.append("thumbnail_url = %(thumbnail_url)s")
-            params["thumbnail_url"] = data.thumbnail_url
+            params["thumbnail_url"] = validate_image_url(data.thumbnail_url)
         
         if data.category_id is not None or data.category_ids:
             category_id = data.category_id or (data.category_ids[0] if data.category_ids else None)
@@ -338,8 +344,10 @@ class ContentService:
         
         await execute_returning(sql, params)
         
-        # 상세 이미지 업데이트
+        # 상세 이미지 업데이트 (검증 완료된 URL 사용)
         if data.detail_images is not None:
+            validated_detail_images = validate_image_urls(data.detail_images)
+            
             # 기존 이미지 삭제
             await execute(
                 "DELETE FROM public.content_media WHERE content_id = %(content_id)s AND media_type = 'image'",
@@ -347,18 +355,19 @@ class ContentService:
             )
             
             # 새 이미지 추가
-            for i, image_url in enumerate(data.detail_images):
-                await execute(
-                    """
-                    INSERT INTO public.content_media (content_id, media_type, media_url, display_order)
-                    VALUES (%(content_id)s, 'image', %(media_url)s, %(display_order)s)
-                    """,
-                    {
-                        "content_id": content_id,
-                        "media_url": image_url,
-                        "display_order": i + 1
-                    }
-                )
+            if validated_detail_images:
+                for i, image_url in enumerate(validated_detail_images):
+                    await execute(
+                        """
+                        INSERT INTO public.content_media (content_id, media_type, media_url, display_order)
+                        VALUES (%(content_id)s, 'image', %(media_url)s, %(display_order)s)
+                        """,
+                        {
+                            "content_id": content_id,
+                            "media_url": image_url,
+                            "display_order": i + 1
+                        }
+                    )
         
         logger.info(f"컨텐츠 수정: id={content_id}")
         return await cls.get_by_id(content_id)
