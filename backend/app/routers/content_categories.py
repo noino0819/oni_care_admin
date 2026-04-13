@@ -58,7 +58,7 @@ async def get_content_categories(
         
         # 전체 개수 조회
         count_sql = f"SELECT COUNT(*) as count FROM public.content_categories {where_clause}"
-        count_result = await query_one(count_sql, params)
+        count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
         # 카테고리 목록 조회
@@ -76,7 +76,8 @@ async def get_content_categories(
             ORDER BY display_order, id ASC
             LIMIT %(limit)s OFFSET %(offset)s
             """,
-            params
+            params,
+            use_app_db=True,
         )
         
         # 하위 카테고리 포함 옵션
@@ -90,7 +91,8 @@ async def get_content_categories(
                     WHERE parent_id = %(parent_id)s
                     ORDER BY display_order, id ASC
                     """,
-                    {"parent_id": cat["id"]}
+                    {"parent_id": cat["id"]},
+                    use_app_db=True,
                 )
                 cat["children"] = children
         
@@ -131,7 +133,8 @@ async def get_categories_simple_list(
             FROM public.content_categories
             WHERE is_active = true AND parent_id IS NULL
             ORDER BY display_order, id
-            """
+            """,
+            use_app_db=True,
         )
         
         # 대분류가 있으면 계층 구조로 반환
@@ -144,7 +147,8 @@ async def get_categories_simple_list(
                     WHERE is_active = true AND parent_id = %(parent_id)s
                     ORDER BY display_order, id
                     """,
-                    {"parent_id": cat["id"]}
+                    {"parent_id": cat["id"]},
+                    use_app_db=True,
                 )
                 cat["children"] = children
             
@@ -158,7 +162,8 @@ async def get_categories_simple_list(
             FROM public.content_categories
             WHERE is_active = true
             ORDER BY category_type, display_order, id
-            """
+            """,
+            use_app_db=True,
         )
         
         # category_type별로 그룹화하여 가상 대분류 생성
@@ -210,7 +215,8 @@ async def get_categories_flat_list(
             LEFT JOIN public.content_categories p ON c.parent_id = p.id
             WHERE c.is_active = true AND c.parent_id IS NOT NULL
             ORDER BY p.display_order, c.display_order, c.id
-            """
+            """,
+            use_app_db=True,
         )
         
         return {"success": True, "data": categories}
@@ -233,7 +239,8 @@ async def get_content_category(
     try:
         category = await query_one(
             "SELECT * FROM public.content_categories WHERE id = %(category_id)s",
-            {"category_id": category_id}
+            {"category_id": category_id},
+            use_app_db=True,
         )
         
         if not category:
@@ -250,7 +257,8 @@ async def get_content_category(
             WHERE category_id = %(category_id)s
             ORDER BY display_order, id
             """,
-            {"category_id": category_id}
+            {"category_id": category_id},
+            use_app_db=True,
         )
         
         return ApiResponse(success=True, data={**category, "subcategories": subcategories})
@@ -291,7 +299,8 @@ async def create_content_category(
         if parent_id:
             parent = await query_one(
                 "SELECT category_type FROM public.content_categories WHERE id = %(parent_id)s",
-                {"parent_id": parent_id}
+                {"parent_id": parent_id},
+                use_app_db=True,
             )
             if parent:
                 category_type = parent.get("category_type", category_type)
@@ -308,7 +317,8 @@ async def create_content_category(
                 "parent_id": parent_id,
                 "display_order": display_order,
                 "is_active": is_active
-            }
+            },
+            use_app_db=True,
         )
         
         return ApiResponse(success=True, data={"id": result.get("id")})
@@ -358,7 +368,8 @@ async def update_content_category(
         if not update_fields:
             existing = await query_one(
                 "SELECT * FROM public.content_categories WHERE id = %(category_id)s",
-                {"category_id": category_id}
+                {"category_id": category_id},
+                use_app_db=True,
             )
             return ApiResponse(success=True, data=existing)
         
@@ -371,7 +382,8 @@ async def update_content_category(
             WHERE id = %(category_id)s
             RETURNING *
             """,
-            params
+            params,
+            use_app_db=True,
         )
         
         if not result:
@@ -402,7 +414,8 @@ async def delete_content_category(
     try:
         affected = await execute(
             "DELETE FROM public.content_categories WHERE id = %(category_id)s",
-            {"category_id": category_id}
+            {"category_id": category_id},
+            use_app_db=True,
         )
         
         if affected == 0:

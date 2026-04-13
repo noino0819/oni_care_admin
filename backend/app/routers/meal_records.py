@@ -6,7 +6,7 @@
 from typing import Optional, List
 from datetime import date
 from fastapi import APIRouter, Query, HTTPException, status, Path
-from app.lib.app_db import app_db_manager
+from app.config.database import execute, query, query_one
 from app.core.logger import logger
 
 router = APIRouter(prefix="/api/v1/admin/meal-records", tags=["식사기록 관리"])
@@ -70,7 +70,7 @@ async def get_meal_records(
             JOIN meals m ON u.id = m.user_id
             WHERE {where_clause}
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
+        count_result = await query_one(count_query, params, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 회원별 누적 기록 수 조회
@@ -93,7 +93,7 @@ async def get_meal_records(
         params["limit"] = page_size
         params["offset"] = offset
         
-        records = await app_db_manager.fetch_all(list_query, params)
+        records = await query(list_query, params, use_app_db=True)
         
         return {
             "success": True,
@@ -164,7 +164,7 @@ async def get_all_meal_records(
             JOIN users u ON m.user_id = u.id
             WHERE {where_clause}
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
+        count_result = await query_one(count_query, params, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 전체 기록 조회
@@ -190,7 +190,7 @@ async def get_all_meal_records(
         params["limit"] = page_size
         params["offset"] = offset
         
-        records = await app_db_manager.fetch_all(list_query, params)
+        records = await query(list_query, params, use_app_db=True)
         
         # meal_type 한글 변환
         meal_type_map = {
@@ -256,7 +256,7 @@ async def get_meal_record_details(
             FROM meals m
             WHERE {where_clause}
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
+        count_result = await query_one(count_query, params, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 세부 기록 조회 (메뉴 단위)
@@ -279,7 +279,7 @@ async def get_meal_record_details(
         params["limit"] = page_size
         params["offset"] = offset
         
-        records = await app_db_manager.fetch_all(list_query, params)
+        records = await query(list_query, params, use_app_db=True)
         
         # meal_type 한글 변환
         meal_type_map = {
@@ -328,7 +328,7 @@ async def delete_meal_record(
     try:
         # 기록 존재 확인
         check_query = "SELECT id FROM meals WHERE id = %(record_id)s"
-        existing = await app_db_manager.fetch_one(check_query, {"record_id": record_id})
+        existing = await query_one(check_query, {"record_id": record_id}, use_app_db=True)
         
         if not existing:
             raise HTTPException(
@@ -338,7 +338,7 @@ async def delete_meal_record(
         
         # 삭제
         delete_query = "DELETE FROM meals WHERE id = %(record_id)s"
-        await app_db_manager.execute(delete_query, {"record_id": record_id})
+        await execute(delete_query, {"record_id": record_id}, use_app_db=True)
         
         return {
             "success": True,

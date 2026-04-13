@@ -7,7 +7,7 @@
 from typing import Optional, List
 from datetime import date
 from fastapi import APIRouter, Query, HTTPException, status, Path
-from app.lib.app_db import app_db_manager
+from app.config.database import query, query_one, execute
 from app.core.logger import logger
 
 router = APIRouter(prefix="/api/v1/admin/coupons", tags=["쿠폰 관리"])
@@ -84,7 +84,7 @@ async def get_coupons(
             JOIN users u ON c.user_id = u.id
             WHERE {where_clause}
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
+        count_result = await query_one(count_query, params, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 쿠폰 현황 조회
@@ -112,7 +112,7 @@ async def get_coupons(
         params["limit"] = page_size
         params["offset"] = offset
         
-        coupons = await app_db_manager.fetch_all(list_query, params)
+        coupons = await query(list_query, params, use_app_db=True)
         
         # 쿠폰 발급처 한글 변환
         source_map = {
@@ -184,7 +184,7 @@ async def get_coupon_summary(
             WHERE {where_clause}
         """
         
-        summary = await app_db_manager.fetch_one(summary_query, params)
+        summary = await query_one(summary_query, params, use_app_db=True)
         
         return {
             "success": True,
@@ -220,7 +220,7 @@ async def delete_coupon(
     try:
         # 쿠폰 존재 확인
         check_query = "SELECT id FROM coupons WHERE id = %(coupon_id)s"
-        existing = await app_db_manager.fetch_one(check_query, {"coupon_id": coupon_id})
+        existing = await query_one(check_query, {"coupon_id": coupon_id}, use_app_db=True)
         
         if not existing:
             raise HTTPException(
@@ -230,7 +230,7 @@ async def delete_coupon(
         
         # 삭제
         delete_query = "DELETE FROM coupons WHERE id = %(coupon_id)s"
-        await app_db_manager.execute(delete_query, {"coupon_id": coupon_id})
+        await execute(delete_query, {"coupon_id": coupon_id}, use_app_db=True)
         
         return {
             "success": True,

@@ -39,7 +39,8 @@ async def get_content_subcategories(
             {where_clause}
             ORDER BY cs.category_id, cs.display_order, cs.subcategory_name
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         return {"success": True, "data": subcategories}
@@ -67,7 +68,8 @@ async def get_content_subcategory(
             LEFT JOIN public.content_categories cc ON cs.category_id = cc.id
             WHERE cs.id = %(subcategory_id)s
             """,
-            {"subcategory_id": subcategory_id}
+            {"subcategory_id": subcategory_id},
+            use_app_db=True
         )
         
         if not subcategory:
@@ -116,7 +118,8 @@ async def create_content_subcategory(
         # 대분류 존재 확인
         category = await query_one(
             "SELECT id FROM public.content_categories WHERE id = %(category_id)s",
-            {"category_id": category_id}
+            {"category_id": category_id},
+            use_app_db=True
         )
         
         if not category:
@@ -136,7 +139,8 @@ async def create_content_subcategory(
                 "subcategory_name": subcategory_name.strip(),
                 "display_order": display_order,
                 "is_active": is_active
-            }
+            },
+            use_app_db=True
         )
         
         return ApiResponse(success=True, data={"id": result.get("id")})
@@ -182,7 +186,8 @@ async def update_content_subcategory(
         if not update_fields:
             existing = await query_one(
                 "SELECT * FROM public.content_subcategories WHERE id = %(subcategory_id)s",
-                {"subcategory_id": subcategory_id}
+                {"subcategory_id": subcategory_id},
+                use_app_db=True
             )
             return ApiResponse(success=True, data=existing)
         
@@ -195,7 +200,8 @@ async def update_content_subcategory(
             WHERE id = %(subcategory_id)s
             RETURNING *
             """,
-            params
+            params,
+            use_app_db=True
         )
         
         if not result:
@@ -226,7 +232,8 @@ async def delete_content_subcategory(
     try:
         affected = await execute(
             "DELETE FROM public.content_subcategories WHERE id = %(subcategory_id)s",
-            {"subcategory_id": subcategory_id}
+            {"subcategory_id": subcategory_id},
+            use_app_db=True
         )
         
         if affected == 0:

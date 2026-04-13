@@ -100,7 +100,7 @@ class ContentService:
         
         # 전체 개수 조회
         count_sql = f"SELECT COUNT(*) as count FROM public.contents c {where_clause}"
-        count_result = await query_one(count_sql, params)
+        count_result = await query_one(count_sql, params, use_app_db=True)
         total = int(count_result.get("count", 0)) if count_result else 0
         
         # 데이터 조회
@@ -121,7 +121,7 @@ class ContentService:
             LIMIT %(limit)s OFFSET %(offset)s
         """
         
-        data = await query(data_sql, params)
+        data = await query(data_sql, params, use_app_db=True)
         
         # 결과 포맷팅
         formatted_data = []
@@ -167,7 +167,7 @@ class ContentService:
             LEFT JOIN public.content_categories cat ON c.category_id = cat.id
             WHERE c.id = %(content_id)s
         """
-        result = await query_one(sql, {"content_id": content_id})
+        result = await query_one(sql, {"content_id": content_id}, use_app_db=True)
         
         if result:
             result["tags"] = result.get("tags") or []
@@ -229,7 +229,8 @@ class ContentService:
                 "quote_content": data.quote_content,
                 "quote_source": data.quote_source,
                 "created_by": created_by,
-            }
+            },
+            use_app_db=True
         )
         
         content_id = result.get("id")
@@ -246,7 +247,8 @@ class ContentService:
                         "content_id": content_id,
                         "media_url": image_url,
                         "display_order": i + 1
-                    }
+                    },
+                    use_app_db=True
                 )
         
         logger.info(f"컨텐츠 생성: id={content_id}")
@@ -342,7 +344,7 @@ class ContentService:
             RETURNING id
         """
         
-        await execute_returning(sql, params)
+        await execute_returning(sql, params, use_app_db=True)
         
         # 상세 이미지 업데이트 (검증 완료된 URL 사용)
         if data.detail_images is not None:
@@ -351,7 +353,8 @@ class ContentService:
             # 기존 이미지 삭제
             await execute(
                 "DELETE FROM public.content_media WHERE content_id = %(content_id)s AND media_type = 'image'",
-                {"content_id": content_id}
+                {"content_id": content_id},
+                use_app_db=True
             )
             
             # 새 이미지 추가
@@ -366,7 +369,8 @@ class ContentService:
                             "content_id": content_id,
                             "media_url": image_url,
                             "display_order": i + 1
-                        }
+                        },
+                        use_app_db=True
                     )
         
         logger.info(f"컨텐츠 수정: id={content_id}")
@@ -385,7 +389,8 @@ class ContentService:
         """
         affected = await execute(
             "DELETE FROM public.contents WHERE id = %(content_id)s",
-            {"content_id": content_id}
+            {"content_id": content_id},
+            use_app_db=True
         )
         
         if affected > 0:
@@ -410,7 +415,8 @@ class ContentService:
         # UUID 배열로 변환
         affected = await execute(
             "DELETE FROM public.contents WHERE id = ANY(%(ids)s::uuid[])",
-            {"ids": content_ids}
+            {"ids": content_ids},
+            use_app_db=True
         )
         
         logger.info(f"컨텐츠 일괄 삭제: {affected}건")

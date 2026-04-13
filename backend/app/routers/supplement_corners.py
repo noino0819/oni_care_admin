@@ -6,7 +6,7 @@
 from typing import Optional, List
 from fastapi import APIRouter, Query, HTTPException, status, Path
 from pydantic import BaseModel, Field
-from app.lib.app_db import app_db_manager
+from app.config.database import query as db_query, query_one, execute, execute_returning
 from app.core.logger import logger
 
 router = APIRouter(prefix="/api/v1/admin/supplement-corners", tags=["영양제 코너 관리"])
@@ -89,7 +89,7 @@ async def search_products(
             FROM supplement_products_master spm
             WHERE {where_clause}
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
+        count_result = await query_one(count_query, params, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 목록 조회
@@ -115,7 +115,7 @@ async def search_products(
         params["limit"] = page_size
         params["offset"] = offset
         
-        products = await app_db_manager.fetch_all(list_query, params)
+        products = await db_query(list_query, params, use_app_db=True)
         
         # interest_tags가 None인 경우 빈 배열로 변환
         for product in products:
@@ -174,7 +174,7 @@ async def get_corners(
             FROM supplement_corners sc
             WHERE {where_clause}
         """
-        count_result = await app_db_manager.fetch_one(count_query, params)
+        count_result = await query_one(count_query, params, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 목록 조회
@@ -198,7 +198,7 @@ async def get_corners(
         params["limit"] = page_size
         params["offset"] = offset
         
-        corners = await app_db_manager.fetch_all(list_query, params)
+        corners = await db_query(list_query, params, use_app_db=True)
         
         return {
             "success": True,
@@ -229,7 +229,7 @@ async def create_corner(data: CornerCreate):
             SELECT id FROM supplement_corners 
             WHERE display_order = %(display_order)s AND display_order != 999
         """
-        existing = await app_db_manager.fetch_one(check_query, {"display_order": data.display_order})
+        existing = await query_one(check_query, {"display_order": data.display_order}, use_app_db=True)
         
         if existing and data.display_order != 999:
             raise HTTPException(
@@ -243,7 +243,7 @@ async def create_corner(data: CornerCreate):
             VALUES (%(corner_name)s, %(description)s, %(display_order)s, %(is_active)s)
             RETURNING id
         """
-        result = await app_db_manager.fetch_one(insert_query, data.model_dump())
+        result = await execute_returning(insert_query, data.model_dump(), use_app_db=True)
         
         return {"success": True, "data": {"id": result["id"]}}
     except HTTPException:
@@ -271,7 +271,7 @@ async def delete_corners(ids: List[int] = Query(..., description="삭제할 코�
         delete_query = """
             DELETE FROM supplement_corners WHERE id = ANY(%(ids)s)
         """
-        await app_db_manager.execute(delete_query, {"ids": ids})
+        await execute(delete_query, {"ids": ids}, use_app_db=True)
         
         return {"success": True, "data": {"deleted_count": len(ids)}}
     except HTTPException:
@@ -297,7 +297,7 @@ async def get_corner(corner_id: int = Path(..., description="코너 ID")):
             FROM supplement_corners
             WHERE id = %(corner_id)s
         """
-        corner = await app_db_manager.fetch_one(query, {"corner_id": corner_id})
+        corner = await query_one(query, {"corner_id": corner_id}, use_app_db=True)
         
         if not corner:
             raise HTTPException(
@@ -328,10 +328,10 @@ async def update_corner(corner_id: int, data: CornerUpdate):
                 SELECT id FROM supplement_corners 
                 WHERE display_order = %(display_order)s AND id != %(corner_id)s
             """
-            existing = await app_db_manager.fetch_one(check_query, {
+            existing = await query_one(check_query, {
                 "display_order": data.display_order,
                 "corner_id": corner_id
-            })
+            }, use_app_db=True)
             
             if existing:
                 raise HTTPException(
@@ -353,7 +353,7 @@ async def update_corner(corner_id: int, data: CornerUpdate):
             WHERE id = %(corner_id)s
             RETURNING id
         """
-        result = await app_db_manager.fetch_one(update_query, update_data)
+        result = await execute_returning(update_query, update_data, use_app_db=True)
         
         if not result:
             raise HTTPException(
@@ -380,7 +380,7 @@ async def delete_corner(corner_id: int = Path(..., description="코너 ID")):
     try:
         # 코너 존재 확인
         check_query = "SELECT id FROM supplement_corners WHERE id = %(corner_id)s"
-        existing = await app_db_manager.fetch_one(check_query, {"corner_id": corner_id})
+        existing = await query_one(check_query, {"corner_id": corner_id}, use_app_db=True)
         
         if not existing:
             raise HTTPException(
@@ -390,7 +390,7 @@ async def delete_corner(corner_id: int = Path(..., description="코너 ID")):
         
         # 삭제 (CASCADE로 매핑도 삭제됨)
         delete_query = "DELETE FROM supplement_corners WHERE id = %(corner_id)s"
-        await app_db_manager.execute(delete_query, {"corner_id": corner_id})
+        await execute(delete_query, {"corner_id": corner_id}, use_app_db=True)
         
         return {"success": True, "message": "코너가 삭제되었습니다."}
     except HTTPException:
@@ -424,7 +424,7 @@ async def get_corner_products(
             JOIN supplement_products_master spm ON scp.product_id = spm.id
             WHERE scp.corner_id = %(corner_id)s
         """
-        count_result = await app_db_manager.fetch_one(count_query, {"corner_id": corner_id})
+        count_result = await query_one(count_query, {"corner_id": corner_id}, use_app_db=True)
         total = count_result["total"] if count_result else 0
         
         # 목록 조회
@@ -452,11 +452,11 @@ async def get_corner_products(
             ORDER BY scp.display_order ASC, spm.product_name ASC
             LIMIT %(limit)s OFFSET %(offset)s
         """
-        products = await app_db_manager.fetch_all(list_query, {
+        products = await db_query(list_query, {
             "corner_id": corner_id,
             "limit": page_size,
             "offset": offset
-        })
+        }, use_app_db=True)
         
         # interest_tags가 None인 경우 빈 배열로 변환
         for product in products:
@@ -488,9 +488,10 @@ async def add_corner_products(corner_id: int, data: ProductMappingBulk):
     """
     try:
         # 코너 존재 확인
-        corner_check = await app_db_manager.fetch_one(
+        corner_check = await query_one(
             "SELECT id FROM supplement_corners WHERE id = %(corner_id)s",
-            {"corner_id": corner_id}
+            {"corner_id": corner_id},
+            use_app_db=True,
         )
         if not corner_check:
             raise HTTPException(
@@ -501,10 +502,11 @@ async def add_corner_products(corner_id: int, data: ProductMappingBulk):
         added_count = 0
         for product in data.products:
             # 이미 매핑되어 있는지 확인
-            existing = await app_db_manager.fetch_one(
+            existing = await query_one(
                 """SELECT id FROM supplement_corner_products 
                    WHERE corner_id = %(corner_id)s AND product_id = %(product_id)s""",
-                {"corner_id": corner_id, "product_id": product.product_id}
+                {"corner_id": corner_id, "product_id": product.product_id},
+                use_app_db=True,
             )
             
             if not existing:
@@ -512,11 +514,11 @@ async def add_corner_products(corner_id: int, data: ProductMappingBulk):
                     INSERT INTO supplement_corner_products (corner_id, product_id, display_order)
                     VALUES (%(corner_id)s, %(product_id)s, %(display_order)s)
                 """
-                await app_db_manager.execute(insert_query, {
+                await execute(insert_query, {
                     "corner_id": corner_id,
                     "product_id": product.product_id,
                     "display_order": product.display_order
-                })
+                }, use_app_db=True)
                 added_count += 1
         
         return {"success": True, "data": {"added_count": added_count}}
@@ -549,10 +551,10 @@ async def remove_corner_products(
             DELETE FROM supplement_corner_products 
             WHERE corner_id = %(corner_id)s AND product_id = ANY(%(product_ids)s)
         """
-        await app_db_manager.execute(delete_query, {
+        await execute(delete_query, {
             "corner_id": corner_id,
             "product_ids": product_ids
-        })
+        }, use_app_db=True)
         
         return {"success": True, "data": {"deleted_count": len(product_ids)}}
     except HTTPException:
@@ -579,10 +581,10 @@ async def remove_corner_product(
             SELECT id FROM supplement_corner_products 
             WHERE corner_id = %(corner_id)s AND id = %(mapping_id)s
         """
-        existing = await app_db_manager.fetch_one(check_query, {
+        existing = await query_one(check_query, {
             "corner_id": corner_id,
             "mapping_id": mapping_id
-        })
+        }, use_app_db=True)
         
         if not existing:
             raise HTTPException(
@@ -594,10 +596,10 @@ async def remove_corner_product(
             DELETE FROM supplement_corner_products 
             WHERE corner_id = %(corner_id)s AND id = %(mapping_id)s
         """
-        await app_db_manager.execute(delete_query, {
+        await execute(delete_query, {
             "corner_id": corner_id,
             "mapping_id": mapping_id
-        })
+        }, use_app_db=True)
         
         return {"success": True, "message": "영양제가 삭제되었습니다."}
     except HTTPException:

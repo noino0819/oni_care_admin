@@ -30,7 +30,7 @@ async def get_units(
 
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-        async with get_connection() as conn:
+        async with get_connection(use_app_db=True) as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     f"""SELECT 
