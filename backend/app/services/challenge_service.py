@@ -570,7 +570,7 @@ class QuizService:
         data: Dict[str, Any],
         updated_by: str
     ) -> Dict[str, Any]:
-        """퀴즈 수정"""
+        """퀴즈 수정 (앱 DB challenge_quizzes에도 동기화)"""
         params = {
             "quiz_id": quiz_id,
             "quiz_name": data.get("quiz_name"),
@@ -586,6 +586,12 @@ class QuizService:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
                 result = await cur.fetchone()
+            
+            # 앱이 읽는 challenge_quizzes에도 반영
+            sync_query = self.sql.get("sync_quiz_update_to_app")
+            async with conn.cursor() as cur:
+                await cur.execute(sync_query, {"quiz_id": quiz_id})
+            
             await conn.commit()
         
         return dict(result) if result else {}
@@ -627,7 +633,7 @@ class QuizService:
         quiz_id: str,
         display_order: Optional[int] = None
     ) -> Dict[str, Any]:
-        """챌린지에 퀴즈 추가"""
+        """챌린지에 퀴즈 추가 (앱 DB challenge_quizzes에도 동기화)"""
         async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("add_quiz_to_challenge")
             async with conn.cursor() as cur:
@@ -637,6 +643,16 @@ class QuizService:
                     "display_order": display_order
                 })
                 result = await cur.fetchone()
+            
+            # 앱이 읽는 challenge_quizzes 테이블에도 동기화
+            sync_query = self.sql.get("sync_quiz_to_app")
+            async with conn.cursor() as cur:
+                await cur.execute(sync_query, {
+                    "challenge_id": challenge_id,
+                    "quiz_id": quiz_id,
+                    "display_order": display_order
+                })
+            
             await conn.commit()
         
         return dict(result) if result else {}
@@ -646,7 +662,7 @@ class QuizService:
         challenge_id: str,
         quiz_id: str
     ) -> bool:
-        """챌린지에서 퀴즈 제거"""
+        """챌린지에서 퀴즈 제거 (앱 DB challenge_quizzes에서도 제거)"""
         async with get_connection(use_app_db=True) as conn:
             query = self.sql.get("remove_quiz_from_challenge")
             async with conn.cursor() as cur:
@@ -655,6 +671,15 @@ class QuizService:
                     "quiz_id": quiz_id
                 })
                 result = await cur.fetchone()
+            
+            # 앱 DB에서도 제거
+            remove_app_query = self.sql.get("remove_quiz_from_app")
+            async with conn.cursor() as cur:
+                await cur.execute(remove_app_query, {
+                    "challenge_id": challenge_id,
+                    "quiz_id": quiz_id
+                })
+            
             await conn.commit()
         
         return result is not None

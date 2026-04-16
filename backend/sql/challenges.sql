@@ -292,11 +292,39 @@ VALUES (%(challenge_id)s::uuid, %(quiz_id)s::uuid, COALESCE(%(display_order)s, 0
 ON CONFLICT (challenge_id, quiz_id) DO UPDATE SET display_order = EXCLUDED.display_order
 RETURNING *;
 
+-- name: sync_quiz_to_app
+INSERT INTO challenge_quizzes (id, challenge_id, quiz_type, question, options, correct_answers, hint, display_order)
+SELECT qm.id, %(challenge_id)s::uuid, qm.quiz_type, qm.question, qm.options, qm.correct_answers, qm.hint, COALESCE(%(display_order)s, 0)
+FROM quiz_master qm WHERE qm.id = %(quiz_id)s::uuid
+ON CONFLICT (id) DO UPDATE SET
+    challenge_id = EXCLUDED.challenge_id,
+    quiz_type = EXCLUDED.quiz_type,
+    question = EXCLUDED.question,
+    options = EXCLUDED.options,
+    correct_answers = EXCLUDED.correct_answers,
+    hint = EXCLUDED.hint,
+    display_order = EXCLUDED.display_order;
+
+-- name: sync_quiz_update_to_app
+UPDATE challenge_quizzes cq
+SET quiz_type = qm.quiz_type,
+    question = qm.question,
+    options = qm.options,
+    correct_answers = qm.correct_answers,
+    hint = qm.hint
+FROM quiz_master qm
+WHERE cq.id = qm.id AND qm.id = %(quiz_id)s::uuid;
+
 -- name: remove_quiz_from_challenge
 DELETE FROM challenge_quiz_mapping
 WHERE challenge_id = %(challenge_id)s::uuid
   AND quiz_id = %(quiz_id)s::uuid
 RETURNING *;
+
+-- name: remove_quiz_from_app
+DELETE FROM challenge_quizzes
+WHERE id = %(quiz_id)s::uuid
+  AND challenge_id = %(challenge_id)s::uuid;
 
 -- name: get_quiz_challenges_list
 SELECT 
