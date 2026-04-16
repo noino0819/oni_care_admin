@@ -40,11 +40,13 @@ WHERE c.id = %(content_id)s;
 INSERT INTO public.contents (
     title, content, thumbnail_url, category_id, tags, visibility_scope, company_codes,
     store_visible, start_date, end_date, has_quote, quote_content, quote_source,
+    is_published, published_at,
     created_by, updated_by
 ) VALUES (
     %(title)s, %(content)s, %(thumbnail_url)s, %(category_id)s, %(tags)s,
     %(visibility_scope)s, %(company_codes)s, %(store_visible)s, %(start_date)s,
     %(end_date)s, %(has_quote)s, %(quote_content)s, %(quote_source)s,
+    true, NOW(),
     %(created_by)s, %(created_by)s
 )
 RETURNING id;
