@@ -745,6 +745,26 @@ export function ChallengeFormModal({
                       <span className="text-[12px] text-gray-500">※ 비워두면 챌린지 기간 전체</span>
                     </div>
 
+                    {/* 퀴즈 챌린지 안내 */}
+                    {formData.challenge_type === 'quiz' && (
+                      <div className="border-t pt-4 mt-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h3 className="text-[14px] font-semibold text-blue-800 mb-2">퀴즈 설정 안내</h3>
+                          <p className="text-[13px] text-blue-700 mb-3">
+                            퀴즈 문항(질문, 선지, 정답, 힌트)은 별도 메뉴에서 관리합니다.
+                          </p>
+                          <a
+                            href="/greating-care/challenge-quizzes"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[13px] font-medium text-blue-600 hover:text-blue-800 underline"
+                          >
+                            챌린지 퀴즈 관리 페이지로 이동 &rarr;
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
                     {/* 걸음수 챌린지 설정 */}
                     {formData.challenge_type === 'steps' && (
                       <div className="border-t pt-4 mt-4">
