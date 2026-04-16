@@ -23,19 +23,19 @@ class ContentBase(BaseModel):
     quote_content: Optional[str] = Field(None, description="명언 내용")
     quote_source: Optional[str] = Field(None, description="명언 출처")
 
-
-class ContentCreate(ContentBase):
-    """컨텐츠 생성 모델"""
-    category_ids: List[int] = Field(default_factory=list, description="카테고리 ID 목록")
-    detail_images: List[str] = Field(default_factory=list, description="상세 이미지 URL 목록")
-    is_store_visible: bool = Field(False, description="스토어 노출 여부")
-
     @field_validator('start_date', 'end_date', mode='before')
     @classmethod
     def empty_str_to_none(cls, v):
         if v == '' or v is None:
             return None
         return v
+
+
+class ContentCreate(ContentBase):
+    """컨텐츠 생성 모델"""
+    category_ids: List[int] = Field(default_factory=list, description="카테고리 ID 목록")
+    detail_images: List[str] = Field(default_factory=list, description="상세 이미지 URL 목록")
+    is_store_visible: bool = Field(False, description="스토어 노출 여부")
 
 
 class ContentUpdate(BaseModel):

@@ -11,7 +11,7 @@ from app.core.exceptions import ValidationError
 def validate_image_url(url: Optional[str]) -> Optional[str]:
     """
     이미지 URL 서버측 검증 (프로세스 검증 누락 취약점 대응)
-    내부 업로드 경로만 허용, 외부 URL 차단
+    내부 상대 경로만 허용, 외부 URL 차단
 
     Args:
         url: 검증할 이미지 URL
@@ -27,7 +27,11 @@ def validate_image_url(url: Optional[str]) -> Optional[str]:
     url = url.strip()
     if ".." in url or "\\" in url:
         raise ValidationError("유효하지 않은 이미지 경로입니다.")
-    if url.startswith("/uploads/") or url.startswith("/images/"):
+    if url.startswith("http://") or url.startswith("https://"):
+        raise ValidationError(
+            "외부 URL은 허용되지 않습니다. 내부 업로드 경로만 사용 가능합니다."
+        )
+    if url.startswith("/"):
         return url
     raise ValidationError(
         "외부 URL은 허용되지 않습니다. 내부 업로드 경로만 사용 가능합니다."

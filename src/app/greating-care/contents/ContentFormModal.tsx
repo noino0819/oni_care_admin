@@ -222,16 +222,26 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
       return;
     }
 
+    const cleanedForm = {
+      ...form,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      thumbnail_url: form.thumbnail_url || null,
+      quote_content: form.quote_content || null,
+      quote_source: form.quote_source || null,
+    };
+
     setIsSaving(true);
     try {
       if (isEditing && contentId) {
-        await updateContent(contentId, form);
+        await updateContent(contentId, cleanedForm as ContentForm);
       } else {
-        await createContent(form);
+        await createContent(cleanedForm as ContentForm);
       }
       onSaved();
-    } catch {
-      setAlertMessage('저장 중 오류가 발생했습니다.');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : '';
+      setAlertMessage(msg || '저장 중 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
     }
