@@ -364,7 +364,7 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
                 {formData.image_url ? (
                   <div className="relative inline-block">
                     <img
-                      src={formData.image_url.startsWith('http') 
+                      src={formData.image_url.startsWith('http') || formData.image_url.startsWith('/images/')
                         ? formData.image_url 
                         : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}${formData.image_url}`}
                       alt="공지 이미지"

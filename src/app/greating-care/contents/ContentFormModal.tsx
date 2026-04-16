@@ -159,6 +159,7 @@ export function ContentFormModal({ contentId, isOpen, onClose, onSaved }: Conten
   const getImageUrl = (url: string | undefined | null) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
+    if (url.startsWith('/images/')) return url;
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
     return `${API_BASE_URL}${url}`;
   };
