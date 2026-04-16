@@ -66,6 +66,8 @@ INSERT INTO challenges (
     reward_settings,
     type_settings,
     images,
+    total_stamp_count,
+    reward_type,
     created_by
 ) VALUES (
     %(challenge_type)s,
@@ -93,6 +95,8 @@ INSERT INTO challenges (
     %(reward_settings)s,
     %(type_settings)s,
     %(images)s,
+    %(total_stamp_count)s,
+    %(reward_type)s,
     %(created_by)s
 )
 RETURNING *;
@@ -124,6 +128,8 @@ SET
     reward_settings = COALESCE(%(reward_settings)s::jsonb, reward_settings),
     type_settings = COALESCE(%(type_settings)s::jsonb, type_settings),
     images = COALESCE(%(images)s::jsonb, images),
+    total_stamp_count = COALESCE(%(total_stamp_count)s, total_stamp_count),
+    reward_type = COALESCE(%(reward_type)s, reward_type),
     updated_by = %(updated_by)s,
     updated_at = NOW()
 WHERE id = %(challenge_id)s::uuid
@@ -134,6 +140,38 @@ UPDATE challenges
 SET is_active = false, updated_by = %(updated_by)s, updated_at = NOW()
 WHERE id = ANY(%(challenge_ids)s::uuid[])
 RETURNING id;
+
+-- ============================================
+-- 룰렛 설정 쿼리 (roulette_settings 테이블 사용)
+-- ============================================
+
+-- name: get_roulette_settings
+SELECT *
+FROM roulette_settings
+WHERE challenge_id = %(challenge_id)s::uuid;
+
+-- name: upsert_roulette_settings
+INSERT INTO roulette_settings (
+    challenge_id,
+    guide_text,
+    segments,
+    created_by
+) VALUES (
+    %(challenge_id)s::uuid,
+    %(guide_text)s,
+    %(segments)s::jsonb,
+    %(created_by)s
+)
+ON CONFLICT (challenge_id) DO UPDATE SET
+    guide_text = %(guide_text)s,
+    segments = %(segments)s::jsonb,
+    updated_by = %(created_by)s,
+    updated_at = NOW()
+RETURNING *;
+
+-- name: delete_roulette_settings
+DELETE FROM roulette_settings
+WHERE challenge_id = %(challenge_id)s::uuid;
 
 -- ============================================
 -- 퀴즈 관련 쿼리 (quiz_master 테이블 사용)

@@ -118,7 +118,7 @@ class ChallengeService:
         challenge_id: str
     ) -> Optional[Dict[str, Any]]:
         """
-        챌린지 상세 조회
+        챌린지 상세 조회 (룰렛 설정 포함)
         
         Args:
             challenge_id: 챌린지 ID
@@ -135,7 +135,14 @@ class ChallengeService:
         if not challenge:
             raise NotFoundError(f"챌린지를 찾을 수 없습니다: {challenge_id}")
         
-        return dict(challenge)
+        result = dict(challenge)
+        
+        # 룰렛 인증 방식인 경우 룰렛 설정도 함께 조회
+        if result.get("verification_method") == "roulette":
+            roulette = await self.get_roulette_settings(challenge_id)
+            result["roulette_settings"] = roulette
+        
+        return result
 
     async def create_challenge(
         self,
@@ -184,6 +191,8 @@ class ChallengeService:
             "reward_settings": json.dumps(data.get("reward_settings", {})),
             "type_settings": json.dumps(type_settings),
             "images": json.dumps(data.get("images", {})),
+            "total_stamp_count": self._get_stamp_count(data),
+            "reward_type": self._get_reward_type(data),
             "created_by": created_by
         }
         
@@ -194,7 +203,20 @@ class ChallengeService:
                 result = await cur.fetchone()
             await conn.commit()
         
-        return dict(result) if result else {}
+        challenge_result = dict(result) if result else {}
+        
+        # 룰렛 인증 방식인 경우 룰렛 설정 저장
+        if challenge_result and data.get("verification_method") == "roulette":
+            roulette_segments = data.get("roulette_segments")
+            if roulette_segments:
+                await self.upsert_roulette_settings(
+                    challenge_id=str(challenge_result["id"]),
+                    guide_text=data.get("roulette_guide_text"),
+                    segments=roulette_segments,
+                    created_by=created_by
+                )
+        
+        return challenge_result
 
     async def update_challenge(
         self,
@@ -256,6 +278,8 @@ class ChallengeService:
             "reward_settings": json.dumps(data["reward_settings"]) if "reward_settings" in data else None,
             "type_settings": json.dumps(type_settings) if type_settings else None,
             "images": json.dumps(data["images"]) if "images" in data else None,
+            "total_stamp_count": self._get_stamp_count(data) if "reward_settings" in data else None,
+            "reward_type": self._get_reward_type(data) if "reward_settings" in data else None,
             "updated_by": updated_by
         }
         
@@ -266,7 +290,22 @@ class ChallengeService:
                 result = await cur.fetchone()
             await conn.commit()
         
-        return dict(result) if result else {}
+        challenge_result = dict(result) if result else {}
+        
+        # 룰렛 인증 방식인 경우 룰렛 설정 업데이트
+        if challenge_result:
+            verification_method = data.get("verification_method") or existing.get("verification_method")
+            if verification_method == "roulette" and "roulette_segments" in data:
+                roulette_segments = data.get("roulette_segments")
+                if roulette_segments:
+                    await self.upsert_roulette_settings(
+                        challenge_id=challenge_id,
+                        guide_text=data.get("roulette_guide_text"),
+                        segments=roulette_segments,
+                        created_by=updated_by
+                    )
+        
+        return challenge_result
 
     async def delete_challenges(
         self,
@@ -360,6 +399,24 @@ class ChallengeService:
             if len(title) > 20:
                 raise ValidationError("챌린지명은 최대 20자까지 입력 가능합니다.")
 
+    def _get_stamp_count(self, data: Dict[str, Any]) -> int:
+        """보상 설정에서 스탬프 개수 추출"""
+        reward_settings = data.get("reward_settings", {})
+        if isinstance(reward_settings, str):
+            reward_settings = json.loads(reward_settings)
+        if reward_settings.get("stamp_enabled"):
+            return reward_settings.get("stamp_count", 7)
+        return data.get("challenge_duration_days", 7)
+
+    def _get_reward_type(self, data: Dict[str, Any]) -> str:
+        """보상 설정에서 보상 유형 추출"""
+        reward_settings = data.get("reward_settings", {})
+        if isinstance(reward_settings, str):
+            reward_settings = json.loads(reward_settings)
+        if reward_settings.get("stamp_enabled"):
+            return "stamp"
+        return "point"
+
     def _build_type_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """유형별 상세설정 구성"""
         challenge_type = data.get("challenge_type")
@@ -373,6 +430,45 @@ class ChallengeService:
             settings = data["health_habit_settings"]
         
         return settings
+
+    # ============================================
+    # 룰렛 설정 관리
+    # ============================================
+
+    async def get_roulette_settings(
+        self,
+        challenge_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """룰렛 설정 조회"""
+        async with get_connection(use_app_db=True) as conn:
+            query = self.sql.get("get_roulette_settings")
+            async with conn.cursor() as cur:
+                await cur.execute(query, {"challenge_id": challenge_id})
+                result = await cur.fetchone()
+        
+        return dict(result) if result else None
+
+    async def upsert_roulette_settings(
+        self,
+        challenge_id: str,
+        guide_text: Optional[str],
+        segments: list,
+        created_by: str
+    ) -> Dict[str, Any]:
+        """룰렛 설정 생성/수정 (UPSERT)"""
+        async with get_connection(use_app_db=True) as conn:
+            query = self.sql.get("upsert_roulette_settings")
+            async with conn.cursor() as cur:
+                await cur.execute(query, {
+                    "challenge_id": challenge_id,
+                    "guide_text": guide_text,
+                    "segments": json.dumps(segments),
+                    "created_by": created_by
+                })
+                result = await cur.fetchone()
+            await conn.commit()
+        
+        return dict(result) if result else {}
 
 
 class QuizService:

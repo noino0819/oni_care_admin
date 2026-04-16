@@ -39,6 +39,7 @@ export interface Challenge {
   reward_settings: RewardSettings;
   type_settings: Record<string, unknown>;
   images: ChallengeImages;
+  roulette_settings?: RouletteSettingsData | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -76,6 +77,20 @@ export interface ChallengeImages {
   today_achievement_bg: string | null;
   today_achievement_success: string | null;
   detail_pages: string[];
+}
+
+export interface RouletteSegment {
+  label: string;
+  probability: number;
+  reward_type: 'point' | 'coupon';
+  reward_value: number;
+}
+
+export interface RouletteSettingsData {
+  id?: string;
+  challenge_id?: string;
+  guide_text?: string | null;
+  segments: RouletteSegment[];
 }
 
 export interface ChallengeSearchFilters {

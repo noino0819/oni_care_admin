@@ -195,6 +195,10 @@ class ChallengeCreateRequest(BaseModel):
     
     # 이미지 설정
     images: Optional[ChallengeImages] = None
+    
+    # 룰렛 설정 (인증 방식이 roulette일 때)
+    roulette_guide_text: Optional[str] = Field(None, max_length=30, description="룰렛 안내문구")
+    roulette_segments: Optional[List[dict]] = Field(None, description="룰렛 세그먼트 (6~8개)")
 
 
 class ChallengeUpdateRequest(BaseModel):
@@ -244,6 +248,10 @@ class ChallengeUpdateRequest(BaseModel):
     
     # 이미지 설정
     images: Optional[ChallengeImages] = None
+    
+    # 룰렛 설정 (인증 방식이 roulette일 때)
+    roulette_guide_text: Optional[str] = Field(None, max_length=30, description="룰렛 안내문구")
+    roulette_segments: Optional[List[dict]] = Field(None, description="룰렛 세그먼트 (6~8개)")
 
 
 # ============================================

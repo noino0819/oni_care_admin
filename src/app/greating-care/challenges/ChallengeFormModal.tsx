@@ -15,6 +15,7 @@ import {
   type DailyVerificationSetting,
   type RewardSettings,
   type ChallengeImages,
+  type RouletteSegment,
 } from '@/hooks/useChallenges';
 
 interface ChallengeFormModalProps {
@@ -86,6 +87,15 @@ const initialFormData = {
     stamp_count: 7,
   } as RewardSettings,
   type_settings: {} as Record<string, unknown>,
+  roulette_guide_text: '' as string,
+  roulette_segments: [
+    { label: '1포인트', probability: 30, reward_type: 'point', reward_value: 1 },
+    { label: '5포인트', probability: 25, reward_type: 'point', reward_value: 5 },
+    { label: '10포인트', probability: 20, reward_type: 'point', reward_value: 10 },
+    { label: '25포인트', probability: 15, reward_type: 'point', reward_value: 25 },
+    { label: '50포인트', probability: 7, reward_type: 'point', reward_value: 50 },
+    { label: '100포인트', probability: 3, reward_type: 'point', reward_value: 100 },
+  ] as RouletteSegment[],
   images: {
     thumbnail: null,
     total_achievement_success: null,
@@ -143,6 +153,8 @@ export function ChallengeFormModal({
         total_achievement_days: challenge.total_achievement_days,
         reward_settings: challenge.reward_settings || { stamp_enabled: false, stamp_count: 7 },
         type_settings: challenge.type_settings || {},
+        roulette_guide_text: challenge.roulette_settings?.guide_text || '',
+        roulette_segments: challenge.roulette_settings?.segments || initialFormData.roulette_segments,
         images: challenge.images || initialFormData.images,
       });
     } else if (!challengeId) {
@@ -182,6 +194,18 @@ export function ChallengeFormModal({
     if (formData.challenge_duration_days > 30) {
       setAlertMessage('챌린지 기간은 최대 30일까지 설정할 수 있습니다.');
       return;
+    }
+
+    if (formData.verification_method === 'roulette') {
+      if (formData.roulette_segments.length < 6 || formData.roulette_segments.length > 8) {
+        setAlertMessage('룰렛 세그먼트는 6~8개 사이여야 합니다.');
+        return;
+      }
+      const hasEmpty = formData.roulette_segments.some(s => !s.label.trim());
+      if (hasEmpty) {
+        setAlertMessage('모든 룰렛 세그먼트의 표시 문구를 입력해주세요.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -839,8 +863,126 @@ export function ChallengeFormModal({
                     {formData.verification_method === 'roulette' && (
                       <div className="border-t pt-4 mt-4">
                         <h3 className="text-[14px] font-semibold mb-4">룰렛 설정</h3>
-                        <div className="text-[13px] text-gray-500 text-center py-4 bg-gray-50 rounded">
-                          룰렛 세그먼트 설정은 추후 구현 예정입니다.
+                        
+                        {/* 안내문구 */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <label className={labelClass}>안내문구</label>
+                          <input
+                            type="text"
+                            className={`${inputClass} flex-1`}
+                            value={formData.roulette_guide_text}
+                            onChange={(e) => handleChange('roulette_guide_text', e.target.value)}
+                            placeholder="룰렛을 돌려주세요! (최대 30자)"
+                            maxLength={30}
+                          />
+                        </div>
+
+                        {/* 세그먼트 목록 */}
+                        <div className="space-y-2 mb-3">
+                          <div className="grid grid-cols-[40px_1fr_80px_80px_80px_32px] gap-2 text-[12px] font-medium text-gray-500 px-1">
+                            <span>No.</span>
+                            <span>표시 문구</span>
+                            <span>보상종류</span>
+                            <span>보상값</span>
+                            <span>확률(%)</span>
+                            <span></span>
+                          </div>
+                          {formData.roulette_segments.map((seg, idx) => (
+                            <div key={idx} className="grid grid-cols-[40px_1fr_80px_80px_80px_32px] gap-2 items-center">
+                              <span className="text-[13px] text-gray-500 text-center">{idx + 1}</span>
+                              <input
+                                type="text"
+                                className={inputClass}
+                                value={seg.label}
+                                onChange={(e) => {
+                                  const updated = [...formData.roulette_segments];
+                                  updated[idx] = { ...updated[idx], label: e.target.value };
+                                  handleChange('roulette_segments', updated);
+                                }}
+                                placeholder="표시 문구"
+                                maxLength={20}
+                              />
+                              <select
+                                className={selectClass}
+                                value={seg.reward_type}
+                                onChange={(e) => {
+                                  const updated = [...formData.roulette_segments];
+                                  updated[idx] = { ...updated[idx], reward_type: e.target.value as 'point' | 'coupon' };
+                                  handleChange('roulette_segments', updated);
+                                }}
+                              >
+                                <option value="point">포인트</option>
+                                <option value="coupon">쿠폰</option>
+                              </select>
+                              <input
+                                type="number"
+                                className={inputClass}
+                                value={seg.reward_value}
+                                onChange={(e) => {
+                                  const updated = [...formData.roulette_segments];
+                                  updated[idx] = { ...updated[idx], reward_value: Number(e.target.value) || 0 };
+                                  handleChange('roulette_segments', updated);
+                                }}
+                                min={0}
+                                placeholder="0"
+                              />
+                              <input
+                                type="number"
+                                className={inputClass}
+                                value={seg.probability}
+                                onChange={(e) => {
+                                  const updated = [...formData.roulette_segments];
+                                  updated[idx] = { ...updated[idx], probability: Number(e.target.value) || 0 };
+                                  handleChange('roulette_segments', updated);
+                                }}
+                                min={0}
+                                max={100}
+                                step={0.1}
+                                placeholder="0"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (formData.roulette_segments.length <= 6) {
+                                    setAlertMessage('세그먼트는 최소 6개입니다.');
+                                    return;
+                                  }
+                                  const updated = formData.roulette_segments.filter((_, i) => i !== idx);
+                                  handleChange('roulette_segments', updated);
+                                }}
+                                className="p-1 hover:bg-red-50 rounded text-gray-400 hover:text-red-500"
+                                title="삭제"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* 세그먼트 추가 버튼 */}
+                        {formData.roulette_segments.length < 8 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newSegment: RouletteSegment = {
+                                label: '',
+                                probability: 0,
+                                reward_type: 'point',
+                                reward_value: 0,
+                              };
+                              handleChange('roulette_segments', [...formData.roulette_segments, newSegment]);
+                            }}
+                            className="flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-700 px-2 py-1"
+                          >
+                            <Plus className="w-4 h-4" />
+                            세그먼트 추가 (최대 8개)
+                          </button>
+                        )}
+
+                        {/* 확률 합계 표시 */}
+                        <div className="mt-3 text-[12px] text-gray-500 bg-gray-50 rounded px-3 py-2">
+                          확률 합계: {formData.roulette_segments.reduce((sum, s) => sum + s.probability, 0).toFixed(1)}%
+                          {' '}(합계가 100이 아니어도 비율로 자동 계산됩니다)
                         </div>
                       </div>
                     )}
