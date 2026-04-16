@@ -3,7 +3,7 @@
 # ============================================
 
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import date, datetime
 
 
@@ -30,6 +30,13 @@ class ContentCreate(ContentBase):
     detail_images: List[str] = Field(default_factory=list, description="상세 이미지 URL 목록")
     is_store_visible: bool = Field(False, description="스토어 노출 여부")
 
+    @field_validator('start_date', 'end_date', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v == '' or v is None:
+            return None
+        return v
+
 
 class ContentUpdate(BaseModel):
     """컨텐츠 수정 모델"""
@@ -49,6 +56,13 @@ class ContentUpdate(BaseModel):
     quote_content: Optional[str] = None
     quote_source: Optional[str] = None
     detail_images: Optional[List[str]] = None
+
+    @field_validator('start_date', 'end_date', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if v == '' or v is None:
+            return None
+        return v
 
 
 class ContentResponse(BaseModel):

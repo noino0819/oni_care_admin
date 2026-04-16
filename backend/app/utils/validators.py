@@ -25,9 +25,9 @@ def validate_image_url(url: Optional[str]) -> Optional[str]:
     if not url or not url.strip():
         return None
     url = url.strip()
-    if url.startswith("/uploads/"):
-        if ".." in url or "\\" in url:
-            raise ValidationError("유효하지 않은 이미지 경로입니다.")
+    if ".." in url or "\\" in url:
+        raise ValidationError("유효하지 않은 이미지 경로입니다.")
+    if url.startswith("/uploads/") or url.startswith("/images/"):
         return url
     raise ValidationError(
         "외부 URL은 허용되지 않습니다. 내부 업로드 경로만 사용 가능합니다."
