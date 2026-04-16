@@ -18,7 +18,7 @@ class ChallengeType(str, Enum):
     STEPS = "steps"                     # 걸음수
     MEAL = "meal"                       # 식사기록
     SUPPLEMENT = "supplement"           # 영양제 기록
-    NUTRITION_DIAGNOSIS = "nutrition_diagnosis"  # 영양진단
+    NUTRITION_SURVEY = "nutrition_survey"  # 영양진단
     HEALTH_HABIT = "health_habit"       # 건강습관
     QUIZ = "quiz"                       # 퀴즈
 
@@ -44,7 +44,7 @@ class ChallengeStatus(str, Enum):
 class RankDisplayType(str, Enum):
     """등수 공개 방식"""
     LIVE = "live"       # 선공개 (진행중 공개)
-    POST = "post"       # 후공개 (종료 후 공개)
+    AFTER = "after"     # 후공개 (종료 후 공개)
     HIDDEN = "hidden"   # 미공개
 
 

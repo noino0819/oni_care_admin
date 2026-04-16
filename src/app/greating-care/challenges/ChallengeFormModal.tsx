@@ -31,7 +31,7 @@ const CHALLENGE_TYPE_OPTIONS = [
   { value: 'steps', label: '걸음수' },
   { value: 'meal', label: '식단' },
   { value: 'supplement', label: '영양제' },
-  { value: 'nutrition_diagnosis', label: '영양진단' },
+  { value: 'nutrition_survey', label: '영양진단' },
   { value: 'health_habit', label: '건강습관' },
   { value: 'quiz', label: '퀴즈' },
 ];
@@ -55,7 +55,7 @@ const VISIBILITY_OPTIONS = [
 const RANK_DISPLAY_OPTIONS = [
   { value: 'hidden', label: '비공개' },
   { value: 'live', label: '선공개' },
-  { value: 'post', label: '후공개' },
+  { value: 'after', label: '후공개' },
 ];
 
 // 초기 폼 데이터
@@ -219,7 +219,7 @@ export function ChallengeFormModal({
     };
 
     try {
-      const submitData: Partial<Challenge> = {
+      const submitData: Partial<Challenge> & Record<string, unknown> = {
         ...formData,
         max_participants: formData.max_participants || null,
         total_achievement_days: formData.total_achievement_days || null,
@@ -230,6 +230,13 @@ export function ChallengeFormModal({
         display_start_date: toDateOnly(formData.display_start_date),
         display_end_date: toDateOnly(formData.display_end_date),
       };
+
+      if (formData.challenge_type === 'steps' && formData.type_settings) {
+        const ts = formData.type_settings as { target_steps?: number };
+        if (ts.target_steps) {
+          submitData.steps_settings = { target_steps: ts.target_steps };
+        }
+      }
 
       if (challengeId) {
         await updateChallenge(challengeId, submitData);

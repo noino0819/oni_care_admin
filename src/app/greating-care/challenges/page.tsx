@@ -20,7 +20,7 @@ const CHALLENGE_TYPE_OPTIONS = [
   { value: 'steps', label: '걸음수' },
   { value: 'meal', label: '식단' },
   { value: 'supplement', label: '영양제' },
-  { value: 'nutrition_diagnosis', label: '영양진단' },
+  { value: 'nutrition_survey', label: '영양진단' },
   { value: 'health_habit', label: '건강습관' },
   { value: 'quiz', label: '퀴즈' },
 ];
@@ -76,7 +76,7 @@ const TypeBadge = ({ type }: { type: string }) => {
     steps: { label: '걸음수', className: 'bg-orange-100 text-orange-600' },
     meal: { label: '식단', className: 'bg-green-100 text-green-600' },
     supplement: { label: '영양제', className: 'bg-pink-100 text-pink-600' },
-    nutrition_diagnosis: { label: '영양진단', className: 'bg-indigo-100 text-indigo-600' },
+    nutrition_survey: { label: '영양진단', className: 'bg-indigo-100 text-indigo-600' },
     health_habit: { label: '건강습관', className: 'bg-cyan-100 text-cyan-600' },
     quiz: { label: '퀴즈', className: 'bg-yellow-100 text-yellow-600' },
   };
