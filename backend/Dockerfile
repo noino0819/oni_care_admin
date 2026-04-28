@@ -24,4 +24,5 @@ RUN mkdir -p uploads
 EXPOSE 8001
 
 # 7. 앱 실행 명령어
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# --no-server-header: Server: uvicorn 헤더 제거 (정보 노출 취약점 대응)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--no-server-header"]

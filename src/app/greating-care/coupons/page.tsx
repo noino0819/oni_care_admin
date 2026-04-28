@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { AdminLayout } from '@/components/layout';
 import { DataTable, Pagination, AlertModal, ConfirmModal, Button } from '@/components/common';
 import { useCoupons, useDeleteCoupon, type Coupon } from '@/hooks/useCoupons';
+import { maskId, maskName } from '@/lib/utils';
 import type { TableColumn } from '@/types';
 
 // 발급처 한글화
@@ -15,18 +16,6 @@ const issueSourceLabel: Record<string, string> = {
   greating: '그리팅',
   cafeteria: '카페테리아',
 };
-
-// ID 마스킹
-function maskId(id: string): string {
-  if (!id || id.length < 4) return '***';
-  return id.slice(0, 4) + '****';
-}
-
-// 고객명 마스킹
-function maskName(name: string): string {
-  if (!name || name.length < 2) return '*';
-  return name[0] + '*'.repeat(name.length - 1);
-}
 
 // 금액 포맷
 function formatCurrency(value: number): string {
@@ -122,7 +111,7 @@ export default function CouponsPage() {
       key: 'user_id',
       label: 'ID',
       width: 100,
-      render: (value) => maskId(String(value || '').slice(0, 8)),
+      render: (value) => maskId(String(value || '')),
     },
     {
       key: 'user_name',

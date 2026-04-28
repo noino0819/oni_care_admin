@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { AdminLayout } from '@/components/layout';
 import { DataTable, Pagination, AlertModal, ConfirmModal, Button } from '@/components/common';
 import { useMealRecords, useDeleteMealRecord, type MealRecord } from '@/hooks/useMealRecords';
+import { maskId, maskName } from '@/lib/utils';
 import type { TableColumn } from '@/types';
 
 // 끼니 구분 한글화
@@ -23,18 +24,6 @@ const recordSourceLabel: Record<string, string> = {
   greating_care: '그리팅 케어',
   cafeteria: '카페테리아',
 };
-
-// ID 마스킹
-function maskId(id: string): string {
-  if (!id || id.length < 4) return '***';
-  return id.slice(0, 4) + '****';
-}
-
-// 고객명 마스킹
-function maskName(name: string): string {
-  if (!name || name.length < 2) return '*';
-  return name[0] + '*'.repeat(name.length - 1);
-}
 
 export default function MealRecordsPage() {
   // 검색 조건
@@ -125,7 +114,7 @@ export default function MealRecordsPage() {
       key: 'user_id',
       label: 'ID',
       width: 100,
-      render: (value) => maskId(String(value || '').slice(0, 8)),
+      render: (value) => maskId(String(value || '')),
     },
     {
       key: 'user_name',

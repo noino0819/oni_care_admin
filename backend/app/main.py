@@ -102,14 +102,22 @@ app = FastAPI(
 )
 
 
-# Security Headers 미들웨어 (Server 정보 노출 제거)
+# Security Headers 미들웨어
+# NOTE: Server 헤더는 uvicorn protocol layer에서 추가되므로 미들웨어로 제거 불가.
+#       따라서 uvicorn 실행 시 --no-server-header / server_header=False 옵션 사용.
+#       이 미들웨어는 그 외 보안 헤더를 추가하고, 안전망으로 server 헤더 제거를 시도.
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
+        # Server 헤더 제거 (안전망 - 실제 차단은 uvicorn server_header=False)
         if "server" in response.headers:
             del response.headers["server"]
+        # 보안 헤더 추가
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -243,5 +251,6 @@ if __name__ == "__main__":
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,
+        server_header=False,  # Server: uvicorn 헤더 제거 (정보 노출 취약점 대응)
     )
 
