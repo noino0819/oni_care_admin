@@ -162,7 +162,20 @@ class ChallengeService:
         """
         # 유효성 검사
         self._validate_challenge_data(data)
-        
+
+        # 신규 생성 SQL INSERT 직전 다중 방어 단언
+        # (Pydantic 모델 → _validate_challenge_data 통과한 데이터에 대해서도
+        #  마지막 안전망으로 6개 기간이 모두 채워졌는지 확인)
+        for _required_period in (
+            "recruitment_start_date", "recruitment_end_date",
+            "operation_start_date", "operation_end_date",
+            "display_start_date", "display_end_date",
+        ):
+            if not data.get(_required_period):
+                raise ValidationError(
+                    "기간 정보가 누락되었습니다. 모집·운영·노출 기간을 모두 입력해주세요."
+                )
+
         # 유형별 상세설정 구성
         type_settings = self._build_type_settings(data)
         

@@ -163,13 +163,14 @@ class ChallengeCreateRequest(BaseModel):
     challenge_duration_days: int = Field(default=7, ge=1, le=30, description="챌린지 기간")
     display_order: int = Field(default=999, ge=1, description="노출순서")
     
-    # 기간 설정
-    recruitment_start_date: Optional[date] = None
-    recruitment_end_date: Optional[date] = None
-    operation_start_date: Optional[date] = None
-    operation_end_date: Optional[date] = None
-    display_start_date: Optional[date] = None
-    display_end_date: Optional[date] = None
+    # 기간 설정 - 신규 생성 시 6개 모두 필수
+    # (Pydantic 단계에서 우선 차단; service._validate_challenge_data 에서 재검증)
+    recruitment_start_date: date = Field(description="모집 시작일")
+    recruitment_end_date: date = Field(description="모집 종료일")
+    operation_start_date: date = Field(description="운영 시작일")
+    operation_end_date: date = Field(description="운영 종료일")
+    display_start_date: date = Field(description="노출 시작일")
+    display_end_date: date = Field(description="노출 종료일")
     
     # 공개범위 설정
     visibility_scope: List[str] = Field(default=["all"], description="공개범위")
