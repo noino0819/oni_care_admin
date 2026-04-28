@@ -9,7 +9,7 @@ import { AdminLayout } from '@/components/layout';
 import { Button, DataTable, Pagination, ConfirmModal, AlertModal, DatePicker } from '@/components/common';
 import { ChallengeFormModal } from './ChallengeFormModal';
 import { useChallenges, deleteChallenges, type Challenge, type ChallengeSearchFilters } from '@/hooks/useChallenges';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatLocalDate } from '@/lib/utils';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { TableColumn } from '@/types';
 
@@ -166,8 +166,8 @@ export default function ChallengesPage() {
         <input
           type="checkbox"
           checked={selectedIds.includes(row.id)}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => {
-            e.stopPropagation();
             if (e.target.checked) {
               setSelectedIds(prev => [...prev, row.id]);
             } else {
@@ -376,13 +376,13 @@ export default function ChallengesPage() {
               <span className={labelClass}>운영기간</span>
               <DatePicker
                 value={filters.operation_from ? new Date(filters.operation_from) : null}
-                onChange={(date) => handleFilterChange('operation_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('operation_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.operation_to ? new Date(filters.operation_to) : null}
-                onChange={(date) => handleFilterChange('operation_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('operation_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>
@@ -391,13 +391,13 @@ export default function ChallengesPage() {
               <span className={labelClass}>모집기간</span>
               <DatePicker
                 value={filters.recruitment_from ? new Date(filters.recruitment_from) : null}
-                onChange={(date) => handleFilterChange('recruitment_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('recruitment_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.recruitment_to ? new Date(filters.recruitment_to) : null}
-                onChange={(date) => handleFilterChange('recruitment_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('recruitment_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>
@@ -406,13 +406,13 @@ export default function ChallengesPage() {
               <span className={labelClass}>노출기간</span>
               <DatePicker
                 value={filters.display_from ? new Date(filters.display_from) : null}
-                onChange={(date) => handleFilterChange('display_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('display_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.display_to ? new Date(filters.display_to) : null}
-                onChange={(date) => handleFilterChange('display_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('display_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>

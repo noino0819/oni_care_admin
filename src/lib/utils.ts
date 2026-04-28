@@ -132,6 +132,23 @@ export function sanitizeText(text: string): string {
   return String(text || '').replace(/<[^>]*>/g, '');
 }
 
+// ============================================
+// 날짜 포맷 (Local 기준 yyyy-mm-dd)
+// ============================================
+//
+// `date.toISOString()` 은 UTC 기준 문자열을 돌려주기 때문에 KST 자정에
+// 가까운 날짜를 클릭하면 하루 밀리는 버그가 발생한다.
+// 달력에서 선택된 Date 객체를 백엔드에 yyyy-mm-dd 문자열로 보낼 때는
+// 반드시 이 함수를 사용해 로컬 캘린더 기준 날짜를 추출해야 한다.
+
+export function formatLocalDate(date: Date | null | undefined): string {
+  if (!date) return '';
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 // 안전한 에러 메시지 반환
 export function getSafeErrorMessage(status?: number): string {
   switch (status) {

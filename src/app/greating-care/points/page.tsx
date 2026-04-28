@@ -430,7 +430,7 @@ export default function PointsPage() {
               <DatePicker
                 value={filters.created_from ? new Date(filters.created_from) : null}
                 onChange={(date) =>
-                  handleFilterChange("created_from", date ? date.toISOString().split("T")[0] : "")
+                  handleFilterChange("created_from", formatLocalDate(date))
                 }
                 placeholder="시작일"
               />
@@ -438,7 +438,7 @@ export default function PointsPage() {
               <DatePicker
                 value={filters.created_to ? new Date(filters.created_to) : null}
                 onChange={(date) =>
-                  handleFilterChange("created_to", date ? date.toISOString().split("T")[0] : "")
+                  handleFilterChange("created_to", formatLocalDate(date))
                 }
                 placeholder="종료일"
               />

@@ -9,7 +9,7 @@ import { AdminLayout } from '@/components/layout';
 import { Button, DataTable, Pagination, ConfirmModal, AlertModal, DatePicker } from '@/components/common';
 import { ContentFormModal } from './ContentFormModal';
 import { useContents } from '@/hooks/useContents';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatLocalDate } from '@/lib/utils';
 import { RefreshCw, Plus } from 'lucide-react';
 import type { ContentSearchFilters, SortConfig, TableColumn, ContentListItem } from '@/types';
 
@@ -391,13 +391,13 @@ export default function ContentsPage() {
               <span className={labelClass}>최종수정일</span>
               <DatePicker
                 value={filters.updated_from ? new Date(filters.updated_from) : null}
-                onChange={(date) => handleFilterChange('updated_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('updated_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.updated_to ? new Date(filters.updated_to) : null}
-                onChange={(date) => handleFilterChange('updated_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('updated_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>
@@ -406,13 +406,13 @@ export default function ContentsPage() {
               <span className={labelClass}>게시기간</span>
               <DatePicker
                 value={filters.start_from ? new Date(filters.start_from) : null}
-                onChange={(date) => handleFilterChange('start_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('start_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.start_to ? new Date(filters.start_to) : null}
-                onChange={(date) => handleFilterChange('start_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('start_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>

@@ -457,6 +457,8 @@ class ChallengeService:
 
         # 기존 값과 변경값을 병합한 뒤 생성과 동일한 검증 적용
         # (수정 시에도 기간/야간푸시/걸음수 등이 일관되게 검증되도록)
+        # 단, is_update=True 라 기간 필수 검사는 _validate_challenge_data 안에서 생략됨
+        # (기존 NULL 데이터 호환; 신규 생성 단계에서만 강제함)
         merged_data = {**existing, **{k: v for k, v in data.items() if v is not None}}
         self._validate_challenge_data(merged_data, is_update=True)
 

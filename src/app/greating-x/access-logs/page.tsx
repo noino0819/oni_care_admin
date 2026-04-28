@@ -18,6 +18,7 @@ import {
 import { RefreshCw } from 'lucide-react';
 import type { AccessLog, AccessLogSearchFilters, TableColumn, PaginationInfo } from '@/types';
 import { apiClient } from '@/lib/api-client';
+import { formatLocalDate } from '@/lib/utils';
 
 // 마스킹 함수
 function maskUserId(userId: string | null): string {
@@ -57,8 +58,8 @@ export default function AccessLogsPage() {
       if (filters.user_id) params.set('user_id', filters.user_id);
       if (filters.user_name) params.set('user_name', filters.user_name);
       if (filters.device_type) params.set('device_type', filters.device_type);
-      if (startDate) params.set('login_from', startDate.toISOString().split('T')[0]);
-      if (endDate) params.set('login_to', endDate.toISOString().split('T')[0]);
+      if (startDate) params.set('login_from', formatLocalDate(startDate));
+      if (endDate) params.set('login_to', formatLocalDate(endDate));
       params.set('page', page.toString());
       params.set('limit', '20');
 

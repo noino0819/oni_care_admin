@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button, DatePicker, AlertModal } from '@/components/common';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
+import { formatLocalDate } from '@/lib/utils';
 import {
   useChallenge,
   createChallenge,
@@ -196,9 +197,8 @@ export function ChallengeFormModal({
       return;
     }
 
-    // 기간 필수 검사 (신규 생성 시) - 백엔드와 동일 정책
-    // 수정 시에는 기존 데이터 호환을 위해 강제하지 않음
-    if (!challengeId) {
+    // 기간 필수 검사 (생성/수정 모두 적용)
+    {
       const periodLabels: Array<[keyof typeof formData, string]> = [
         ['recruitment_start_date', '모집 시작일'],
         ['recruitment_end_date', '모집 종료일'],
@@ -560,13 +560,13 @@ export function ChallengeFormModal({
                       <span className={labelClass}>운영기간</span>
                       <DatePicker
                         value={formData.operation_start_date ? new Date(formData.operation_start_date) : null}
-                        onChange={(date) => handleChange('operation_start_date', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => handleChange('operation_start_date', formatLocalDate(date))}
                         placeholder="시작일"
                       />
                       <span className="text-gray-400">~</span>
                       <DatePicker
                         value={formData.operation_end_date ? new Date(formData.operation_end_date) : null}
-                        onChange={(date) => handleChange('operation_end_date', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => handleChange('operation_end_date', formatLocalDate(date))}
                         placeholder="종료일"
                       />
                     </div>
@@ -576,13 +576,13 @@ export function ChallengeFormModal({
                       <span className={labelClass}>모집기간</span>
                       <DatePicker
                         value={formData.recruitment_start_date ? new Date(formData.recruitment_start_date) : null}
-                        onChange={(date) => handleChange('recruitment_start_date', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => handleChange('recruitment_start_date', formatLocalDate(date))}
                         placeholder="시작일"
                       />
                       <span className="text-gray-400">~</span>
                       <DatePicker
                         value={formData.recruitment_end_date ? new Date(formData.recruitment_end_date) : null}
-                        onChange={(date) => handleChange('recruitment_end_date', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => handleChange('recruitment_end_date', formatLocalDate(date))}
                         placeholder="종료일"
                       />
                     </div>
@@ -592,13 +592,13 @@ export function ChallengeFormModal({
                       <span className={labelClass}>노출기간</span>
                       <DatePicker
                         value={formData.display_start_date ? new Date(formData.display_start_date) : null}
-                        onChange={(date) => handleChange('display_start_date', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => handleChange('display_start_date', formatLocalDate(date))}
                         placeholder="시작일"
                       />
                       <span className="text-gray-400">~</span>
                       <DatePicker
                         value={formData.display_end_date ? new Date(formData.display_end_date) : null}
-                        onChange={(date) => handleChange('display_end_date', date ? date.toISOString().split('T')[0] : '')}
+                        onChange={(date) => handleChange('display_end_date', formatLocalDate(date))}
                         placeholder="종료일"
                       />
                     </div>

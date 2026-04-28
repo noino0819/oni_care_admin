@@ -370,14 +370,14 @@ export default function NoticesPage() {
               <DatePicker
                 value={filters.created_from ? new Date(filters.created_from) : null}
                 onChange={(date) =>
-                  handleFilterChange("created_from", date ? date.toISOString().split("T")[0] : "")
+                  handleFilterChange("created_from", formatLocalDate(date))
                 }
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.created_to ? new Date(filters.created_to) : null}
-                onChange={(date) => handleFilterChange("created_to", date ? date.toISOString().split("T")[0] : "")}
+                onChange={(date) => handleFilterChange("created_to", formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>

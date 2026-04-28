@@ -9,7 +9,7 @@ import { AdminLayout } from '@/components/layout';
 import { Button, DataTable, Pagination, DatePicker } from '@/components/common';
 import { InquiryAnswerModal } from './InquiryAnswerModal';
 import { useInquiries, useInquiryTypes, type Inquiry, type InquirySearchFilters } from '@/hooks/useInquiries';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatLocalDate } from '@/lib/utils';
 import { RefreshCw } from 'lucide-react';
 import type { TableColumn } from '@/types';
 
@@ -202,13 +202,13 @@ export default function InquiriesPage() {
               <span className={labelClass}>등록일</span>
               <DatePicker
                 value={filters.created_from ? new Date(filters.created_from) : null}
-                onChange={(date) => handleFilterChange('created_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('created_from', formatLocalDate(date))}
                 placeholder=""
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.created_to ? new Date(filters.created_to) : null}
-                onChange={(date) => handleFilterChange('created_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('created_to', formatLocalDate(date))}
                 placeholder=""
               />
             </div>
@@ -283,13 +283,13 @@ export default function InquiriesPage() {
               <span className={labelClass}>답변일</span>
               <DatePicker
                 value={filters.answered_from ? new Date(filters.answered_from) : null}
-                onChange={(date) => handleFilterChange('answered_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('answered_from', formatLocalDate(date))}
                 placeholder=""
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.answered_to ? new Date(filters.answered_to) : null}
-                onChange={(date) => handleFilterChange('answered_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('answered_to', formatLocalDate(date))}
                 placeholder=""
               />
             </div>

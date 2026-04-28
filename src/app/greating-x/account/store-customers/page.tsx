@@ -16,6 +16,7 @@ import {
 import { RefreshCw, Plus, Calendar } from 'lucide-react';
 import type { StoreCustomer, SecurityGroup } from '@/types';
 import { apiClient } from '@/lib/api-client';
+import { formatLocalDate } from '@/lib/utils';
 
 // 고객 회원 모달 컴포넌트
 interface CustomerModalProps {
@@ -264,7 +265,7 @@ function formatDate(dateStr: string | null): string {
 // 날짜 퀵버튼 함수
 function getDateRange(period: string): { from: string; to: string } {
   const today = new Date();
-  const to = today.toISOString().split('T')[0];
+  const to = formatLocalDate(today);
   let from = new Date();
 
   switch (period) {
@@ -284,7 +285,7 @@ function getDateRange(period: string): { from: string; to: string } {
       return { from: '', to: '' };
   }
 
-  return { from: from.toISOString().split('T')[0], to };
+  return { from: formatLocalDate(from), to };
 }
 
 export default function StoreCustomersPage() {

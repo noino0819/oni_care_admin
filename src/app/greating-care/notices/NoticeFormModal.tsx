@@ -340,7 +340,7 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
                     <DatePicker
                       value={formData.start_date ? new Date(formData.start_date) : null}
                       onChange={(date) =>
-                        handleChange("start_date", date ? date.toISOString().split("T")[0] : "")
+                        handleChange("start_date", formatLocalDate(date))
                       }
                       placeholder="시작일"
                     />
@@ -348,7 +348,7 @@ export function NoticeFormModal({ isOpen, notice, onClose, onSuccess }: NoticeFo
                     <DatePicker
                       value={formData.end_date ? new Date(formData.end_date) : null}
                       onChange={(date) =>
-                        handleChange("end_date", date ? date.toISOString().split("T")[0] : "")
+                        handleChange("end_date", formatLocalDate(date))
                       }
                       placeholder="종료일"
                     />

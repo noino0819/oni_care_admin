@@ -19,7 +19,7 @@ import {
   type ChallengeQuiz,
   type ChallengeSearchFilters,
 } from '@/hooks/useChallenges';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatLocalDate } from '@/lib/utils';
 import { RefreshCw, Plus, ArrowUp, ArrowDown, Trash2, Search } from 'lucide-react';
 import type { TableColumn } from '@/types';
 
@@ -364,13 +364,13 @@ export default function ChallengeQuizzesPage() {
               <span className={labelClass}>운영기간</span>
               <DatePicker
                 value={filters.operation_from ? new Date(filters.operation_from) : null}
-                onChange={(date) => handleFilterChange('operation_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('operation_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.operation_to ? new Date(filters.operation_to) : null}
-                onChange={(date) => handleFilterChange('operation_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('operation_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>
@@ -379,13 +379,13 @@ export default function ChallengeQuizzesPage() {
               <span className={labelClass}>모집기간</span>
               <DatePicker
                 value={filters.recruitment_from ? new Date(filters.recruitment_from) : null}
-                onChange={(date) => handleFilterChange('recruitment_from', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('recruitment_from', formatLocalDate(date))}
                 placeholder="시작일"
               />
               <span className="text-gray-400">~</span>
               <DatePicker
                 value={filters.recruitment_to ? new Date(filters.recruitment_to) : null}
-                onChange={(date) => handleFilterChange('recruitment_to', date ? date.toISOString().split('T')[0] : '')}
+                onChange={(date) => handleFilterChange('recruitment_to', formatLocalDate(date))}
                 placeholder="종료일"
               />
             </div>
