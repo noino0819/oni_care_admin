@@ -7,7 +7,7 @@
 import { useState, useCallback } from "react";
 import { AdminLayout } from "@/components/layout";
 import { Button, DataTable, AlertModal, ConfirmModal, DatePicker } from "@/components/common";
-import { maskEmail, maskName, formatDate, cn } from "@/lib/utils";
+import { maskEmail, maskName, formatDate, formatLocalDate, cn } from "@/lib/utils";
 import { RefreshCw } from "lucide-react";
 import useSWR from "swr";
 import { swrFetcher, apiClient } from "@/lib/api-client";

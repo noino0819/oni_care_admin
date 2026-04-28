@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { Button, AlertModal, DatePicker } from "@/components/common";
-import { cn } from "@/lib/utils";
+import { cn, formatLocalDate } from "@/lib/utils";
 import { X, Upload } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import type { NoticeListItem, NoticeDetail, NoticeForm } from "@/types";

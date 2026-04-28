@@ -8,7 +8,7 @@ import { useState, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout";
 import { Button, DataTable, Pagination, AlertModal, ConfirmModal, DatePicker, Checkbox } from "@/components/common";
 import { NoticeFormModal } from "./NoticeFormModal";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, formatLocalDate, cn } from "@/lib/utils";
 import { RefreshCw, Plus, Trash2 } from "lucide-react";
 import useSWR from "swr";
 import { swrFetcher, apiClient } from "@/lib/api-client";
