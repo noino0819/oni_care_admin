@@ -8,6 +8,7 @@ from datetime import date
 
 from app.core.exceptions import ValidationError, NotFoundError
 from app.utils.sql_loader import get_sql
+from app.utils.validators import validate_image_urls_dict
 from app.config.database import get_connection
 
 
@@ -190,7 +191,8 @@ class ChallengeService:
             "total_achievement_days": data.get("total_achievement_days"),
             "reward_settings": json.dumps(data.get("reward_settings", {})),
             "type_settings": json.dumps(type_settings),
-            "images": json.dumps(data.get("images", {})),
+            # 이미지 URL은 내부 경로만 허용 (프로세스 검증 누락 취약점 대응)
+            "images": json.dumps(validate_image_urls_dict(data.get("images", {})) or {}),
             "total_stamp_count": self._get_stamp_count(data),
             "reward_type": self._get_reward_type(data),
             "created_by": created_by
@@ -277,7 +279,8 @@ class ChallengeService:
             "total_achievement_days": data.get("total_achievement_days"),
             "reward_settings": json.dumps(data["reward_settings"]) if "reward_settings" in data else None,
             "type_settings": json.dumps(type_settings) if type_settings else None,
-            "images": json.dumps(data["images"]) if "images" in data else None,
+            # 이미지 URL은 내부 경로만 허용 (프로세스 검증 누락 취약점 대응)
+            "images": json.dumps(validate_image_urls_dict(data["images"]) or {}) if "images" in data else None,
             "total_stamp_count": self._get_stamp_count(data) if "reward_settings" in data else None,
             "reward_type": self._get_reward_type(data) if "reward_settings" in data else None,
             "updated_by": updated_by

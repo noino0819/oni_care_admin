@@ -8,6 +8,7 @@ from datetime import date
 from fastapi import APIRouter, Query, HTTPException, status, Path
 from app.config.database import execute, query, query_one
 from app.core.logger import logger
+from app.utils.masking import mask_records
 
 router = APIRouter(prefix="/api/v1/admin/meal-records", tags=["식사기록 관리"])
 
@@ -95,6 +96,9 @@ async def get_meal_records(
         
         records = await query(list_query, params, use_app_db=True)
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        records = mask_records(records)
+
         return {
             "success": True,
             "data": records,
@@ -207,6 +211,9 @@ async def get_all_meal_records(
             else:
                 record["calories_display"] = "-"
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        records = mask_records(records)
+
         return {
             "success": True,
             "data": records,

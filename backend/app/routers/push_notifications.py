@@ -11,6 +11,7 @@ from app.config.database import query, query_one, execute_returning, execute
 from app.models.common import ApiResponse
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
+from app.utils.validators import validate_link_url
 
 
 router = APIRouter(prefix="/api/v1/admin/push-notifications", tags=["Push Notifications"])
@@ -278,7 +279,8 @@ async def create_push_notification(
         send_type_detail = body.get("send_type_detail")
         send_time = body.get("send_time")
         content = body.get("content")
-        link_url = body.get("link_url")
+        # link_url은 내부 경로/딥링크만 허용 (프로세스 검증 누락 취약점 대응)
+        link_url = validate_link_url(body.get("link_url"))
         is_active = body.get("is_active", True)
         
         # 필수 필드 검증
@@ -345,7 +347,7 @@ async def create_push_notification(
                 "send_type_detail": send_type_detail,
                 "send_time": send_time,
                 "content": content.strip() if content else None,
-                "link_url": link_url.strip() if link_url else None,
+                "link_url": link_url,
                 "is_active": is_active,
                 "created_by": created_by
             },
@@ -435,8 +437,9 @@ async def update_push_notification(
             params["content"] = content.strip() if content else None
         
         if "link_url" in body:
+            # link_url은 내부 경로/딥링크만 허용 (프로세스 검증 누락 취약점 대응)
             update_fields.append("link_url = %(link_url)s")
-            params["link_url"] = body["link_url"].strip() if body["link_url"] else None
+            params["link_url"] = validate_link_url(body["link_url"])
         
         if "is_active" in body:
             update_fields.append("is_active = %(is_active)s")

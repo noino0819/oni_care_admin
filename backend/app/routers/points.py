@@ -10,6 +10,7 @@ from app.config.database import query, query_one, execute_returning
 from app.models.common import ApiResponse
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
+from app.utils.masking import mask_record, mask_records
 
 
 router = APIRouter(prefix="/api/v1/admin/points", tags=["Points"])
@@ -120,6 +121,9 @@ async def get_points_summary(
             use_app_db=True
         )
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        rows = mask_records(rows)
+
         return {
             "success": True,
             "data": rows,
@@ -179,6 +183,9 @@ async def get_user_point_history(
             use_app_db=True
         )
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        rows = mask_records(rows)
+
         return {"success": True, "data": rows}
     except Exception as e:
         logger.error(f"사용자 포인트 내역 조회 오류: {str(e)}", exc_info=True)
@@ -224,6 +231,9 @@ async def get_point_detail(
                 detail={"error": "NOT_FOUND", "message": "포인트 내역을 찾을 수 없습니다."}
             )
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        row = mask_record(row)
+
         return ApiResponse(success=True, data=row)
     except HTTPException:
         raise

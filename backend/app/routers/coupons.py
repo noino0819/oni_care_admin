@@ -9,6 +9,7 @@ from datetime import date
 from fastapi import APIRouter, Query, HTTPException, status, Path
 from app.config.database import query, query_one, execute
 from app.core.logger import logger
+from app.utils.masking import mask_records
 
 router = APIRouter(prefix="/api/v1/admin/coupons", tags=["쿠폰 관리"])
 
@@ -131,6 +132,9 @@ async def get_coupons(
             else:
                 coupon["coupon_value_display"] = "-"
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        coupons = mask_records(coupons)
+
         return {
             "success": True,
             "data": coupons,

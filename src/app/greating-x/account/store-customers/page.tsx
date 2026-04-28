@@ -385,6 +385,20 @@ export default function StoreCustomersPage() {
     fetchCustomers();
   };
 
+  // 고객 행 클릭 → 평문 상세를 별도 조회 후 모달 오픈 (목록 응답은 마스킹되어 있음)
+  const handleOpenEdit = useCallback(async (customer: StoreCustomer) => {
+    try {
+      const result = await apiClient.get<StoreCustomer>(`/admin/store-customers/${customer.id}`);
+      if (result.success && result.data) {
+        setCustomerModal({ isOpen: true, data: result.data });
+      } else {
+        setCustomerModal({ isOpen: true, data: customer });
+      }
+    } catch {
+      setCustomerModal({ isOpen: true, data: customer });
+    }
+  }, []);
+
   // 고객 저장
   const handleSaveCustomer = async (data: Partial<StoreCustomer>) => {
     if (!data.customer_name) {
@@ -667,7 +681,7 @@ export default function StoreCustomersPage() {
                   customers.map((customer) => (
                     <tr
                       key={customer.id}
-                      onClick={() => setCustomerModal({ isOpen: true, data: customer })}
+                      onClick={() => handleOpenEdit(customer)}
                       className="border-b last:border-0 cursor-pointer hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-3 py-2 text-[13px]">{customer.member_code}</td>

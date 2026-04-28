@@ -11,6 +11,7 @@ from app.config.database import query, query_one, execute_returning
 from app.models.common import ApiResponse
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
+from app.utils.masking import mask_email, mask_name as mask_name_global, mask_user_id
 
 
 router = APIRouter(prefix="/api/v1/admin/inquiries", tags=["Inquiries"])
@@ -168,13 +169,18 @@ async def get_inquiries(
             use_app_db=True
         )
         
-        # 마스킹 처리 및 포맷
+        # 마스킹 처리 및 포맷 (응답값 평문 노출 방지 - 정보 누출 취약점 대응)
         formatted_inquiries = []
         for inq in inquiries:
+            raw_email = inq.get("customer_email", "")
+            raw_name = inq.get("customer_name", "")
             formatted_inquiries.append({
                 **inq,
-                "customer_id_masked": mask_id(inq.get("customer_email", "")),
-                "customer_name_display": inq.get("customer_name", ""),
+                # 평문 필드 자체를 마스킹된 값으로 덮어씀
+                "customer_email": mask_email(raw_email),
+                "customer_name": mask_name_global(raw_name),
+                "customer_id_masked": mask_user_id(raw_email),
+                "customer_name_display": mask_name_global(raw_name),
                 "inquiry_type_name": inq.get("inquiry_type_name") or INQUIRY_TYPES.get(inq.get("inquiry_type_id"), "기타"),
                 "status_display": "답변 완료" if inq.get("status") == "answered" else "미답변"
             })
@@ -256,9 +262,14 @@ async def get_inquiry(
                 detail={"error": "NOT_FOUND", "message": "문의를 찾을 수 없습니다."}
             )
         
-        # 마스킹 처리
-        inquiry["customer_id_masked"] = mask_id(inquiry.get("customer_email", ""))
-        inquiry["customer_name_masked"] = mask_name(inquiry.get("customer_name", ""))
+        # 마스킹 처리 (응답값 평문 노출 방지 - 정보 누출 취약점 대응)
+        raw_email = inquiry.get("customer_email", "")
+        raw_name = inquiry.get("customer_name", "")
+        inquiry["customer_id_masked"] = mask_user_id(raw_email)
+        inquiry["customer_name_masked"] = mask_name_global(raw_name)
+        # 평문 필드 자체를 마스킹된 값으로 덮어씀
+        inquiry["customer_email"] = mask_email(raw_email)
+        inquiry["customer_name"] = mask_name_global(raw_name)
         inquiry["inquiry_type_name"] = inquiry.get("inquiry_type_name") or INQUIRY_TYPES.get(inquiry.get("inquiry_type_id"), "기타")
         inquiry["status_display"] = "답변 완료" if inquiry.get("status") == "answered" else "미답변"
         

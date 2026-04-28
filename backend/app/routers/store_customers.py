@@ -10,6 +10,7 @@ from app.config.database import query, query_one, execute_returning, execute
 from app.models.common import ApiResponse
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
+from app.utils.masking import mask_record, mask_records
 
 
 router = APIRouter(prefix="/api/v1/admin/store-customers", tags=["Store Customers"])
@@ -68,6 +69,9 @@ async def get_store_customers(
             params
         )
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        data = mask_records(data)
+
         return {
             "success": True,
             "data": data,
@@ -106,6 +110,8 @@ async def get_store_customer(
                 detail={"error": "NOT_FOUND", "message": "고객을 찾을 수 없습니다."}
             )
         
+        # NOTE: 단건 상세조회는 어드민이 수정 모달을 열 때도 사용되므로
+        # 평문 그대로 반환한다. (목록은 노출 위험이 커서 마스킹 적용)
         return ApiResponse(success=True, data=customer)
     except HTTPException:
         raise
@@ -182,6 +188,7 @@ async def create_store_customer(
             }
         )
         
+        # NOTE: 등록 응답은 방금 어드민이 입력한 값을 그대로 반환 (평문 유지)
         return ApiResponse(success=True, data=result)
     except HTTPException:
         raise
@@ -242,6 +249,7 @@ async def update_store_customer(
                 detail={"error": "NOT_FOUND", "message": "고객을 찾을 수 없습니다."}
             )
         
+        # NOTE: 수정 응답은 방금 어드민이 입력한 값을 그대로 반환 (평문 유지)
         return ApiResponse(success=True, data=result)
     except HTTPException:
         raise
