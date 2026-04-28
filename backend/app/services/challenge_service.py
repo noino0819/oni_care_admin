@@ -8,7 +8,7 @@ from datetime import date
 
 from app.core.exceptions import ValidationError, NotFoundError
 from app.utils.sql_loader import get_sql
-from app.utils.validators import validate_image_urls_dict
+from app.utils.validators import validate_image_urls_dict, validate_roulette_segments
 from app.config.database import get_connection
 
 
@@ -209,7 +209,9 @@ class ChallengeService:
         
         # 룰렛 인증 방식인 경우 룰렛 설정 저장
         if challenge_result and data.get("verification_method") == "roulette":
-            roulette_segments = data.get("roulette_segments")
+            # 허용된 필드만 통과하도록 화이트리스트 검증
+            # (프로세스 검증 누락 취약점 대응 - 임의 URL/필드 변조 차단)
+            roulette_segments = validate_roulette_segments(data.get("roulette_segments"))
             if roulette_segments:
                 await self.upsert_roulette_settings(
                     challenge_id=str(challenge_result["id"]),
@@ -299,7 +301,9 @@ class ChallengeService:
         if challenge_result:
             verification_method = data.get("verification_method") or existing.get("verification_method")
             if verification_method == "roulette" and "roulette_segments" in data:
-                roulette_segments = data.get("roulette_segments")
+                # 허용된 필드만 통과하도록 화이트리스트 검증
+                # (프로세스 검증 누락 취약점 대응 - 임의 URL/필드 변조 차단)
+                roulette_segments = validate_roulette_segments(data.get("roulette_segments"))
                 if roulette_segments:
                     await self.upsert_roulette_settings(
                         challenge_id=challenge_id,
@@ -337,70 +341,85 @@ class ChallengeService:
         
         return len(results)
 
-    def _validate_challenge_data(self, data: Dict[str, Any]) -> None:
-        """챌린지 데이터 유효성 검사"""
+    def _validate_challenge_data(
+        self,
+        data: Dict[str, Any],
+        is_update: bool = False,
+    ) -> None:
+        """
+        챌린지 데이터 유효성 검사.
+
+        Args:
+            data: 검증할 데이터(생성 시 전체, 수정 시 병합본)
+            is_update: 수정 호출 여부 (필수 필드 누락 검사 완화)
+        """
         # 제목 길이 검사
         title = data.get("title", "")
-        if len(title) > 20:
+        if title is not None and len(title) > 20:
             raise ValidationError("챌린지명은 최대 20자까지 입력 가능합니다.")
-        
+
         # 부제 길이 검사
         subtitle = data.get("subtitle")
         if subtitle and len(subtitle) > 8:
             raise ValidationError("챌린지 부제는 홈/챌린지 진행현황에 표시되는 명칭입니다. 8자 이내로 입력해 주세요.")
-        
+
+        # 설명 길이 검사 (DB 부하 / 비정상 페이로드 차단)
+        description = data.get("description")
+        if description and len(description) > 2000:
+            raise ValidationError("챌린지 설명은 2000자 이내로 입력해주세요.")
+
         # 챌린지 기간 검사
-        duration = data.get("challenge_duration_days", 7)
-        if duration > 30:
+        duration = data.get("challenge_duration_days")
+        if duration is not None and duration > 30:
             raise ValidationError("챌린지 기간은 최대 30일까지 설정할 수 있습니다. 기간을 확인해주세요.")
-        
+
         # 기간 검사
         recruitment_start = data.get("recruitment_start_date")
         recruitment_end = data.get("recruitment_end_date")
         operation_start = data.get("operation_start_date")
         operation_end = data.get("operation_end_date")
-        
+
         if recruitment_start and recruitment_end and recruitment_start > recruitment_end:
             raise ValidationError("모집 기간을 확인해주세요.")
-        
+
         if operation_start and operation_end and operation_start > operation_end:
             raise ValidationError("운영 기간을 확인해주세요.")
-        
+
         # 등수 공개 방식 검사 (선공개 시 모집/운영 기간 겹침 불가)
         rank_display_type = data.get("rank_display_type")
         if rank_display_type == "live":
             if recruitment_end and operation_start and recruitment_end >= operation_start:
                 raise ValidationError("모집기간 종료 후 운영이 시작되는 챌린지에서만 등수 선공개가 가능합니다.")
-        
+
         # 일일 인증 설정 검사 (야간 푸시 불가)
-        daily_settings = data.get("daily_verification_settings", [])
+        daily_settings = data.get("daily_verification_settings") or []
         for setting in daily_settings:
             if setting.get("push_enabled"):
                 start_time = setting.get("start_time", "00:01")
-                hour = int(start_time.split(":")[0])
+                try:
+                    hour = int(start_time.split(":")[0])
+                except (ValueError, AttributeError):
+                    raise ValidationError("인증 시작 시간 형식이 올바르지 않습니다.")
                 if hour >= 21 or hour < 8:
                     raise ValidationError("야간 푸시(밤 9시~익일 8시)는 설정할 수 없습니다. 시작 시간을 확인해주세요.")
-        
-        # 걸음수 챌린지 검사
+
+        # 걸음수 챌린지 검사 (생성 시 또는 수정에서 steps_settings를 변경할 때)
         if data.get("challenge_type") == "steps":
             steps_settings = data.get("steps_settings")
-            if not steps_settings or not steps_settings.get("target_steps"):
-                raise ValidationError("목표 걸음수를 설정해주세요.")
+            if not is_update or steps_settings is not None:
+                if not steps_settings or not steps_settings.get("target_steps"):
+                    raise ValidationError("목표 걸음수를 설정해주세요.")
 
     def _validate_challenge_update(self, existing: Dict[str, Any], data: Dict[str, Any]) -> None:
         """챌린지 수정 시 유효성 검사"""
         # 챌린지 유형 변경 불가
         if "challenge_type" in data and data["challenge_type"] != existing.get("challenge_type"):
             raise ValidationError("수정 시 챌린지 타입 변경은 불가능 합니다. 다른 유형의 챌린지는 신규로 생성해주세요.")
-        
-        # 기본 유효성 검사
+
+        # 기존 값과 변경값을 병합한 뒤 생성과 동일한 검증 적용
+        # (수정 시에도 기간/야간푸시/걸음수 등이 일관되게 검증되도록)
         merged_data = {**existing, **{k: v for k, v in data.items() if v is not None}}
-        
-        # 제목 길이 검사
-        if "title" in data:
-            title = data.get("title", "")
-            if len(title) > 20:
-                raise ValidationError("챌린지명은 최대 20자까지 입력 가능합니다.")
+        self._validate_challenge_data(merged_data, is_update=True)
 
     def _get_stamp_count(self, data: Dict[str, Any]) -> int:
         """보상 설정에서 스탬프 개수 추출"""

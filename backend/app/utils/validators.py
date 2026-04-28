@@ -88,6 +88,60 @@ def validate_image_urls_dict(images: Optional[Dict[str, Any]]) -> Optional[Dict[
 _ALLOWED_DEEPLINK_SCHEMES = ("greatingcare://", "app://")
 
 
+def validate_roulette_segments(
+    segments: Optional[List[Dict[str, Any]]],
+) -> Optional[List[Dict[str, Any]]]:
+    """
+    룰렛 세그먼트 화이트리스트 검증 (프로세스 검증 누락 취약점 대응).
+
+    프론트가 보내는 정상 segment 형태:
+        { label, probability, reward_type, reward_value }
+
+    모델이 List[dict] 라서 임의 키(image_url 등)가 통과해 DB에 그대로
+    저장되는 위험이 있어, 허용된 키 외에는 모두 제거한다.
+    """
+    if segments is None:
+        return None
+    if not isinstance(segments, list):
+        raise ValidationError("룰렛 세그먼트 형식이 올바르지 않습니다.")
+
+    allowed_keys = {
+        "slot",
+        "is_active",
+        "label",
+        "display_text",
+        "probability",
+        "reward_type",
+        "reward_value",
+        "daily_max_quantity",
+        "total_max_quantity",
+    }
+    allowed_reward_types = {"point", "coupon"}
+
+    cleaned: List[Dict[str, Any]] = []
+    for idx, seg in enumerate(segments):
+        if not isinstance(seg, dict):
+            raise ValidationError(f"{idx + 1}번 룰렛 세그먼트 형식이 올바르지 않습니다.")
+        clean: Dict[str, Any] = {k: v for k, v in seg.items() if k in allowed_keys}
+
+        # reward_type 화이트리스트
+        rt = clean.get("reward_type")
+        if rt is not None and rt not in allowed_reward_types:
+            raise ValidationError("허용되지 않는 보상 종류입니다.")
+
+        # 표시 문구 길이 제한
+        for text_key in ("label", "display_text"):
+            text = clean.get(text_key)
+            if isinstance(text, str) and len(text) > 30:
+                raise ValidationError("룰렛 표시 문구는 30자 이내여야 합니다.")
+            # HTML 태그 차단(저장 단계에서 무력화)
+            if isinstance(text, str) and ("<" in text or ">" in text):
+                raise ValidationError("룰렛 표시 문구에 허용되지 않는 문자가 포함되어 있습니다.")
+
+        cleaned.append(clean)
+    return cleaned
+
+
 def validate_link_url(url: Optional[str]) -> Optional[str]:
     """
     링크 URL 서버측 검증 (푸시/배너 등 사용자가 누르면 이동하는 URL).

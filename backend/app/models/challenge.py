@@ -156,7 +156,7 @@ class ChallengeCreateRequest(BaseModel):
     verification_method: VerificationMethod
     title: str = Field(max_length=20, description="챌린지명")
     subtitle: Optional[str] = Field(None, max_length=8, description="부제")
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000, description="챌린지 설명")
     
     # 모집 설정
     max_participants: Optional[int] = Field(None, ge=1, description="최대 모집인원")
@@ -206,7 +206,7 @@ class ChallengeUpdateRequest(BaseModel):
     # 기본 정보 (유형은 변경 불가)
     title: Optional[str] = Field(None, max_length=20)
     subtitle: Optional[str] = Field(None, max_length=8)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
     
     # 모집 설정
     max_participants: Optional[int] = Field(None, ge=1)
