@@ -196,6 +196,41 @@ export function ChallengeFormModal({
       return;
     }
 
+    // 기간 필수 검사 (신규 생성 시) - 백엔드와 동일 정책
+    // 수정 시에는 기존 데이터 호환을 위해 강제하지 않음
+    if (!challengeId) {
+      const periodLabels: Array<[keyof typeof formData, string]> = [
+        ['recruitment_start_date', '모집 시작일'],
+        ['recruitment_end_date', '모집 종료일'],
+        ['operation_start_date', '운영 시작일'],
+        ['operation_end_date', '운영 종료일'],
+        ['display_start_date', '노출 시작일'],
+        ['display_end_date', '노출 종료일'],
+      ];
+      const missingPeriods = periodLabels
+        .filter(([key]) => !formData[key])
+        .map(([, label]) => label);
+      if (missingPeriods.length > 0) {
+        setAlertMessage(`다음 항목을 모두 설정해주세요: ${missingPeriods.join(', ')}`);
+        return;
+      }
+    }
+
+    // 기간 시작/종료 일관성 검사
+    const periodPairs: Array<[string, string, string]> = [
+      ['recruitment_start_date', 'recruitment_end_date', '모집 기간'],
+      ['operation_start_date', 'operation_end_date', '운영 기간'],
+      ['display_start_date', 'display_end_date', '노출 기간'],
+    ];
+    for (const [startKey, endKey, label] of periodPairs) {
+      const start = (formData as Record<string, unknown>)[startKey] as string;
+      const end = (formData as Record<string, unknown>)[endKey] as string;
+      if (start && end && start > end) {
+        setAlertMessage(`${label}을(를) 확인해주세요. 시작일이 종료일보다 늦을 수 없습니다.`);
+        return;
+      }
+    }
+
     if (formData.verification_method === 'roulette') {
       if (formData.roulette_segments.length < 6 || formData.roulette_segments.length > 8) {
         setAlertMessage('룰렛 세그먼트는 6~8개 사이여야 합니다.');

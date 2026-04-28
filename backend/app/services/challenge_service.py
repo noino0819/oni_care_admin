@@ -373,17 +373,43 @@ class ChallengeService:
         if duration is not None and duration > 30:
             raise ValidationError("챌린지 기간은 최대 30일까지 설정할 수 있습니다. 기간을 확인해주세요.")
 
-        # 기간 검사
+        # 기간 검사 - 신규 생성 시 모집/운영/노출 6개 필드 모두 필수
+        # (NULL 기간 챌린지 생성 자체를 차단; FO 측에도 NULL=비활성 안전망 존재.
+        #  is_update=True 인 수정 호출에서는 기존 데이터 호환을 위해 필수 강제는 생략하고
+        #  사용자가 명시한 값에 한해 일관성만 검증)
+        period_fields = {
+            "recruitment_start_date": "모집 시작일",
+            "recruitment_end_date": "모집 종료일",
+            "operation_start_date": "운영 시작일",
+            "operation_end_date": "운영 종료일",
+            "display_start_date": "노출 시작일",
+            "display_end_date": "노출 종료일",
+        }
+        if not is_update:
+            missing = [
+                label for field, label in period_fields.items()
+                if not data.get(field)
+            ]
+            if missing:
+                raise ValidationError(
+                    f"다음 항목은 반드시 설정해야 합니다: {', '.join(missing)}"
+                )
+
         recruitment_start = data.get("recruitment_start_date")
         recruitment_end = data.get("recruitment_end_date")
         operation_start = data.get("operation_start_date")
         operation_end = data.get("operation_end_date")
+        display_start = data.get("display_start_date")
+        display_end = data.get("display_end_date")
 
         if recruitment_start and recruitment_end and recruitment_start > recruitment_end:
             raise ValidationError("모집 기간을 확인해주세요.")
 
         if operation_start and operation_end and operation_start > operation_end:
             raise ValidationError("운영 기간을 확인해주세요.")
+
+        if display_start and display_end and display_start > display_end:
+            raise ValidationError("노출 기간을 확인해주세요.")
 
         # 등수 공개 방식 검사 (선공개 시 모집/운영 기간 겹침 불가)
         rank_display_type = data.get("rank_display_type")
