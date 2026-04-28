@@ -9,6 +9,17 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.config.database import query, query_one
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
+from app.utils.masking import mask_user_id, mask_name
+
+
+def _mask_log_records(records):
+    """로그 응답의 user_id / user_name 평문 노출 차단 (정보 누출 취약점 대응)."""
+    for row in records or []:
+        if row.get("user_id"):
+            row["user_id"] = mask_user_id(row["user_id"])
+        if row.get("user_name"):
+            row["user_name"] = mask_name(row["user_name"])
+    return records
 
 
 router = APIRouter(prefix="/api/v1/admin/logs", tags=["Logs"])
@@ -74,7 +85,10 @@ async def get_access_logs(
         """
         
         data = await query(data_sql, params)
-        
+
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        data = _mask_log_records(data)
+
         return {
             "success": True,
             "data": data,
@@ -163,7 +177,10 @@ async def get_personal_info_logs(
         """
         
         data = await query(data_sql, params)
-        
+
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        data = _mask_log_records(data)
+
         return {
             "success": True,
             "data": data,

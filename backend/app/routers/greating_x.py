@@ -11,6 +11,7 @@ from app.config.database import query, query_one, execute_returning, execute
 from app.models.common import ApiResponse
 from app.middleware.auth import get_current_user
 from app.core.logger import logger
+from app.utils.masking import mask_records
 
 
 router = APIRouter(prefix="/api/v1/greating-x", tags=["Greating-X"])
@@ -90,6 +91,11 @@ async def get_greating_x_admin_users(
             params
         )
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        # - 화면에서는 마스킹하지만 응답값이 평문이던 문제를 차단
+        # - 수정 모달은 별도의 단건 상세 API를 호출해 평문을 받도록 분리
+        data = mask_records(data)
+
         return {
             "success": True,
             "data": data,
@@ -133,6 +139,8 @@ async def get_greating_x_admin_user(
                 detail={"error": "NOT_FOUND", "message": "관리자 회원을 찾을 수 없습니다."}
             )
         
+        # NOTE: 단건 상세조회는 어드민이 수정 모달을 열 때 사용되므로
+        # 평문 그대로 반환한다. (목록은 노출 위험이 커서 마스킹 적용)
         return ApiResponse(success=True, data=user)
     except HTTPException:
         raise

@@ -10,6 +10,7 @@ from app.config.database import query, query_one, execute_returning, execute
 from app.core.exceptions import ValidationError, NotFoundError, DuplicateKeyError
 from app.core.logger import logger
 from app.models.admin_user import AdminUserCreate, AdminUserUpdate
+from app.utils.masking import mask_records
 
 
 class AdminUserService:
@@ -103,6 +104,11 @@ class AdminUserService:
         
         data = await query(data_sql, params)
         
+        # 응답 직전 개인정보 마스킹 (정보 누출 취약점 대응)
+        # - 화면에서는 마스킹하지만 응답값이 평문이던 문제를 차단
+        # - 수정 모달은 별도의 단건 상세 API(get_by_id)를 호출해 평문을 받도록 분리
+        data = mask_records(data)
+
         return {
             "data": data,
             "pagination": {

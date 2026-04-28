@@ -283,6 +283,20 @@ export default function AdminUsersPage() {
     }
   }, [filters]);
 
+  // 행 클릭 → 평문 상세를 별도 조회 후 모달 오픈 (목록 응답은 마스킹되어 있음)
+  const handleOpenEdit = useCallback(async (user: AdminUserAccount) => {
+    try {
+      const result = await apiClient.get<AdminUserAccount>(`/admin/admin-users/${user.id}`);
+      if (result.success && result.data) {
+        setUserModal({ isOpen: true, data: result.data });
+      } else {
+        setUserModal({ isOpen: true, data: user });
+      }
+    } catch {
+      setUserModal({ isOpen: true, data: user });
+    }
+  }, []);
+
   // 초기 로드
   useEffect(() => {
     fetchCompanies();
@@ -476,7 +490,7 @@ export default function AdminUsersPage() {
                   users.map((user) => (
                     <tr
                       key={user.id}
-                      onClick={() => setUserModal({ isOpen: true, data: user })}
+                      onClick={() => handleOpenEdit(user)}
                       className="border-b last:border-0 cursor-pointer hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-3 py-2 text-[13px]">{maskId(user.login_id)}</td>

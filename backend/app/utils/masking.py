@@ -53,6 +53,8 @@ def mask_user_id(user_id: Optional[str]) -> Optional[str]:
 
 
 # 마스킹 대상 필드 정의 (필드명: 마스킹 함수)
+# - 어드민/그리팅-X 관리자 회원 목록 응답에도 동일 정책을 적용하기 위해
+#   login_id / employee_name 도 기본 마스커에 포함한다.
 _DEFAULT_FIELD_MASKERS = {
     "email": mask_email,
     "user_email": mask_email,
@@ -61,9 +63,11 @@ _DEFAULT_FIELD_MASKERS = {
     "user_name": mask_name,
     "customer_name": mask_name,
     "customer_name_display": mask_name,
+    "employee_name": mask_name,
     "phone": mask_phone,
     "user_phone": mask_phone,
     "customer_phone": mask_phone,
+    "login_id": mask_user_id,
 }
 
 
